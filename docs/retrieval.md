@@ -37,3 +37,14 @@ RRF 只使用各自的**排名**而不是原始分数，因此可以避免直接
 ## 当前边界
 
 Dense 检索使用本地 `BAAI/bge-small-zh-v1.5` 生成 512 维归一化语义向量；RRF 分数本身仍不是概率或可靠置信度，不能直接作为固定拒答阈值。BM25 目前在应用进程中遍历当前知识库的 `ready` chunk，适合本地 MVP 和建立效果基线；文档量增长后应替换为 PostgreSQL 全文检索或 Qdrant sparse vector。该检索端点本身不调用 DeepSeek；它已被证据问答链路使用，具体的上下文约束和引用校验见 [grounded-chat.md](grounded-chat.md)。
+
+## 本地重排序
+
+RRF 会先融合 Dense 与 BM25 的候选，再将前 10 个候选交给本地
+`BAAI/bge-reranker-base` CrossEncoder，按问题与片段的联合相关性重新排序，最后返回
+`top_k`。该模型不写入 Qdrant，也不需要重新索引文档；它只影响每次查询的排序和本地
+CPU 延迟。
+
+CrossEncoder 分数只用于相对排序，不是置信度或概率。候选数量通过
+`RERANKER_CANDIDATE_COUNT` 配置，默认 10；需要在固定题集上比较“RRF only”与
+“RRF + Reranker”的 Recall@K、MRR 和延迟，才能做真实效果结论。

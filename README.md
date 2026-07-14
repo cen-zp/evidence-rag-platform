@@ -11,7 +11,7 @@
 - 上传并解析 PDF、DOCX、Markdown 文件
 - 异步分块、向量化并写入知识库
 - 支持同一页面会话内的有限多轮追问，并在回答中展示来源片段
-- 基于本地 BGE 语义向量与 BM25 的 RRF 混合检索生成上下文
+- 基于本地 BGE 语义向量、BM25、RRF 与 CrossEncoder 重排序生成上下文
 - 无检索证据或模型返回非法引用时拒答
 - 展示模型名称、端到端模型耗时与检索评测指标
 - 使用 Docker Compose 本地启动 PostgreSQL、Redis、Qdrant
@@ -25,7 +25,7 @@
 | 数据 | PostgreSQL、Redis、Qdrant |
 | 异步任务 | ARQ（Redis 队列） |
 | AI | DeepSeek Chat API（OpenAI 兼容 SDK）、结构化引用输出 |
-| 检索 | 本地 BGE 语义向量 + BM25 + RRF |
+| 检索 | 本地 BGE 语义向量 + BM25 + RRF + CrossEncoder Reranker |
 | 质量 | pytest、JSONL 评测集、知识库级评测案例 |
 | 交付 | Docker Compose、uv、pnpm |
 
@@ -102,7 +102,7 @@ M2-A 已支持创建知识库与上传 Markdown/PDF/DOCX；M2-B 已接入 Redis/
 ### 尚未完成的关键能力
 
 - 正式语义 Embedding 与同题集的效果、延迟、成本对比
-- Reranker、基于可靠阈值的低置信度拒答
+- 基于可靠阈值的低置信度拒答
 - 账户/权限、持久化会话、请求日志与答案反馈
 - API/Web/Worker 的完整容器化
 

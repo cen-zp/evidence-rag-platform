@@ -8,6 +8,7 @@ from app.db.base import Base
 from app.db.session import create_session_factory
 from app.models import Document, DocumentChunk, DocumentStatus, KnowledgeBase
 from app.services.bm25 import rank_bm25
+from app.services.reranker import RerankResult
 from app.services.retrieval import KnowledgeBaseRetriever
 from app.services.vector_store import VectorSearchHit
 
@@ -100,6 +101,8 @@ def test_retriever_enforces_knowledge_base_and_ready_document_filters() -> None:
         session_factory=session_factory,
         vector_store=vector_store,
         embedding_provider=FakeEmbeddingProvider(),
+        reranker=FakeReranker(),
+        reranker_candidate_count=10,
     )
 
     hits = retriever.search(target_knowledge_base_id, "target question", top_k=3)
@@ -121,6 +124,13 @@ class FakeEmbeddingProvider:
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [[1.0, 0.0] for _ in texts]
+
+
+class FakeReranker:
+    def rerank(self, query: str, candidates: list[tuple[UUID, str]]) -> list[RerankResult]:
+        assert query == "target question"
+        assert [content for _, content in candidates] == ["target evidence"]
+        return [RerankResult(chunk_id=chunk_id, score=0.8) for chunk_id, _ in candidates]
 
 
 def test_bm25_ranks_matching_chunk_above_unrelated_chunk() -> None:

@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-zh-v1.5"
     embedding_dimension: int = 512
     embedding_device: str = "cpu"
+    reranker_model: str = "BAAI/bge-reranker-base"
+    reranker_candidate_count: int = 10
+    reranker_device: str = "cpu"
     deepseek_api_key: SecretStr | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_chat_model: str = "deepseek-v4-flash"

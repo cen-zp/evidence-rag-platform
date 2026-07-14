@@ -11,6 +11,7 @@ from app.db.session import get_session_factory
 from app.models import Document, DocumentChunk, DocumentStatus
 from app.services.bm25 import rank_bm25
 from app.services.embedding import EmbeddingProvider, get_embedding_provider
+from app.services.reranker import Reranker, get_reranker
 from app.services.vector_store import QdrantVectorStore
 
 
@@ -26,10 +27,14 @@ class KnowledgeBaseRetriever:
         session_factory: sessionmaker[Session],
         vector_store: QdrantVectorStore,
         embedding_provider: EmbeddingProvider,
+        reranker: Reranker,
+        reranker_candidate_count: int,
     ) -> None:
         self._session_factory = session_factory
         self._vector_store = vector_store
         self._embedding_provider = embedding_provider
+        self._reranker = reranker
+        self._reranker_candidate_count = reranker_candidate_count
 
     def search(self, knowledge_base_id: UUID, query: str, top_k: int) -> list[RetrievalHit]:
         vector_hits = self._vector_store.search(
@@ -65,9 +70,14 @@ class KnowledgeBaseRetriever:
         fused_scores = _reciprocal_rank_fusion(dense_ranks, lexical_ranks)
 
         ranked_scores = sorted(fused_scores.items(), key=lambda item: item[1], reverse=True)
+        rerank_candidates = [
+            (chunk_id, chunks_by_id[chunk_id].content)
+            for chunk_id, _ in ranked_scores[: max(top_k, self._reranker_candidate_count)]
+        ]
+        reranked = self._reranker.rerank(query, rerank_candidates)
         return [
-            RetrievalHit(chunk=chunks_by_id[chunk_id], score=score)
-            for chunk_id, score in ranked_scores[:top_k]
+            RetrievalHit(chunk=chunks_by_id[result.chunk_id], score=result.score)
+            for result in reranked[:top_k]
         ]
 
 
@@ -94,4 +104,6 @@ def get_knowledge_base_retriever() -> KnowledgeBaseRetriever:
             vector_size=settings.embedding_dimension,
         ),
         embedding_provider=get_embedding_provider(),
+        reranker=get_reranker(),
+        reranker_candidate_count=settings.reranker_candidate_count,
     )
