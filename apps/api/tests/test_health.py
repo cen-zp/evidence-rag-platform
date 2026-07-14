@@ -29,3 +29,33 @@ def test_chat_returns_503_without_api_key() -> None:
     assert response.json()["detail"] == (
         "AI provider is not configured. Add DEEPSEEK_API_KEY to the local .env file."
     )
+
+
+def test_cors_allows_only_the_workbench_origin_and_required_request_shape() -> None:
+    response = create_test_client().options(
+        "/api/chat",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "Content-Type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+    assert response.headers["access-control-allow-methods"] == "GET, POST, DELETE, OPTIONS"
+    assert response.headers["access-control-allow-headers"] == (
+        "Accept, Accept-Language, Content-Language, Content-Type"
+    )
+
+
+def test_cors_rejects_unneeded_request_method() -> None:
+    response = create_test_client().options(
+        "/api/chat",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "PATCH",
+        },
+    )
+
+    assert response.status_code == 400
