@@ -1,0 +1,27 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!apps/web/.env.local.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node.js
+node_modules/
+.next/
+out/
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime uploads and logs
+uploads/
+logs/
