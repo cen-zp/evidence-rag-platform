@@ -60,6 +60,32 @@ export type RetrievalEvaluationReport = {
   p95_latency_ms: number;
 };
 
+export type ReviewVerdict = "pass" | "fail" | "not_applicable";
+
+export type AnswerReview = {
+  id: string;
+  evaluation_case_id: string;
+  answer: string;
+  model: string;
+  latency_ms: number;
+  citation_chunk_ids: string[];
+  citation_filenames: string[];
+  answer_verdict: ReviewVerdict;
+  citation_verdict: ReviewVerdict;
+  refusal_verdict: ReviewVerdict;
+  notes: string | null;
+  created_at: string;
+};
+
+export type AnswerReviewSummary = {
+  case_count: number;
+  review_count: number;
+  unreviewed_case_count: number;
+  answer_pass_rate: number | null;
+  citation_pass_rate: number | null;
+  refusal_pass_rate: number | null;
+};
+
 export class ChatApiError extends Error {
   constructor(message: string) {
     super(message);
@@ -244,5 +270,40 @@ export async function runRetrievalEvaluation(
   } catch (error) {
     if (error instanceof ChatApiError) throw error;
     throw new ChatApiError("无法运行评测。请确认 API 与 Qdrant 已启动。");
+  }
+}
+
+export async function getAnswerReviewSummary(
+  knowledgeBaseId: string,
+): Promise<AnswerReviewSummary> {
+  try {
+    return await readJson<AnswerReviewSummary>(
+      await fetch(`${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/evaluations/answer-review-summary`),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法读取答案评审汇总。请确认 API 已启动。");
+  }
+}
+
+export async function createAnswerReview(
+  knowledgeBaseId: string,
+  evaluationCaseId: string,
+  review: Omit<AnswerReview, "id" | "evaluation_case_id" | "citation_filenames" | "created_at">,
+): Promise<AnswerReview> {
+  try {
+    return await readJson<AnswerReview>(
+      await fetch(
+        `${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/evaluation-cases/${evaluationCaseId}/answer-reviews`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(review),
+        },
+      ),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法保存答案评审。请确认 API 已启动。");
   }
 }

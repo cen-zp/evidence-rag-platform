@@ -2,20 +2,43 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.api.knowledge_bases import get_knowledge_base_or_404
 from app.db.session import get_session
 from app.evaluation.retrieval import RetrievalEvaluationCase, evaluate_retrieval
-from app.models import EvaluationCase
+from app.models import AnswerReview, DocumentChunk, EvaluationCase
 from app.schemas.knowledge import (
+    AnswerReviewCreate,
+    AnswerReviewRead,
+    AnswerReviewSummaryRead,
     EvaluationCaseCreate,
     EvaluationCaseRead,
     RetrievalEvaluationReportRead,
+    ReviewVerdict,
 )
 from app.services.retrieval import KnowledgeBaseRetriever, get_knowledge_base_retriever
 
 router = APIRouter(prefix="/api/knowledge-bases", tags=["evaluations"])
+
+
+def get_evaluation_case_or_404(
+    session: Session,
+    knowledge_base_id: UUID,
+    evaluation_case_id: UUID,
+) -> EvaluationCase:
+    evaluation_case = session.scalar(
+        select(EvaluationCase).where(
+            EvaluationCase.id == evaluation_case_id,
+            EvaluationCase.knowledge_base_id == knowledge_base_id,
+        )
+    )
+    if evaluation_case is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evaluation case not found in this knowledge base",
+        )
+    return evaluation_case
 
 
 @router.post(
@@ -65,19 +88,128 @@ def delete_evaluation_case(
     session: Session = Depends(get_session),
 ) -> None:
     get_knowledge_base_or_404(session, knowledge_base_id)
-    evaluation_case = session.scalar(
-        select(EvaluationCase).where(
-            EvaluationCase.id == evaluation_case_id,
-            EvaluationCase.knowledge_base_id == knowledge_base_id,
-        )
-    )
-    if evaluation_case is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Evaluation case not found in this knowledge base",
-        )
+    evaluation_case = get_evaluation_case_or_404(session, knowledge_base_id, evaluation_case_id)
     session.delete(evaluation_case)
     session.commit()
+
+
+@router.post(
+    "/{knowledge_base_id}/evaluation-cases/{evaluation_case_id}/answer-reviews",
+    response_model=AnswerReviewRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_answer_review(
+    knowledge_base_id: UUID,
+    evaluation_case_id: UUID,
+    payload: AnswerReviewCreate,
+    session: Session = Depends(get_session),
+) -> AnswerReview:
+    get_knowledge_base_or_404(session, knowledge_base_id)
+    evaluation_case = get_evaluation_case_or_404(session, knowledge_base_id, evaluation_case_id)
+    if len(set(payload.citation_chunk_ids)) != len(payload.citation_chunk_ids):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Citation chunk IDs must be unique",
+        )
+
+    chunks = list(
+        session.scalars(
+            select(DocumentChunk)
+            .options(selectinload(DocumentChunk.document))
+            .where(
+                DocumentChunk.knowledge_base_id == knowledge_base_id,
+                DocumentChunk.id.in_(payload.citation_chunk_ids),
+            )
+        )
+    )
+    chunks_by_id = {chunk.id: chunk for chunk in chunks}
+    if len(chunks_by_id) != len(payload.citation_chunk_ids):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Citation chunks must belong to the current knowledge base",
+        )
+
+    answer_review = AnswerReview(
+        evaluation_case=evaluation_case,
+        answer=payload.answer,
+        model=payload.model,
+        latency_ms=payload.latency_ms,
+        citation_chunk_ids=[str(chunk_id) for chunk_id in payload.citation_chunk_ids],
+        citation_filenames=[
+            chunks_by_id[chunk_id].document.filename for chunk_id in payload.citation_chunk_ids
+        ],
+        answer_verdict=payload.answer_verdict,
+        citation_verdict=payload.citation_verdict,
+        refusal_verdict=payload.refusal_verdict,
+        notes=payload.notes,
+    )
+    session.add(answer_review)
+    session.commit()
+    session.refresh(answer_review)
+    return answer_review
+
+
+@router.get(
+    "/{knowledge_base_id}/evaluation-cases/{evaluation_case_id}/answer-reviews",
+    response_model=list[AnswerReviewRead],
+)
+def list_answer_reviews(
+    knowledge_base_id: UUID,
+    evaluation_case_id: UUID,
+    session: Session = Depends(get_session),
+) -> list[AnswerReview]:
+    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_evaluation_case_or_404(session, knowledge_base_id, evaluation_case_id)
+    statement = (
+        select(AnswerReview)
+        .where(AnswerReview.evaluation_case_id == evaluation_case_id)
+        .order_by(AnswerReview.created_at.desc())
+    )
+    return list(session.scalars(statement))
+
+
+@router.get(
+    "/{knowledge_base_id}/evaluations/answer-review-summary",
+    response_model=AnswerReviewSummaryRead,
+)
+def get_answer_review_summary(
+    knowledge_base_id: UUID,
+    session: Session = Depends(get_session),
+) -> AnswerReviewSummaryRead:
+    get_knowledge_base_or_404(session, knowledge_base_id)
+    evaluation_cases = list(
+        session.scalars(
+            select(EvaluationCase)
+            .options(selectinload(EvaluationCase.answer_reviews))
+            .where(EvaluationCase.knowledge_base_id == knowledge_base_id)
+        )
+    )
+    reviews = [
+        review for evaluation_case in evaluation_cases for review in evaluation_case.answer_reviews
+    ]
+
+    def pass_rate(attribute: str) -> float | None:
+        applicable_reviews = [
+            review
+            for review in reviews
+            if getattr(review, attribute) != ReviewVerdict.NOT_APPLICABLE
+        ]
+        if not applicable_reviews:
+            return None
+        return sum(
+            getattr(review, attribute) == ReviewVerdict.PASS for review in applicable_reviews
+        ) / len(applicable_reviews)
+
+    return AnswerReviewSummaryRead(
+        case_count=len(evaluation_cases),
+        review_count=len(reviews),
+        unreviewed_case_count=sum(
+            not evaluation_case.answer_reviews for evaluation_case in evaluation_cases
+        ),
+        answer_pass_rate=pass_rate("answer_verdict"),
+        citation_pass_rate=pass_rate("citation_verdict"),
+        refusal_pass_rate=pass_rate("refusal_verdict"),
+    )
 
 
 @router.post(

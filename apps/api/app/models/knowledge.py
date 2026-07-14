@@ -132,3 +132,34 @@ class EvaluationCase(Base):
     )
 
     knowledge_base: Mapped[KnowledgeBase] = relationship(back_populates="evaluation_cases")
+    answer_reviews: Mapped[list["AnswerReview"]] = relationship(
+        back_populates="evaluation_case", cascade="all, delete-orphan"
+    )
+
+
+class AnswerReview(Base):
+    """A human verdict over one captured, grounded answer for an evaluation case."""
+
+    __tablename__ = "answer_reviews"
+    __table_args__ = (Index("ix_answer_reviews_evaluation_case_id", "evaluation_case_id"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    evaluation_case_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("evaluation_cases.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    answer: Mapped[str] = mapped_column(Text, nullable=False)
+    model: Mapped[str] = mapped_column(String(120), nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    citation_chunk_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    citation_filenames: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    answer_verdict: Mapped[str] = mapped_column(String(20), nullable=False)
+    citation_verdict: Mapped[str] = mapped_column(String(20), nullable=False)
+    refusal_verdict: Mapped[str] = mapped_column(String(20), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    evaluation_case: Mapped[EvaluationCase] = relationship(back_populates="answer_reviews")

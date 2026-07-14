@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -67,3 +68,38 @@ class RetrievalEvaluationReportRead(BaseModel):
     mean_reciprocal_rank: float
     mean_latency_ms: float
     p95_latency_ms: float
+
+
+class ReviewVerdict(StrEnum):
+    PASS = "pass"
+    FAIL = "fail"
+    NOT_APPLICABLE = "not_applicable"
+
+
+class AnswerReviewCreate(BaseModel):
+    answer: str = Field(min_length=1, max_length=8_000)
+    model: str = Field(min_length=1, max_length=120)
+    latency_ms: int = Field(ge=0, le=600_000)
+    citation_chunk_ids: list[UUID] = Field(default_factory=list, max_length=5)
+    answer_verdict: ReviewVerdict
+    citation_verdict: ReviewVerdict
+    refusal_verdict: ReviewVerdict
+    notes: str | None = Field(default=None, max_length=2_000)
+
+
+class AnswerReviewRead(AnswerReviewCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    evaluation_case_id: UUID
+    citation_filenames: list[str]
+    created_at: datetime
+
+
+class AnswerReviewSummaryRead(BaseModel):
+    case_count: int
+    review_count: int
+    unreviewed_case_count: int
+    answer_pass_rate: float | None
+    citation_pass_rate: float | None
+    refusal_pass_rate: float | None

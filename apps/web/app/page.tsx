@@ -3,6 +3,7 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  AnswerReviewSummary,
   ChatApiError,
   ChatHistoryMessage,
   Citation,
@@ -10,9 +11,12 @@ import {
   EvaluationCase,
   KnowledgeBase,
   RetrievalEvaluationReport,
+  ReviewVerdict,
+  createAnswerReview,
   createEvaluationCase,
   createKnowledgeBase,
   deleteEvaluationCase,
+  getAnswerReviewSummary,
   getApiHealth,
   getDocuments,
   getEvaluationCases,
@@ -30,11 +34,17 @@ type Message = {
   model?: string;
   latencyMs?: number;
   citations?: Citation[];
+  evaluationCaseId?: string;
 };
 
 type ApiStatus = "checking" | "connected" | "disconnected";
 
 const examples = ["上传文档后处于什么状态？", "如何判断回答是否有依据？"];
+const reviewVerdictOptions: { value: ReviewVerdict; label: string }[] = [
+  { value: "pass", label: "通过" },
+  { value: "fail", label: "不通过" },
+  { value: "not_applicable", label: "不适用" },
+];
 const apiStatusLabel: Record<ApiStatus, string> = {
   checking: "正在检查 API",
   connected: "API 已连接",
@@ -55,12 +65,20 @@ export default function ChatPage() {
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [evaluationCases, setEvaluationCases] = useState<EvaluationCase[]>([]);
   const [evaluationReport, setEvaluationReport] = useState<RetrievalEvaluationReport | null>(null);
+  const [answerReviewSummary, setAnswerReviewSummary] = useState<AnswerReviewSummary | null>(null);
   const [newKnowledgeBaseName, setNewKnowledgeBaseName] = useState("");
   const [evaluationQuestion, setEvaluationQuestion] = useState("");
   const [expectedFilename, setExpectedFilename] = useState("");
   const [isSavingEvaluationCase, setIsSavingEvaluationCase] = useState(false);
   const [deletingEvaluationCaseId, setDeletingEvaluationCaseId] = useState<string | null>(null);
   const [isRunningEvaluation, setIsRunningEvaluation] = useState(false);
+  const [draftEvaluationCaseId, setDraftEvaluationCaseId] = useState<string | null>(null);
+  const [reviewingEvaluationCaseId, setReviewingEvaluationCaseId] = useState<string | null>(null);
+  const [answerVerdict, setAnswerVerdict] = useState<ReviewVerdict | "">("");
+  const [citationVerdict, setCitationVerdict] = useState<ReviewVerdict | "">("");
+  const [refusalVerdict, setRefusalVerdict] = useState<ReviewVerdict | "">("");
+  const [reviewNotes, setReviewNotes] = useState("");
+  const [isSavingAnswerReview, setIsSavingAnswerReview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedKnowledgeBase = knowledgeBases.find(
@@ -68,6 +86,13 @@ export default function ChatPage() {
   );
   const latestCitations = useMemo(
     () => [...messages].reverse().find((message) => message.role === "assistant")?.citations ?? [],
+    [messages],
+  );
+  const latestReviewableAnswer = useMemo(
+    () =>
+      [...messages]
+        .reverse()
+        .find((message) => message.role === "assistant" && message.evaluationCaseId),
     [messages],
   );
   const hasPendingDocuments = documents.some(
@@ -87,6 +112,14 @@ export default function ChatPage() {
       setEvaluationCases(await getEvaluationCases(knowledgeBaseId));
     } catch (loadError) {
       setError(loadError instanceof ChatApiError ? loadError.message : "无法读取评测案例。");
+    }
+  }, []);
+
+  const loadAnswerReviewSummary = useCallback(async (knowledgeBaseId: string) => {
+    try {
+      setAnswerReviewSummary(await getAnswerReviewSummary(knowledgeBaseId));
+    } catch (loadError) {
+      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取答案评审汇总。");
     }
   }, []);
 
@@ -128,11 +161,12 @@ export default function ChatPage() {
       await Promise.all([
         loadDocuments(selectedKnowledgeBaseId),
         loadEvaluationCases(selectedKnowledgeBaseId),
+        loadAnswerReviewSummary(selectedKnowledgeBaseId),
       ]);
     }
 
     void refreshKnowledgeBaseData();
-  }, [loadDocuments, loadEvaluationCases, selectedKnowledgeBaseId]);
+  }, [loadAnswerReviewSummary, loadDocuments, loadEvaluationCases, selectedKnowledgeBaseId]);
 
   useEffect(() => {
     if (!selectedKnowledgeBaseId || !hasPendingDocuments) return;
@@ -145,9 +179,21 @@ export default function ChatPage() {
     const message = draft.trim();
     if (!message || isSending) return;
 
-    const userMessage: Message = { id: Date.now(), role: "user", content: message };
+    const evaluationCaseId = evaluationCases.some(
+      (evaluationCase) =>
+        evaluationCase.id === draftEvaluationCaseId && evaluationCase.question === message,
+    )
+      ? draftEvaluationCaseId ?? undefined
+      : undefined;
+    const userMessage: Message = {
+      id: Date.now(),
+      role: "user",
+      content: message,
+      evaluationCaseId,
+    };
     setMessages((current) => [...current, userMessage]);
     setDraft("");
+    setDraftEvaluationCaseId(null);
     setError(null);
     setIsSending(true);
 
@@ -166,6 +212,7 @@ export default function ChatPage() {
           model: result.model,
           latencyMs: result.latency_ms,
           citations: result.citations,
+          evaluationCaseId,
         },
       ]);
     } catch (requestError) {
@@ -255,6 +302,7 @@ export default function ChatPage() {
       setEvaluationQuestion("");
       setExpectedFilename("");
       setEvaluationReport(null);
+      setAnswerReviewSummary(null);
     } catch (requestError) {
       setError(requestError instanceof ChatApiError ? requestError.message : "无法保存评测案例。");
     } finally {
@@ -285,10 +333,69 @@ export default function ChatPage() {
       await deleteEvaluationCase(selectedKnowledgeBaseId, evaluationCaseId);
       setEvaluationCases((current) => current.filter((item) => item.id !== evaluationCaseId));
       setEvaluationReport(null);
+      setAnswerReviewSummary(null);
+      if (reviewingEvaluationCaseId === evaluationCaseId) setReviewingEvaluationCaseId(null);
     } catch (requestError) {
       setError(requestError instanceof ChatApiError ? requestError.message : "无法删除评测案例。");
     } finally {
       setDeletingEvaluationCaseId(null);
+    }
+  }
+
+  function askEvaluationCase(evaluationCase: EvaluationCase) {
+    setDraft(evaluationCase.question);
+    setDraftEvaluationCaseId(evaluationCase.id);
+    setReviewingEvaluationCaseId(null);
+  }
+
+  function startAnswerReview(evaluationCaseId: string) {
+    setReviewingEvaluationCaseId(evaluationCaseId);
+    setAnswerVerdict("");
+    setCitationVerdict("");
+    setRefusalVerdict("");
+    setReviewNotes("");
+  }
+
+  async function submitAnswerReview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (
+      !selectedKnowledgeBaseId ||
+      !reviewingEvaluationCaseId ||
+      !latestReviewableAnswer ||
+      latestReviewableAnswer.evaluationCaseId !== reviewingEvaluationCaseId ||
+      !answerVerdict ||
+      !citationVerdict ||
+      !refusalVerdict ||
+      isSavingAnswerReview
+    ) {
+      return;
+    }
+
+    setIsSavingAnswerReview(true);
+    setError(null);
+    try {
+      await createAnswerReview(selectedKnowledgeBaseId, reviewingEvaluationCaseId, {
+        answer: latestReviewableAnswer.content,
+        model: latestReviewableAnswer.model ?? "unknown",
+        latency_ms: latestReviewableAnswer.latencyMs ?? 0,
+        citation_chunk_ids: (latestReviewableAnswer.citations ?? []).map(
+          (citation) => citation.chunk_id,
+        ),
+        answer_verdict: answerVerdict,
+        citation_verdict: citationVerdict,
+        refusal_verdict: refusalVerdict,
+        notes: reviewNotes.trim() || null,
+      });
+      await loadAnswerReviewSummary(selectedKnowledgeBaseId);
+      setReviewingEvaluationCaseId(null);
+      setAnswerVerdict("");
+      setCitationVerdict("");
+      setRefusalVerdict("");
+      setReviewNotes("");
+    } catch (requestError) {
+      setError(requestError instanceof ChatApiError ? requestError.message : "无法保存答案评审。");
+    } finally {
+      setIsSavingAnswerReview(false);
     }
   }
 
@@ -327,6 +434,9 @@ export default function ChatPage() {
                 setDocuments([]);
                 setEvaluationCases([]);
                 setEvaluationReport(null);
+                setAnswerReviewSummary(null);
+                setDraftEvaluationCaseId(null);
+                setReviewingEvaluationCaseId(null);
                 setSelectedKnowledgeBaseId(event.target.value);
               }}
             >
@@ -387,7 +497,10 @@ export default function ChatPage() {
             <textarea
               id="message"
               value={draft}
-              onChange={(event) => setDraft(event.target.value)}
+              onChange={(event) => {
+                setDraft(event.target.value);
+                setDraftEvaluationCaseId(null);
+              }}
               placeholder={selectedKnowledgeBase ? "基于当前知识库提问…" : "输入问题，直接请求模型…"}
               rows={3}
               disabled={isSending}
@@ -540,14 +653,31 @@ export default function ChatPage() {
                           <p>{evaluationCase.question}</p>
                           <span>预期：{evaluationCase.expected_filenames.join("、")}</span>
                         </div>
-                        <button
-                          type="button"
-                          aria-label={`删除案例：${evaluationCase.question}`}
-                          disabled={deletingEvaluationCaseId !== null}
-                          onClick={() => void removeEvaluationCase(evaluationCase.id)}
-                        >
-                          {deletingEvaluationCaseId === evaluationCase.id ? "删除中" : "删除"}
-                        </button>
+                        <div className="evaluation-case-actions">
+                          <button
+                            type="button"
+                            onClick={() => askEvaluationCase(evaluationCase)}
+                          >
+                            用此题提问
+                          </button>
+                          {latestReviewableAnswer?.evaluationCaseId === evaluationCase.id && (
+                            <button
+                              type="button"
+                              onClick={() => startAnswerReview(evaluationCase.id)}
+                            >
+                              评审回答
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="delete-evaluation-case"
+                            aria-label={`删除案例：${evaluationCase.question}`}
+                            disabled={deletingEvaluationCaseId !== null}
+                            onClick={() => void removeEvaluationCase(evaluationCase.id)}
+                          >
+                            {deletingEvaluationCaseId === evaluationCase.id ? "删除中" : "删除"}
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -572,6 +702,122 @@ export default function ChatPage() {
                     </div>
                   </dl>
                 )}
+                {answerReviewSummary && (
+                  <dl className="answer-review-summary">
+                    <div>
+                      <dt>已人工评审</dt>
+                      <dd>{answerReviewSummary.review_count} 条</dd>
+                    </div>
+                    <div>
+                      <dt>未覆盖案例</dt>
+                      <dd>{answerReviewSummary.unreviewed_case_count} 条</dd>
+                    </div>
+                    <div>
+                      <dt>答案通过</dt>
+                      <dd>
+                        {answerReviewSummary.answer_pass_rate === null
+                          ? "—"
+                          : `${(answerReviewSummary.answer_pass_rate * 100).toFixed(1)}%`}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>引用支持</dt>
+                      <dd>
+                        {answerReviewSummary.citation_pass_rate === null
+                          ? "—"
+                          : `${(answerReviewSummary.citation_pass_rate * 100).toFixed(1)}%`}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>拒答恰当</dt>
+                      <dd>
+                        {answerReviewSummary.refusal_pass_rate === null
+                          ? "—"
+                          : `${(answerReviewSummary.refusal_pass_rate * 100).toFixed(1)}%`}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
+                {reviewingEvaluationCaseId &&
+                  latestReviewableAnswer?.evaluationCaseId === reviewingEvaluationCaseId && (
+                    <form className="answer-review-form" onSubmit={submitAnswerReview}>
+                      <p className="answer-review-title">人工评审当前回答</p>
+                      <p className="answer-review-answer">{latestReviewableAnswer.content}</p>
+                      <p className="answer-review-meta">
+                        {latestReviewableAnswer.model} · {latestReviewableAnswer.latencyMs} ms ·{" "}
+                        {latestReviewableAnswer.citations?.length ?? 0} 条已校验证据
+                      </p>
+                      <fieldset>
+                        <legend>答案是否符合参考资料或预期回答？</legend>
+                        {reviewVerdictOptions.map((option) => (
+                          <label key={`answer-${option.value}`}>
+                            <input
+                              type="radio"
+                              name="answer-verdict"
+                              checked={answerVerdict === option.value}
+                              onChange={() => setAnswerVerdict(option.value)}
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                      </fieldset>
+                      <fieldset>
+                        <legend>引用是否足以支持本次回答？</legend>
+                        {reviewVerdictOptions.map((option) => (
+                          <label key={`citation-${option.value}`}>
+                            <input
+                              type="radio"
+                              name="citation-verdict"
+                              checked={citationVerdict === option.value}
+                              onChange={() => setCitationVerdict(option.value)}
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                      </fieldset>
+                      <fieldset>
+                        <legend>面对证据不足时，拒答是否恰当？</legend>
+                        {reviewVerdictOptions.map((option) => (
+                          <label key={`refusal-${option.value}`}>
+                            <input
+                              type="radio"
+                              name="refusal-verdict"
+                              checked={refusalVerdict === option.value}
+                              onChange={() => setRefusalVerdict(option.value)}
+                            />
+                            {option.label}
+                          </label>
+                        ))}
+                      </fieldset>
+                      <label className="sr-only" htmlFor="answer-review-notes">
+                        评审备注
+                      </label>
+                      <textarea
+                        id="answer-review-notes"
+                        value={reviewNotes}
+                        onChange={(event) => setReviewNotes(event.target.value)}
+                        placeholder="可选：记录错误类型、遗漏证据或改进建议"
+                        maxLength={2_000}
+                        rows={3}
+                      />
+                      <div className="answer-review-actions">
+                        <button type="button" onClick={() => setReviewingEvaluationCaseId(null)}>
+                          取消
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={
+                            isSavingAnswerReview ||
+                            !answerVerdict ||
+                            !citationVerdict ||
+                            !refusalVerdict
+                          }
+                        >
+                          {isSavingAnswerReview ? "保存中" : "保存人工评审"}
+                        </button>
+                      </div>
+                    </form>
+                  )}
               </>
             ) : (
               <p className="panel-empty">选择知识库后，可积累题集并运行本地检索评测。</p>

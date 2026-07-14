@@ -1,4 +1,5 @@
 from app.models.knowledge import (
+    AnswerReview,
     Document,
     DocumentChunk,
     DocumentStatus,
@@ -6,4 +7,11 @@ from app.models.knowledge import (
     KnowledgeBase,
 )
 
-__all__ = ["Document", "DocumentChunk", "DocumentStatus", "EvaluationCase", "KnowledgeBase"]
+__all__ = [
+    "AnswerReview",
+    "Document",
+    "DocumentChunk",
+    "DocumentStatus",
+    "EvaluationCase",
+    "KnowledgeBase",
+]

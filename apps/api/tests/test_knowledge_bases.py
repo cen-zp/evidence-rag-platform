@@ -1,5 +1,6 @@
 import sqlite3
 from collections.abc import Generator
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -247,3 +248,82 @@ def test_run_evaluation_requires_cases(client: TestClient) -> None:
     assert response.json()["detail"] == (
         "Add at least one evaluation case before running retrieval evaluation"
     )
+
+
+def test_capture_and_summarize_human_answer_review(client: TestClient) -> None:
+    knowledge_base = create_knowledge_base(client)
+    evaluation_case = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases",
+        json={
+            "question": "Where is the release process?",
+            "expected_filenames": ["handbook.md"],
+        },
+    ).json()
+
+    response = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases/"
+        f"{evaluation_case['id']}/answer-reviews",
+        json={
+            "answer": "The release process is documented in the handbook.",
+            "model": "test-model",
+            "latency_ms": 12,
+            "citation_chunk_ids": [],
+            "answer_verdict": "pass",
+            "citation_verdict": "not_applicable",
+            "refusal_verdict": "not_applicable",
+            "notes": "Manually reviewed for the API contract.",
+        },
+    )
+
+    assert response.status_code == 201
+    answer_review = response.json()
+    assert answer_review["evaluation_case_id"] == evaluation_case["id"]
+    assert answer_review["citation_filenames"] == []
+
+    list_response = client.get(
+        f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases/"
+        f"{evaluation_case['id']}/answer-reviews"
+    )
+    assert list_response.status_code == 200
+    assert list_response.json() == [answer_review]
+
+    summary_response = client.get(
+        f"/api/knowledge-bases/{knowledge_base['id']}/evaluations/answer-review-summary"
+    )
+    assert summary_response.status_code == 200
+    assert summary_response.json() == {
+        "case_count": 1,
+        "review_count": 1,
+        "unreviewed_case_count": 0,
+        "answer_pass_rate": 1.0,
+        "citation_pass_rate": None,
+        "refusal_pass_rate": None,
+    }
+
+
+def test_answer_review_rejects_citation_outside_current_knowledge_base(client: TestClient) -> None:
+    knowledge_base = create_knowledge_base(client)
+    evaluation_case = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases",
+        json={
+            "question": "Where is the release process?",
+            "expected_filenames": ["handbook.md"],
+        },
+    ).json()
+
+    response = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases/"
+        f"{evaluation_case['id']}/answer-reviews",
+        json={
+            "answer": "The release process is documented in the handbook.",
+            "model": "test-model",
+            "latency_ms": 12,
+            "citation_chunk_ids": [str(uuid4())],
+            "answer_verdict": "pass",
+            "citation_verdict": "pass",
+            "refusal_verdict": "not_applicable",
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Citation chunks must belong to the current knowledge base"
