@@ -56,12 +56,20 @@ flowchart LR
 
 ## 基础设施（Docker Compose）
 
-当前 Compose 负责启动 PostgreSQL、Redis 和 Qdrant；API、Web 和后续 Worker 仍在本地进程中运行。首次启动并等待健康检查：
+Compose 可一并启动 PostgreSQL、Redis、Qdrant、FastAPI、ARQ Worker 和 Next.js 工作台。根目录 `.env` 只在运行时注入 API/Worker，**不会**被复制进镜像。首次构建和启动并等待健康检查：
 
 ```bash
-docker compose up -d --wait
+docker compose up --build -d --wait
 docker compose ps
 ```
+
+浏览器打开 `http://localhost:3000`，API 健康检查为 `http://localhost:8000/health`。查看服务日志：
+
+```bash
+docker compose logs -f api worker web
+```
+
+首次处理文档或检索时，API/Worker 容器会下载本地 BGE 模型；这是本地模型依赖的正常初始化，不是 DeepSeek 调用。模型缓存保存在 `model_cache` Docker 卷中，容器重建后可复用。
 
 停止基础设施但保留数据卷：
 
@@ -104,7 +112,6 @@ M2-A 已支持创建知识库与上传 Markdown/PDF/DOCX；M2-B 已接入 Redis/
 - 正式语义 Embedding 与同题集的效果、延迟、成本对比
 - 基于可靠阈值的低置信度拒答
 - 账户/权限、持久化会话、请求日志与答案反馈
-- API/Web/Worker 的完整容器化
 
 这些项目没有被计入已完成能力。BGE 已提供正式语义向量，但仍需用独立题集记录真实的检索效果、延迟与成本，不能在没有评测数据时宣称准确率。
 

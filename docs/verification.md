@@ -99,3 +99,12 @@
 结果文件：[demo-rrf-only.json](../evals/results/demo-rrf-only.json) 与 [demo-reranker.json](../evals/results/demo-reranker.json)。两份报告均记录了 `reranker_enabled`，可以复跑。
 
 结论：多文档种子、20 题运行器和两种配置已真实连通；在这套自生成题集上，重排序补回了 1 条 Top-3 命中，但平均首个正确来源排名略低且本地延迟显著增加。题目与语料来自同一项目验收文档，存在明显的自描述偏差，**只用于功能演示与回归检查，不用于简历、公开效果结论或模型选型**。后续应以 60–100 条独立问题、独立标注来源和预热后的固定硬件重新评估。
+
+## 2026-07-14：完整 Docker Compose 栈
+
+- 构建：API 镜像使用 CPU-only PyTorch 锁定依赖；Web 使用 Next.js production build；构建上下文排除了本机 `.venv`、`node_modules` 与上传文件。
+- 启动：`docker compose up --build -d --wait` 后，PostgreSQL、Redis、Qdrant、API、ARQ Worker 与 Web 均处于运行状态；API 启动时已应用 Alembic head。
+- HTTP 验证：`GET http://localhost:8000/health` 返回 200；`HEAD http://localhost:3000` 返回 200；来自 `http://localhost:3000` 的 API CORS 预检返回对应的 `Access-Control-Allow-Origin`。
+- 数据卷：上传文件由 API/Worker 共用 `uploads_data`；本地模型缓存使用 `model_cache`，避免容器重建后重复下载。
+
+结论：完整本地交付栈已真实启动并通过 Web/API/CORS 冒烟验证。本次没有上传文件、执行检索或调用 DeepSeek，因此不构成模型效果、异步处理吞吐或端到端问答质量结论。
