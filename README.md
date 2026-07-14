@@ -95,12 +95,16 @@ pnpm dev
 
 M2-A 已支持创建知识库与上传 Markdown/PDF/DOCX；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant，并可重试失败任务；M3 已提供按知识库隔离的本地向量 + BM25 + RRF 混合检索；M3-B 已实现服务端校验引用的证据问答契约、有限页面内追问上下文及前端知识库工作流；M4 已加入可复现的 JSONL 检索评测运行器和可管理的知识库级评测案例。处理过程、检索、问答和评测边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md)、[docs/grounded-chat.md](docs/grounded-chat.md) 与 [docs/evaluation.md](docs/evaluation.md)。
 
+### 自动化质量检查
+
+仓库已配置 GitHub Actions CI：对 push 和 pull request 运行 API 的锁定依赖安装、pytest、Ruff，以及 Web 的锁定依赖安装、ESLint 和 production build。首次推送到 GitHub 后可在 Actions 页面查看实际运行记录。
+
 ### 尚未完成的关键能力
 
 - 正式语义 Embedding 与同题集的效果、延迟、成本对比
 - Reranker、基于可靠阈值的低置信度拒答
 - 账户/权限、持久化会话、请求日志与答案反馈
-- API/Web/Worker 的完整容器化及 CI
+- API/Web/Worker 的完整容器化
 
 这些项目没有被计入已完成能力；其中“本地哈希向量”仅用于验证索引和检索工程链路，不能代表语义检索质量。
 
