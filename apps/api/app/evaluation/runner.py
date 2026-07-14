@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from uuid import UUID
 
+from app.evaluation.formal import validate_formal_dataset
 from app.evaluation.retrieval import (
     RetrievalEvaluationCase,
     RetrievalEvaluationReport,
@@ -52,18 +53,33 @@ def main() -> None:
         help="Evaluate the Dense + BM25 + RRF baseline without CrossEncoder reranking",
     )
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--formal-manifest",
+        type=Path,
+        help=(
+            "Require a 60-100 case independent dataset and include provenance hashes in the report"
+        ),
+    )
     args = parser.parse_args()
     if args.top_k < 1:
         parser.error("--top-k must be positive")
 
     reranker_enabled = not args.disable_reranker
+    cases = load_cases(args.cases)
+    formal_dataset = (
+        validate_formal_dataset(cases, args.formal_manifest, args.cases)
+        if args.formal_manifest
+        else None
+    )
     report = run(
         args.knowledge_base_id,
-        load_cases(args.cases),
+        cases,
         args.top_k,
         reranker_enabled=reranker_enabled,
     )
     report_data = report.to_dict() | {"reranker_enabled": reranker_enabled}
+    if formal_dataset is not None:
+        report_data["formal_dataset"] = formal_dataset
     serialized_report = json.dumps(report_data, ensure_ascii=False, indent=2)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)

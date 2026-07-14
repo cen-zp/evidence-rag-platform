@@ -74,6 +74,21 @@ uv run python -m app.evaluation.runner \
   --output ../../evals/results/rrf-only.json
 ```
 
+## 正式独立题集模式
+
+仓库的 [../evals/independent/](../evals/independent/) 只提供 JSONL 和来源说明模板，**不是题集本身**。完成独立题集和人工来源标注后，复制模板为未提交或已脱敏的实际文件，并使用 `--formal-manifest` 运行：
+
+```bash
+uv run python -m app.evaluation.runner \
+  --knowledge-base-id <知识库 UUID> \
+  --cases ../../evals/independent/cases.jsonl \
+  --formal-manifest ../../evals/independent/manifest.json \
+  --top-k 5 \
+  --output ../../evals/results/formal-reranker.json
+```
+
+正式模式会拒绝少于 60 或多于 100 条的题集、重复案例 ID、重复问题，以及缺少 `dataset_origin: "independent"` 和来源说明的 manifest。输出会附加题集与 manifest 的 SHA-256，便于在答辩或简历复核时证明报告使用了哪一版数据；它不能自动证明题目真的独立，题目来源和人工标注方法仍必须如实填写。
+
 CLI 结果会记录 `reranker_enabled`，使两个报告的配置可追溯。
 
 ## 仅演示题集
