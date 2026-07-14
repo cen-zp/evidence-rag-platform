@@ -9,9 +9,9 @@ source_template: linear.app (adapted)
 
 This is a focused internal knowledge tool, not a marketing page. It should make
 the distinction between an AI answer and supporting evidence easy to inspect.
-The initial chat screen must also be honest about its current scope: before
-document retrieval is implemented, it is a direct-model chat rather than a
-retrieval-grounded answer.
+The workbench must make the current scope obvious: without a selected knowledge
+base it is direct-model chat; with a selected knowledge base it is a
+retrieval-grounded answer surface with inspectable evidence.
 
 ## Visual system
 
@@ -28,8 +28,8 @@ retrieval-grounded answer.
 
 ## Chat states
 
-- Empty: explain that the current milestone sends a direct model request and
-  present example questions.
+- Empty: explain whether the current mode is direct-model chat or evidence
+  question answering, then present example questions.
 - Sending: disable the composer and show a clear in-progress state.
 - Success: render the answer, model name, and measured latency as separate,
   inspectable information.
@@ -38,7 +38,7 @@ retrieval-grounded answer.
 
 ## Evidence panel
 
-The panel is part of the product contract, even though citations are not
-available in this milestone. Show an explicit "not connected yet" state rather
-than simulated sources. When the RAG pipeline exists, this area will render
-validated document snippets, locations, and confidence signals.
+The panel is part of the product contract. It includes compact knowledge-base
+selection, document processing status, and an explicit empty state until a
+grounded answer exists. When citations exist, render only server-validated
+document snippets and locations; never simulate sources.

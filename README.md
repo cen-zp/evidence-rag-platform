@@ -52,9 +52,9 @@ docker compose ps
 docker compose down
 ```
 
-## 前端聊天界面（当前里程碑）
+## 前端 RAG 工作台（当前里程碑）
 
-`apps/web` 是一个 Next.js 聊天工作台：它调用 `POST /api/chat`，显示真实的模型名和后端测得的响应耗时。文档检索与引用尚未接入时，页面会明确标示为“直接模型调用”，不会模拟来源证据。
+`apps/web` 是一个 Next.js 知识库问答工作台：可创建/选择知识库、上传 Markdown 或 PDF、轮询文档处理状态，并在指定知识库后调用 `POST /api/chat` 展示服务端校验过的来源片段。未选择知识库时，页面会明确标示为“直接模型调用”，不会模拟来源证据。
 
 ```bash
 # Terminal 1: start the API
@@ -76,6 +76,6 @@ pnpm dev
 
 后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
 
-M2-A 已支持创建知识库与上传 Markdown/PDF 文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant；M3-A 已提供按知识库强制隔离的检索 API；M3-B 已实现服务端校验引用的证据问答契约。处理过程、检索与问答边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md) 与 [docs/grounded-chat.md](docs/grounded-chat.md)。当前尚未实现前端知识库选择、重排序、DOCX 支持或正式语义 Embedding。
+M2-A 已支持创建知识库与上传 Markdown/PDF 文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant；M3-A 已提供按知识库强制隔离的检索 API；M3-B 已实现服务端校验引用的证据问答契约，并已接入前端知识库工作流。处理过程、检索与问答边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md) 与 [docs/grounded-chat.md](docs/grounded-chat.md)。当前尚未实现重排序、DOCX 支持或正式语义 Embedding。
 
 最近一次本地真实链路验收记录见 [docs/verification.md](docs/verification.md)。
