@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.knowledge_bases import router as knowledge_bases_router
 from app.core.config import Settings, get_settings
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.deepseek import DeepSeekNotConfiguredError, DeepSeekService
@@ -16,6 +17,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.include_router(knowledge_bases_router)
 
     @app.get("/health", tags=["system"])
     def health_check() -> dict[str, str]:

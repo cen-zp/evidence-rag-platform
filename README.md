@@ -75,3 +75,5 @@ pnpm dev
 ## 当前数据层里程碑
 
 后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式；尚未实现文件上传、解析、Embedding 或检索。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
+
+M2-A 已支持创建知识库与上传 Markdown/PDF 文件。上传后文档会显示为 `pending`，直到后续 Worker 完成解析和索引；接口契约见 [docs/document-intake.md](docs/document-intake.md)。
