@@ -44,7 +44,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_origins=[active_settings.web_origin],
         allow_credentials=True,
         allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Authorization", "Content-Type"],
     )
     app.include_router(knowledge_bases.router)
     app.include_router(auth_router)

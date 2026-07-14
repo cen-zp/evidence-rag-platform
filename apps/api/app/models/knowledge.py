@@ -39,6 +39,7 @@ class KnowledgeBase(Base):
     owner_id: Mapped[UUID | None] = mapped_column(
         Uuid,
         ForeignKey("users.id", ondelete="RESTRICT"),
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)

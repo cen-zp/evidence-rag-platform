@@ -43,7 +43,7 @@ def test_cors_allows_only_the_workbench_origin_and_required_request_shape() -> N
         headers={
             "Origin": "http://localhost:3000",
             "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "Content-Type",
+            "Access-Control-Request-Headers": "Authorization, Content-Type",
         },
     )
 
@@ -51,7 +51,7 @@ def test_cors_allows_only_the_workbench_origin_and_required_request_shape() -> N
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
     assert response.headers["access-control-allow-methods"] == "GET, POST, DELETE, OPTIONS"
     assert response.headers["access-control-allow-headers"] == (
-        "Accept, Accept-Language, Content-Language, Content-Type"
+        "Accept, Accept-Language, Authorization, Content-Language, Content-Type"
     )
 
 
