@@ -1,0 +1,8 @@
+{
+  "dataset_name": "FastAPI official documentation independent evaluation set",
+  "dataset_origin": "independent",
+  "corpus_description": "The corpus contains nine public FastAPI tutorial pages downloaded from the official fastapi/fastapi repository on 2026-07-14. It is separate from this project's documentation and demonstration corpus.",
+  "question_authoring": "This is an AI-assisted Chinese question-and-label draft created after fixing the source corpus. It avoids copying source headings and sentences verbatim and was not generated from the retrieval system. It must be independently checked and edited by a human reviewer before any formal quality claim.",
+  "source_labeling": "Expected filenames are provisional labels assigned from the official source pages before retrieval runs. A human reviewer must check every label and reference answer before this dataset can support a formal result.",
+  "human_review_status": "needs_human_review"
+}

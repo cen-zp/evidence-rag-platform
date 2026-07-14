@@ -1,5 +1,6 @@
 from hashlib import sha256
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +13,7 @@ class FormalEvaluationManifest(BaseModel):
     corpus_description: str = Field(min_length=20, max_length=2_000)
     question_authoring: str = Field(min_length=20, max_length=2_000)
     source_labeling: str = Field(min_length=20, max_length=2_000)
+    human_review_status: Literal["approved"]
 
 
 def validate_formal_dataset(

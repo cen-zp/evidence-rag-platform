@@ -87,7 +87,19 @@ uv run python -m app.evaluation.runner \
   --output ../../evals/results/formal-reranker.json
 ```
 
-正式模式会拒绝少于 60 或多于 100 条的题集、重复案例 ID、重复问题，以及缺少 `dataset_origin: "independent"` 和来源说明的 manifest。输出会附加题集与 manifest 的 SHA-256，便于在答辩或简历复核时证明报告使用了哪一版数据；它不能自动证明题目真的独立，题目来源和人工标注方法仍必须如实填写。
+正式模式会拒绝少于 60 或多于 100 条的题集、重复案例 ID、重复问题，以及缺少 `dataset_origin: "independent"`、来源说明和 `human_review_status: "approved"` 的 manifest。输出会附加题集与 manifest 的 SHA-256，便于在答辩或简历复核时证明报告使用了哪一版数据；它不能自动证明题目真的独立，题目来源和人工标注方法仍必须如实填写。
+
+`fastapi-official-cases.jsonl` 是基于公开 FastAPI 官方文档建立的 72 条中文 AI 协助草案，当前 manifest 故意标为 `needs_human_review`，因此不能进入正式模式，也不能作为简历指标。它可用于检查导入、检索与评审流程；由与生成者独立的人工评审者逐条核查题目、参考答案和预期文件后，才可把审核状态改为 `approved`。
+
+## 公开 FastAPI 语料导入
+
+仓库已提交 9 篇 FastAPI 官方公开教程及其来源哈希，位于 [../evals/corpora/fastapi-official-2026-07-14/](../evals/corpora/fastapi-official-2026-07-14/)。在 Docker 环境只有一个本地账号时，以下命令会创建一个明确标为“题集待人工复核”的知识库，导入文档并同步处理，同时导入 72 条评测草案：
+
+```bash
+docker compose exec api uv run --no-sync python -m app.public_fastapi_seed
+```
+
+命令不会读取账号邮箱、不会删除既有数据；如果本机有多个账号会停止，避免把语料写进错误账户。重复运行只补充缺失文件或题目。
 
 CLI 结果会记录 `reranker_enabled`，使两个报告的配置可追溯。
 

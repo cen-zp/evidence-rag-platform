@@ -1,0 +1,62 @@
+{
+  "dataset_name": "FastAPI official documentation corpus",
+  "source_repository": "https://github.com/fastapi/fastapi",
+  "fetched_at_utc": "2026-07-14T12:34:28.005519+00:00",
+  "documents": [
+    {
+      "filename": "01-path-params.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/path-params.md",
+      "sha256": "2c930e70d53316c81dcab6c8a3c98ea0452b2ea093e85f6a211da139f26c1e80",
+      "bytes": 9043
+    },
+    {
+      "filename": "02-query-params.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/query-params.md",
+      "sha256": "e521d3e41fd4b3c57adfcecadfd97fe68e64a20ea88fa6bee117bba4e183ec71",
+      "bytes": 4596
+    },
+    {
+      "filename": "03-request-body.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/body.md",
+      "sha256": "18b49896a05ee1c49325d2efd7c406a586fa3c0e896b1031a8545b64917dcb79",
+      "bytes": 6611
+    },
+    {
+      "filename": "04-dependencies.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/dependencies/index.md",
+      "sha256": "83319cc87297bb0959c5721a112133e6a3cd19900163c348a8ee6cf4818cd21f",
+      "bytes": 9771
+    },
+    {
+      "filename": "05-response-model.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/response-model.md",
+      "sha256": "e061837af9e6a79154891342a6407a620adbfe04f71b1df4bbf21b0a7ab82af0",
+      "bytes": 15876
+    },
+    {
+      "filename": "06-handling-errors.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/handling-errors.md",
+      "sha256": "d5d1e708a5c4303e88d9564b0c7a5e5f86ee9a7a3d4fb4ea2f9aaa5864635eb6",
+      "bytes": 9160
+    },
+    {
+      "filename": "07-testing.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/testing.md",
+      "sha256": "83bbd8ac978500418cb2a1ff32a32104af9d4a946eae1f4d0fde48c19a8d3c1d",
+      "bytes": 5825
+    },
+    {
+      "filename": "08-sql-databases.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/sql-databases.md",
+      "sha256": "9c462ca3401bb982714f26adac7ac763d052f600cb5436c302e6002942b04291",
+      "bytes": 15705
+    },
+    {
+      "filename": "09-oauth2-jwt.md",
+      "source_url": "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs/tutorial/security/oauth2-jwt.md",
+      "sha256": "b7c67ddf647f341f0fa5d76b74979c67b55e4d7a69b759c260cac8929ea3bc51",
+      "bytes": 10944
+    }
+  ],
+  "license_note": "Source content remains subject to the FastAPI project's license."
+}
