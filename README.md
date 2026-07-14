@@ -123,4 +123,4 @@ M2-A 已支持创建、删除知识库与上传 Markdown/PDF/DOCX；删除知识
 
 这些项目没有被计入已完成能力。BGE 语义向量、账户隔离、持久化会话、模型调用记录与回答反馈均已实现；但任何准确率、延迟和成本结论仍需用独立题集在固定环境中实际测量。
 
-最近一次本地真实链路验收记录见 [docs/verification.md](docs/verification.md)。
+最近一次本地真实链路验收记录见 [docs/verification.md](docs/verification.md)；按 PRD 逐项区分工程实现与正式效果证据的状态见 [docs/acceptance-audit.md](docs/acceptance-audit.md)。
