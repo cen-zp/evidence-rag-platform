@@ -5,11 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.api import knowledge_bases
+from app.api.auth import router as auth_router
 from app.api.evaluations import router as evaluations_router
 from app.api.retrieval import router as retrieval_router
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
+from app.models import User
 from app.schemas.chat import ChatCitation, ChatRequest, ChatResponse
+from app.services.auth import get_current_user
 from app.services.deepseek import (
     DeepSeekInvalidCitationError,
     DeepSeekNotConfiguredError,
@@ -41,6 +44,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["Content-Type"],
     )
     app.include_router(knowledge_bases.router)
+    app.include_router(auth_router)
     app.include_router(evaluations_router)
     app.include_router(retrieval_router)
 
@@ -52,9 +56,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def chat(
         request: ChatRequest,
         session: Session = Depends(get_session),
+        current_user: User = Depends(get_current_user),
     ) -> ChatResponse:
         if request.knowledge_base_id is not None:
-            knowledge_bases.get_knowledge_base_or_404(session, request.knowledge_base_id)
+            knowledge_bases.get_knowledge_base_or_404(
+                session,
+                request.knowledge_base_id,
+                current_user.id,
+            )
             try:
                 retriever: KnowledgeBaseRetriever = app.state.knowledge_base_retriever_factory()
                 hits = retriever.search(request.knowledge_base_id, request.message, top_k=5)

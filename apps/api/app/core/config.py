@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_chat_model: str = "deepseek-v4-flash"
     deepseek_timeout_seconds: float = 30.0
+    auth_session_days: int = 30
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",

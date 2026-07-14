@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.api.knowledge_bases import get_knowledge_base_or_404
 from app.db.session import get_session
 from app.evaluation.retrieval import RetrievalEvaluationCase, evaluate_retrieval
-from app.models import AnswerReview, DocumentChunk, EvaluationCase, ModelCall
+from app.models import AnswerReview, DocumentChunk, EvaluationCase, ModelCall, User
 from app.schemas.knowledge import (
     AnswerReviewCreate,
     AnswerReviewRead,
@@ -18,7 +18,8 @@ from app.schemas.knowledge import (
     RetrievalEvaluationReportRead,
     ReviewVerdict,
 )
-from app.services.retrieval import KnowledgeBaseRetriever, get_knowledge_base_retriever
+from app.services.auth import get_current_user
+from app.services.retrieval import get_knowledge_base_retriever
 
 router = APIRouter(prefix="/api/knowledge-bases", tags=["evaluations"])
 
@@ -51,8 +52,9 @@ def create_evaluation_case(
     knowledge_base_id: UUID,
     payload: EvaluationCaseCreate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> EvaluationCase:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     evaluation_case = EvaluationCase(
         knowledge_base_id=knowledge_base_id,
         question=payload.question,
@@ -69,8 +71,9 @@ def create_evaluation_case(
 def list_evaluation_cases(
     knowledge_base_id: UUID,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> list[EvaluationCase]:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     statement = (
         select(EvaluationCase)
         .where(EvaluationCase.knowledge_base_id == knowledge_base_id)
@@ -87,8 +90,9 @@ def delete_evaluation_case(
     knowledge_base_id: UUID,
     evaluation_case_id: UUID,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> None:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     evaluation_case = get_evaluation_case_or_404(session, knowledge_base_id, evaluation_case_id)
     session.delete(evaluation_case)
     session.commit()
@@ -104,8 +108,9 @@ def create_answer_review(
     evaluation_case_id: UUID,
     payload: AnswerReviewCreate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> AnswerReview:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     evaluation_case = get_evaluation_case_or_404(session, knowledge_base_id, evaluation_case_id)
     if len(set(payload.citation_chunk_ids)) != len(payload.citation_chunk_ids):
         raise HTTPException(
@@ -158,8 +163,9 @@ def list_answer_reviews(
     knowledge_base_id: UUID,
     evaluation_case_id: UUID,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> list[AnswerReview]:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     get_evaluation_case_or_404(session, knowledge_base_id, evaluation_case_id)
     statement = (
         select(AnswerReview)
@@ -176,8 +182,9 @@ def list_answer_reviews(
 def get_answer_review_summary(
     knowledge_base_id: UUID,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> AnswerReviewSummaryRead:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     evaluation_cases = list(
         session.scalars(
             select(EvaluationCase)
@@ -220,8 +227,9 @@ def get_answer_review_summary(
 def get_model_usage_summary(
     knowledge_base_id: UUID,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> ModelUsageSummaryRead:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     calls = list(
         session.scalars(
             select(ModelCall)
@@ -251,7 +259,7 @@ def run_retrieval_evaluation(
     knowledge_base_id: UUID,
     top_k: int = 5,
     session: Session = Depends(get_session),
-    retriever: KnowledgeBaseRetriever = Depends(get_knowledge_base_retriever),
+    current_user: User = Depends(get_current_user),
 ) -> RetrievalEvaluationReportRead:
     if not 1 <= top_k <= 10:
         raise HTTPException(
@@ -259,7 +267,7 @@ def run_retrieval_evaluation(
             detail="top_k must be 1-10",
         )
 
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     evaluation_cases = list(
         session.scalars(
             select(EvaluationCase).where(EvaluationCase.knowledge_base_id == knowledge_base_id)
@@ -280,6 +288,7 @@ def run_retrieval_evaluation(
         )
 
     try:
+        retriever = get_knowledge_base_retriever()
         report = evaluate_retrieval(
             cases,
             lambda question, limit: [

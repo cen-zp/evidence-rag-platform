@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useSta
 
 import {
   AnswerReviewSummary,
+  AuthSession,
   ChatApiError,
   ChatHistoryMessage,
   ChatResponse,
@@ -25,8 +26,13 @@ import {
   getEvaluationCases,
   getKnowledgeBases,
   getModelUsageSummary,
+  getStoredSession,
+  login,
+  logout,
   retryDocument,
   runRetrievalEvaluation,
+  register,
+  saveSession,
   sendChatMessage,
   uploadDocument,
 } from "../lib/chat";
@@ -43,6 +49,7 @@ type Message = {
 };
 
 type ApiStatus = "checking" | "connected" | "disconnected";
+type AuthMode = "login" | "register";
 
 const examples = ["上传文档后处于什么状态？", "如何判断回答是否有依据？"];
 const reviewVerdictOptions: { value: ReviewVerdict; label: string }[] = [
@@ -66,6 +73,11 @@ export default function ChatPage() {
   const [retryingDocumentId, setRetryingDocumentId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
+  const [authSession, setAuthSession] = useState<AuthSession | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   const [selectedKnowledgeBaseId, setSelectedKnowledgeBaseId] = useState("");
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
@@ -141,18 +153,6 @@ export default function ChatPage() {
   useEffect(() => {
     let isActive = true;
 
-    async function initializeKnowledgeBases() {
-      try {
-        const bases = await getKnowledgeBases();
-        if (!isActive) return;
-        setKnowledgeBases(bases);
-        setSelectedKnowledgeBaseId(bases[0]?.id ?? "");
-      } catch (loadError) {
-        if (!isActive) return;
-        setError(loadError instanceof ChatApiError ? loadError.message : "无法加载知识库。");
-      }
-    }
-
     void getApiHealth()
       .then(() => {
         if (isActive) setApiStatus("connected");
@@ -160,12 +160,30 @@ export default function ChatPage() {
       .catch(() => {
         if (isActive) setApiStatus("disconnected");
       });
-    void initializeKnowledgeBases();
+    void Promise.resolve().then(() => {
+      if (isActive) setAuthSession(getStoredSession());
+    });
 
     return () => {
       isActive = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!authSession) return;
+
+    async function initializeKnowledgeBases() {
+      try {
+        const bases = await getKnowledgeBases();
+        setKnowledgeBases(bases);
+        setSelectedKnowledgeBaseId(bases[0]?.id ?? "");
+      } catch (loadError) {
+        setError(loadError instanceof ChatApiError ? loadError.message : "无法加载知识库。");
+      }
+    }
+
+    void initializeKnowledgeBases();
+  }, [authSession]);
 
   useEffect(() => {
     if (!selectedKnowledgeBaseId) {
@@ -268,6 +286,39 @@ export default function ChatPage() {
     } finally {
       setIsCreatingKnowledgeBase(false);
     }
+  }
+
+  async function submitAuthentication(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!authEmail.trim() || authPassword.length < 12 || isAuthenticating) return;
+
+    setIsAuthenticating(true);
+    setError(null);
+    try {
+      const session = authMode === "register"
+        ? await register(authEmail.trim(), authPassword)
+        : await login(authEmail.trim(), authPassword);
+      saveSession(session);
+      setAuthSession(session);
+      setAuthPassword("");
+    } catch (requestError) {
+      setError(requestError instanceof ChatApiError ? requestError.message : "无法完成认证。");
+    } finally {
+      setIsAuthenticating(false);
+    }
+  }
+
+  async function signOut() {
+    await logout();
+    setAuthSession(null);
+    setKnowledgeBases([]);
+    setSelectedKnowledgeBaseId("");
+    setDocuments([]);
+    setMessages([]);
+    setEvaluationCases([]);
+    setEvaluationReport(null);
+    setAnswerReviewSummary(null);
+    setModelUsageSummary(null);
   }
 
   async function removeKnowledgeBase() {
@@ -456,6 +507,55 @@ export default function ChatPage() {
 
   const scopeLabel = selectedKnowledgeBase ? "当前：证据问答" : "当前：直接模型调用";
 
+  if (!authSession) {
+    return (
+      <main className="auth-shell">
+        <section className="auth-card" aria-labelledby="auth-title">
+          <span className="brand-mark">E</span>
+          <p className="eyebrow">EVIDENCE RAG</p>
+          <h1 id="auth-title">{authMode === "login" ? "登录工作台" : "创建本地账户"}</h1>
+          <p className="auth-copy">
+            {authMode === "login"
+              ? "登录后仅能访问属于当前账户的知识库与评测记录。"
+              : "首位注册用户会接管本机已有的旧知识库；后续账户彼此隔离。"}
+          </p>
+          <form className="auth-form" onSubmit={submitAuthentication}>
+            <label htmlFor="auth-email">邮箱</label>
+            <input
+              id="auth-email"
+              type="email"
+              value={authEmail}
+              onChange={(event) => setAuthEmail(event.target.value)}
+              autoComplete="email"
+              required
+            />
+            <label htmlFor="auth-password">密码</label>
+            <input
+              id="auth-password"
+              type="password"
+              value={authPassword}
+              onChange={(event) => setAuthPassword(event.target.value)}
+              autoComplete={authMode === "login" ? "current-password" : "new-password"}
+              minLength={12}
+              required
+            />
+            <button type="submit" disabled={isAuthenticating}>
+              {isAuthenticating ? "处理中" : authMode === "login" ? "登录" : "注册并登录"}
+            </button>
+          </form>
+          <button
+            className="auth-switch"
+            type="button"
+            onClick={() => setAuthMode((mode) => (mode === "login" ? "register" : "login"))}
+          >
+            {authMode === "login" ? "还没有账户？创建本地账户" : "已有账户？返回登录"}
+          </button>
+          {error && <p className="error auth-error" role="alert">{error}</p>}
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="workbench">
       <header className="topbar">
@@ -466,6 +566,10 @@ export default function ChatPage() {
         <div className="status" aria-label={apiStatusLabel[apiStatus]}>
           <span className={`status-dot ${apiStatus}`} />
           {apiStatusLabel[apiStatus]}
+        </div>
+        <div className="account-menu">
+          <span>{authSession.user.email}</span>
+          <button type="button" onClick={() => void signOut()}>退出</button>
         </div>
       </header>
 

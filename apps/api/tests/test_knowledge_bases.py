@@ -13,6 +13,8 @@ from app.core.config import Settings
 from app.db.base import Base
 from app.db.session import create_session_factory, get_session
 from app.main import create_app
+from app.models import User
+from app.services.auth import get_current_user
 from app.services.task_queue import get_document_task_queue
 from app.services.vector_store import get_vector_store
 
@@ -57,6 +59,11 @@ def client(tmp_path) -> Generator[TestClient, None, None]:
 
     Base.metadata.create_all(engine)
     session_factory = create_session_factory(engine)
+    with session_factory() as session:
+        user = User(email="test@example.com", password_hash="test-hash")
+        session.add(user)
+        session.commit()
+        user_id = user.id
     app = create_app(Settings(app_env="test", deepseek_api_key=None, _env_file=None))
     task_queue = FakeTaskQueue()
     vector_store = FakeVectorStore()
@@ -66,6 +73,11 @@ def client(tmp_path) -> Generator[TestClient, None, None]:
             yield session
 
     app.dependency_overrides[get_session] = override_session
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id=user_id,
+        email="test@example.com",
+        password_hash="test-hash",
+    )
     app.dependency_overrides[get_uploads_root] = lambda: tmp_path / "uploads"
     app.dependency_overrides[get_document_task_queue] = lambda: task_queue
     app.dependency_overrides[get_vector_store] = lambda: vector_store

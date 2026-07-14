@@ -2,12 +2,18 @@ from fastapi.testclient import TestClient
 
 from app.core.config import Settings
 from app.main import create_app
+from app.models import User
+from app.services.auth import get_current_user
 
 
 def create_test_client() -> TestClient:
     settings = Settings(app_env="test", deepseek_api_key=None, _env_file=None)
     app = create_app(settings)
     app.state.knowledge_base_retriever_factory = _unexpected_retriever_factory
+    app.dependency_overrides[get_current_user] = lambda: User(
+        email="test@example.com",
+        password_hash="test-hash",
+    )
     return TestClient(app)
 
 

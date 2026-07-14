@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -20,6 +20,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
+if TYPE_CHECKING:
+    from app.models.user import User
+
 
 class DocumentStatus(StrEnum):
     PENDING = "pending"
@@ -32,6 +35,10 @@ class KnowledgeBase(Base):
     __tablename__ = "knowledge_bases"
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    owner_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="RESTRICT"),
+    )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(
@@ -45,6 +52,7 @@ class KnowledgeBase(Base):
         back_populates="knowledge_base", cascade="all, delete-orphan"
     )
     model_calls: Mapped[list["ModelCall"]] = relationship(back_populates="knowledge_base")
+    owner: Mapped["User | None"] = relationship(back_populates="knowledge_bases")
 
 
 class Document(Base):

@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.core.config import PROJECT_ROOT
 from app.db.session import get_session
-from app.models import Document, DocumentStatus, KnowledgeBase
+from app.models import Document, DocumentStatus, KnowledgeBase, User
 from app.schemas.knowledge import DocumentRead, KnowledgeBaseCreate, KnowledgeBaseRead
+from app.services.auth import get_current_user
 from app.services.task_queue import DocumentTaskQueue, get_document_task_queue
 from app.services.vector_store import QdrantVectorStore, get_vector_store
 
@@ -28,8 +29,15 @@ def get_uploads_root() -> Path:
     return PROJECT_ROOT / "uploads"
 
 
-def get_knowledge_base_or_404(session: Session, knowledge_base_id: UUID) -> KnowledgeBase:
-    knowledge_base = session.get(KnowledgeBase, knowledge_base_id)
+def get_knowledge_base_or_404(
+    session: Session,
+    knowledge_base_id: UUID,
+    owner_id: UUID | None = None,
+) -> KnowledgeBase:
+    statement = select(KnowledgeBase).where(KnowledgeBase.id == knowledge_base_id)
+    if owner_id is not None:
+        statement = statement.where(KnowledgeBase.owner_id == owner_id)
+    knowledge_base = session.scalar(statement)
     if knowledge_base is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -87,8 +95,13 @@ def validate_upload(file: UploadFile) -> tuple[str, str]:
 def create_knowledge_base(
     payload: KnowledgeBaseCreate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> KnowledgeBase:
-    knowledge_base = KnowledgeBase(name=payload.name, description=payload.description)
+    knowledge_base = KnowledgeBase(
+        name=payload.name,
+        description=payload.description,
+        owner_id=current_user.id,
+    )
     session.add(knowledge_base)
     session.commit()
     session.refresh(knowledge_base)
@@ -96,8 +109,17 @@ def create_knowledge_base(
 
 
 @router.get("", response_model=list[KnowledgeBaseRead])
-def list_knowledge_bases(session: Session = Depends(get_session)) -> list[KnowledgeBase]:
-    return list(session.scalars(select(KnowledgeBase).order_by(KnowledgeBase.created_at.desc())))
+def list_knowledge_bases(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> list[KnowledgeBase]:
+    return list(
+        session.scalars(
+            select(KnowledgeBase)
+            .where(KnowledgeBase.owner_id == current_user.id)
+            .order_by(KnowledgeBase.created_at.desc())
+        )
+    )
 
 
 @router.delete("/{knowledge_base_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -106,8 +128,9 @@ def delete_knowledge_base(
     session: Session = Depends(get_session),
     uploads_root: Path = Depends(get_uploads_root),
     vector_store: QdrantVectorStore = Depends(get_vector_store),
+    current_user: User = Depends(get_current_user),
 ) -> None:
-    knowledge_base = get_knowledge_base_or_404(session, knowledge_base_id)
+    knowledge_base = get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     document_ids = list(
         session.scalars(select(Document.id).where(Document.knowledge_base_id == knowledge_base_id))
     )
@@ -136,8 +159,9 @@ async def upload_document(
     session: Session = Depends(get_session),
     uploads_root: Path = Depends(get_uploads_root),
     task_queue: DocumentTaskQueue = Depends(get_document_task_queue),
+    current_user: User = Depends(get_current_user),
 ) -> Document:
-    knowledge_base = get_knowledge_base_or_404(session, knowledge_base_id)
+    knowledge_base = get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     filename, mime_type = validate_upload(file)
     document = Document(
         knowledge_base=knowledge_base,
@@ -202,8 +226,9 @@ async def upload_document(
 def list_documents(
     knowledge_base_id: UUID,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> list[Document]:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     statement = (
         select(Document)
         .where(Document.knowledge_base_id == knowledge_base_id)
@@ -223,8 +248,9 @@ async def retry_failed_document(
     session: Session = Depends(get_session),
     uploads_root: Path = Depends(get_uploads_root),
     task_queue: DocumentTaskQueue = Depends(get_document_task_queue),
+    current_user: User = Depends(get_current_user),
 ) -> Document:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     document = get_document_or_404(session, knowledge_base_id, document_id)
     if document.status != DocumentStatus.FAILED:
         raise HTTPException(

@@ -14,6 +14,7 @@ class KnowledgeBaseRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    owner_id: UUID | None
     name: str
     description: str | None
     created_at: datetime

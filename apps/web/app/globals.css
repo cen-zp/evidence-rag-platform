@@ -37,6 +37,24 @@ button:disabled { cursor: not-allowed; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(39 166 68 / 12%); }
 .status-dot.checking { background: var(--subtle); box-shadow: 0 0 0 3px rgb(112 116 125 / 12%); }
 .status-dot.disconnected { background: #dc6d64; box-shadow: 0 0 0 3px rgb(220 109 100 / 12%); }
+.account-menu { display: inline-flex; align-items: center; gap: 12px; color: var(--subtle); font-size: 12px; }
+.account-menu button, .auth-switch { border: 0; padding: 0; color: var(--accent-hover); background: transparent; font-size: 12px; }
+.account-menu button:hover, .auth-switch:hover { color: var(--ink); }
+
+.auth-shell { display: grid; min-height: 100vh; place-items: center; padding: 24px; background: var(--canvas); }
+.auth-card { width: min(100%, 420px); padding: 32px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface); }
+.auth-card .brand-mark { margin-bottom: 24px; }
+.auth-card h1 { margin-bottom: 10px; }
+.auth-copy { margin-bottom: 24px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.auth-form { display: grid; gap: 8px; }
+.auth-form label { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.auth-form input { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 10px; color: var(--ink); background: #0a0b0c; }
+.auth-form input:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(94 106 210 / 16%); }
+.auth-form button { margin-top: 12px; border: 0; border-radius: 7px; padding: 10px; color: white; background: var(--accent); font-weight: 600; }
+.auth-form button:hover:not(:disabled) { background: var(--accent-hover); }
+.auth-form button:disabled { opacity: .45; }
+.auth-switch { margin-top: 18px; }
+.auth-error { width: auto; margin: 16px 0 0; }
 
 .workspace { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(280px, .65fr); max-width: 1440px; min-height: calc(100vh - 64px); margin: 0 auto; }
 .chat-panel { display: flex; flex-direction: column; min-height: calc(100vh - 64px); padding: 34px clamp(24px, 5vw, 76px) 26px; border-right: 1px solid var(--border); }

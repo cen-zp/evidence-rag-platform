@@ -9,8 +9,9 @@ from app.core.config import Settings
 from app.db.base import Base
 from app.db.session import create_session_factory, get_session
 from app.main import create_app
-from app.models import Document, DocumentChunk, DocumentStatus, KnowledgeBase
+from app.models import Document, DocumentChunk, DocumentStatus, KnowledgeBase, User
 from app.schemas.chat import ChatUsage
+from app.services.auth import get_current_user
 from app.services.deepseek import DeepSeekInvalidCitationError, GroundedModelResponse
 from app.services.retrieval import RetrievalHit
 
@@ -64,7 +65,8 @@ def create_chat_client() -> tuple[TestClient, UUID, DocumentChunk]:
     Base.metadata.create_all(engine)
     session_factory = create_session_factory(engine)
     with session_factory() as session:
-        knowledge_base = KnowledgeBase(name="Handbook")
+        user = User(email="test@example.com", password_hash="test-hash")
+        knowledge_base = KnowledgeBase(name="Handbook", owner=user)
         document = Document(
             knowledge_base=knowledge_base,
             filename="handbook.md",
@@ -82,6 +84,7 @@ def create_chat_client() -> tuple[TestClient, UUID, DocumentChunk]:
         session.add(chunk)
         session.commit()
         knowledge_base_id = knowledge_base.id
+        user_id = user.id
 
     app = create_app(Settings(app_env="test", deepseek_api_key=None, _env_file=None))
 
@@ -90,6 +93,11 @@ def create_chat_client() -> tuple[TestClient, UUID, DocumentChunk]:
             yield session
 
     app.dependency_overrides[get_session] = override_session
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id=user_id,
+        email="test@example.com",
+        password_hash="test-hash",
+    )
     client = TestClient(app)
     return client, knowledge_base_id, chunk
 

@@ -7,6 +7,7 @@ from app.models.knowledge import (
     KnowledgeBase,
     ModelCall,
 )
+from app.models.user import User, UserSession
 
 __all__ = [
     "AnswerReview",
@@ -16,4 +17,6 @@ __all__ = [
     "EvaluationCase",
     "KnowledgeBase",
     "ModelCall",
+    "User",
+    "UserSession",
 ]

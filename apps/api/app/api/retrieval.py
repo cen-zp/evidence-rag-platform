@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.api.knowledge_bases import get_knowledge_base_or_404
 from app.db.session import get_session
+from app.models import User
 from app.schemas.knowledge import RetrievalHitRead, RetrievalRequest
+from app.services.auth import get_current_user
 from app.services.retrieval import KnowledgeBaseRetriever, get_knowledge_base_retriever
 
 router = APIRouter(prefix="/api/knowledge-bases", tags=["retrieval"])
@@ -17,8 +19,9 @@ def search_knowledge_base(
     payload: RetrievalRequest,
     session: Session = Depends(get_session),
     retriever: KnowledgeBaseRetriever = Depends(get_knowledge_base_retriever),
+    current_user: User = Depends(get_current_user),
 ) -> list[RetrievalHitRead]:
-    get_knowledge_base_or_404(session, knowledge_base_id)
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     try:
         hits = retriever.search(knowledge_base_id, payload.query, payload.top_k)
     except Exception as error:
