@@ -1,0 +1,20 @@
+{"id":"demo-01","question":"这个项目希望避免哪一种没有依据的回答行为？","expected_filenames":["README.md"]}
+{"id":"demo-02","question":"当前项目支持上传哪些文档格式？","expected_filenames":["README.md"]}
+{"id":"demo-03","question":"Docker Compose 当前会启动哪三项基础设施服务？","expected_filenames":["README.md"]}
+{"id":"demo-04","question":"页面显示 API 已连接时，为什么仍不能说明模型密钥一定配置成功？","expected_filenames":["README.md"]}
+{"id":"demo-05","question":"文档处理中的状态转换顺序是什么？","expected_filenames":["document-processing.md"]}
+{"id":"demo-06","question":"PDF 解析后的 chunk 会保留什么位置信息？","expected_filenames":["document-processing.md"]}
+{"id":"demo-07","question":"当前 DOCX 解析不支持哪些内容？","expected_filenames":["document-processing.md"]}
+{"id":"demo-08","question":"Redis 暂时不可用导致处理失败后，应该如何重新入队？","expected_filenames":["document-processing.md"]}
+{"id":"demo-09","question":"本地 BGE 模型的名称和向量维度分别是什么？","expected_filenames":["document-processing.md"]}
+{"id":"demo-10","question":"Embedding 模型或维度变更后，为什么不能直接复用旧 collection？","expected_filenames":["document-processing.md"]}
+{"id":"demo-11","question":"当前 Dense 检索使用的本地语义模型是什么？","expected_filenames":["retrieval.md"]}
+{"id":"demo-12","question":"为什么 RRF 分数不能直接当作拒答阈值？","expected_filenames":["retrieval.md"]}
+{"id":"demo-13","question":"BM25 当前是在什么范围内遍历 ready chunk？","expected_filenames":["retrieval.md"]}
+{"id":"demo-14","question":"CrossEncoder 重排序默认会处理多少个混合检索候选？","expected_filenames":["retrieval.md"]}
+{"id":"demo-15","question":"如何在评测 CLI 中关闭 Reranker，运行 RRF-only 基线？","expected_filenames":["evaluation.md"]}
+{"id":"demo-16","question":"Recall@K 在这个项目中表示什么？","expected_filenames":["evaluation.md"]}
+{"id":"demo-17","question":"一个评测案例可以填写多个预期来源文件名吗？","expected_filenames":["evaluation.md"]}
+{"id":"demo-18","question":"BGE 迁移后新 Qdrant collection 写入了多少个点？","expected_filenames":["verification.md"]}
+{"id":"demo-19","question":"一条案例的 RRF-only 与 Reranker 对比为什么不能说明重排序效果提升？","expected_filenames":["verification.md"]}
+{"id":"demo-20","question":"BGE 加 Reranker 的真实问答复测中，服务端引用来自哪个文件？","expected_filenames":["verification.md"]}

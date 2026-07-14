@@ -31,6 +31,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title=active_settings.app_name, version="0.1.0", lifespan=lifespan)
     app.state.chat_service_factory = lambda: DeepSeekService(active_settings)
+    app.state.knowledge_base_retriever_factory = get_knowledge_base_retriever
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[active_settings.web_origin],
@@ -50,11 +51,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def chat(
         request: ChatRequest,
         session: Session = Depends(get_session),
-        retriever: KnowledgeBaseRetriever = Depends(get_knowledge_base_retriever),
     ) -> ChatResponse:
         if request.knowledge_base_id is not None:
             knowledge_bases.get_knowledge_base_or_404(session, request.knowledge_base_id)
             try:
+                retriever: KnowledgeBaseRetriever = app.state.knowledge_base_retriever_factory()
                 hits = retriever.search(request.knowledge_base_id, request.message, top_k=5)
             except Exception as error:
                 raise HTTPException(

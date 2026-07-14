@@ -11,7 +11,7 @@ from app.db.session import create_session_factory, get_session
 from app.main import create_app
 from app.models import Document, DocumentChunk, DocumentStatus, KnowledgeBase
 from app.services.deepseek import DeepSeekInvalidCitationError, GroundedModelResponse
-from app.services.retrieval import RetrievalHit, get_knowledge_base_retriever
+from app.services.retrieval import RetrievalHit
 
 
 class StaticRetriever:
@@ -95,7 +95,7 @@ def create_chat_client() -> tuple[TestClient, UUID, DocumentChunk]:
 def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
     client, knowledge_base_id, chunk = create_chat_client()
     retriever = StaticRetriever([RetrievalHit(chunk=chunk, score=0.9)])
-    client.app.dependency_overrides[get_knowledge_base_retriever] = lambda: retriever
+    client.app.state.knowledge_base_retriever_factory = lambda: retriever
     client.app.state.chat_service_factory = lambda: SuccessfulGroundedService(chunk.id)
 
     response = client.post(
@@ -131,7 +131,7 @@ def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
 
 def test_grounded_chat_refuses_when_model_citations_are_invalid() -> None:
     client, knowledge_base_id, chunk = create_chat_client()
-    client.app.dependency_overrides[get_knowledge_base_retriever] = lambda: StaticRetriever(
+    client.app.state.knowledge_base_retriever_factory = lambda: StaticRetriever(
         [RetrievalHit(chunk=chunk, score=0.9)]
     )
     client.app.state.chat_service_factory = lambda: InvalidCitationService()

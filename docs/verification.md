@@ -84,3 +84,18 @@
 - 请求总耗时：`38569.9 ms`，其中包含独立进程内 BGE 与 Reranker 的冷启动加载，不可作为稳态用户延迟。
 
 结论：BGE 检索、BM25、RRF、CrossEncoder Reranker、DeepSeek 结构化回答与服务端引用校验已真实端到端连通。该次仅验证工程链路与引用约束；没有用来评估答案正确率或重排序质量。
+
+## 2026-07-14：验收文档演示题集检索对比（非简历指标）
+
+- 语料：新建本地“验收演示知识库（非简历指标）”，包含项目自身的 `README.md`、文档处理、检索、评测和本验证记录共 5 份 Markdown 文档。
+- 题集：[evals/demo-acceptance.jsonl](../evals/demo-acceptance.jsonl)，20 条人工编写问题；每题的预期文件直接来自上述项目文档。
+- 配置：相同语料、`top_k=3`，分别运行 RRF-only 与启用本地 `BAAI/bge-reranker-base` 的配置。
+
+| 配置 | Recall@3 | MRR | 平均本地检索延迟 |
+| --- | ---: | ---: | ---: |
+| BGE + BM25 + RRF | 0.950 | 0.867 | 19.0 ms |
+| BGE + BM25 + RRF + Reranker | 1.000 | 0.858 | 917.0 ms |
+
+结果文件：[demo-rrf-only.json](../evals/results/demo-rrf-only.json) 与 [demo-reranker.json](../evals/results/demo-reranker.json)。两份报告均记录了 `reranker_enabled`，可以复跑。
+
+结论：多文档种子、20 题运行器和两种配置已真实连通；在这套自生成题集上，重排序补回了 1 条 Top-3 命中，但平均首个正确来源排名略低且本地延迟显著增加。题目与语料来自同一项目验收文档，存在明显的自描述偏差，**只用于功能演示与回归检查，不用于简历、公开效果结论或模型选型**。后续应以 60–100 条独立问题、独立标注来源和预热后的固定硬件重新评估。

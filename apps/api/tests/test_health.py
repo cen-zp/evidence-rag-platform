@@ -6,7 +6,13 @@ from app.main import create_app
 
 def create_test_client() -> TestClient:
     settings = Settings(app_env="test", deepseek_api_key=None, _env_file=None)
-    return TestClient(create_app(settings))
+    app = create_app(settings)
+    app.state.knowledge_base_retriever_factory = _unexpected_retriever_factory
+    return TestClient(app)
+
+
+def _unexpected_retriever_factory() -> None:
+    raise AssertionError("A direct chat request should not initialize the knowledge-base retriever")
 
 
 def test_health_check() -> None:

@@ -51,6 +51,19 @@ uv run python -m app.evaluation.runner \
 
 CLI 结果会记录 `reranker_enabled`，使两个报告的配置可追溯。
 
+## 仅演示题集
+
+仓库中的 [../evals/demo-acceptance.jsonl](../evals/demo-acceptance.jsonl) 由项目自身的验收文档人工编写，目的是验证多文档检索、RRF-only 与 Reranker 对比流程。它不是独立用户问题，**不得**用于简历或公开效果结论。
+
+可在本地创建对应的演示知识库后运行：
+
+```bash
+cd apps/api
+uv run python -m app.demo_seed
+```
+
+命令会创建名为“验收演示知识库（非简历指标）”的本地资料库，重复执行不会重复创建。使用命令输出的知识库 UUID 运行本节的评测 CLI。
+
 运行器输出：
 
 - `recall_at_k`：至少一个预期来源出现在 Top-K 的案例比例。
