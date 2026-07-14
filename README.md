@@ -10,26 +10,43 @@
 
 - 上传并解析 PDF、DOCX、Markdown 文件
 - 异步分块、向量化并写入知识库
-- 支持多轮问答，并在回答中展示可点击的来源片段
-- 基于语义检索、关键词检索与重排序生成上下文
-- 无证据或低置信度时拒答
-- 显示本次请求的耗时、模型调用和基础日志
-- 以 Docker Compose 在本地一键启动
+- 支持同一页面会话内的有限多轮追问，并在回答中展示来源片段
+- 基于本地向量基线与 BM25 的 RRF 混合检索生成上下文
+- 无检索证据或模型返回非法引用时拒答
+- 展示模型名称、端到端模型耗时与检索评测指标
+- 使用 Docker Compose 本地启动 PostgreSQL、Redis、Qdrant
 
 ## 技术栈
 
 | 层级 | 选择 |
 | --- | --- |
-| Web | Next.js、TypeScript、Tailwind CSS |
+| Web | Next.js、TypeScript、原生 CSS |
 | API | Python、FastAPI、Pydantic、SQLAlchemy、Alembic |
 | 数据 | PostgreSQL、Redis、Qdrant |
 | 异步任务 | ARQ（Redis 队列） |
-| AI | DeepSeek API（OpenAI 兼容 SDK）、Embedding、结构化输出 |
-| 检索 | Dense + BM25 混合检索、RRF、Rerank |
-| 质量 | pytest、评测集、Langfuse（第二阶段） |
-| 交付 | Docker Compose、GitHub Actions |
+| AI | DeepSeek Chat API（OpenAI 兼容 SDK）、结构化引用输出 |
+| 检索 | 本地哈希向量基线 + BM25 + RRF |
+| 质量 | pytest、JSONL 评测集、知识库级评测案例 |
+| 交付 | Docker Compose、uv、pnpm |
 
 详细规格见 [docs/PRD.md](docs/PRD.md) 与 [docs/week-1-plan.md](docs/week-1-plan.md)。
+
+## 当前架构
+
+```mermaid
+flowchart LR
+  Web[Next.js 工作台] -->|HTTP| API[FastAPI]
+  API --> PG[(PostgreSQL)]
+  API --> QD[(Qdrant)]
+  API --> DS[DeepSeek Chat API]
+  API --> Redis[(Redis / ARQ)]
+  Redis --> Worker[ARQ Worker]
+  Worker --> PG
+  Worker --> QD
+  Worker --> Files[本地 uploads/]
+```
+
+上传请求先保存源文件与文档记录，再通过 ARQ 异步解析、分块并写入 PostgreSQL/Qdrant。问答请求始终按知识库 ID 隔离检索；有命中时才调用模型，并校验模型返回的引用只能来自本次命中结果。
 
 ## 本地密钥配置
 
@@ -76,6 +93,15 @@ pnpm dev
 
 后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
 
-M2-A 已支持创建知识库与上传 Markdown/PDF 文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant；M3 已提供按知识库隔离的本地向量 + BM25 + RRF 混合检索；M3-B 已实现服务端校验引用的证据问答契约，并已接入前端知识库工作流；M4 已加入可复现的 JSONL 检索评测运行器和知识库级评测案例 API。处理过程、检索、问答和评测边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md)、[docs/grounded-chat.md](docs/grounded-chat.md) 与 [docs/evaluation.md](docs/evaluation.md)。当前尚未实现重排序或正式语义 Embedding。
+M2-A 已支持创建知识库与上传 Markdown/PDF/DOCX；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant，并可重试失败任务；M3 已提供按知识库隔离的本地向量 + BM25 + RRF 混合检索；M3-B 已实现服务端校验引用的证据问答契约、有限页面内追问上下文及前端知识库工作流；M4 已加入可复现的 JSONL 检索评测运行器和可管理的知识库级评测案例。处理过程、检索、问答和评测边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md)、[docs/grounded-chat.md](docs/grounded-chat.md) 与 [docs/evaluation.md](docs/evaluation.md)。
+
+### 尚未完成的关键能力
+
+- 正式语义 Embedding 与同题集的效果、延迟、成本对比
+- Reranker、基于可靠阈值的低置信度拒答
+- 账户/权限、持久化会话、请求日志与答案反馈
+- API/Web/Worker 的完整容器化及 CI
+
+这些项目没有被计入已完成能力；其中“本地哈希向量”仅用于验证索引和检索工程链路，不能代表语义检索质量。
 
 最近一次本地真实链路验收记录见 [docs/verification.md](docs/verification.md)。
