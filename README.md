@@ -76,6 +76,6 @@ pnpm dev
 
 后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
 
-M2-A 已支持创建知识库与上传 Markdown/PDF 文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant；M3 已提供按知识库隔离的本地向量 + BM25 + RRF 混合检索；M3-B 已实现服务端校验引用的证据问答契约，并已接入前端知识库工作流。处理过程、检索与问答边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md) 与 [docs/grounded-chat.md](docs/grounded-chat.md)。当前尚未实现重排序、DOCX 支持或正式语义 Embedding。
+M2-A 已支持创建知识库与上传 Markdown/PDF 文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant；M3 已提供按知识库隔离的本地向量 + BM25 + RRF 混合检索；M3-B 已实现服务端校验引用的证据问答契约，并已接入前端知识库工作流；M4 已加入可复现的 JSONL 检索评测运行器。处理过程、检索、问答和评测边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md)、[docs/grounded-chat.md](docs/grounded-chat.md) 与 [docs/evaluation.md](docs/evaluation.md)。当前尚未实现重排序、DOCX 支持或正式语义 Embedding。
 
 最近一次本地真实链路验收记录见 [docs/verification.md](docs/verification.md)。
