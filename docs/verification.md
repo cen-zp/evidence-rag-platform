@@ -45,3 +45,11 @@
 - 结果：新 collection 共写入 5 个点；分别对 Markdown、文档处理说明和 DOCX 知识库进行本地检索，均返回当前知识库内的来源文件。
 
 结论：本地语义 Embedding、重新解析、Qdrant 写入和按知识库检索已真实连通。本次只验证工程迁移与隔离，不比较旧/新模型效果；正式结论仍需在独立 60–100 条题集上对比 Recall@K、MRR、延迟与资源开销。
+
+## 2026-07-14：BGE 检索烟雾评测
+
+- 题集：[evals/smoke.jsonl](../evals/smoke.jsonl)，仅 1 条案例；结果文件：[evals/results/bge-smoke.json](../evals/results/bge-smoke.json)。
+- 配置：本地 `BAAI/bge-small-zh-v1.5` + BM25 + RRF，`top_k=3`。
+- 结果：Recall@3=`1.0`、MRR=`1.0`、本地检索延迟 `160.6 ms`。
+
+结论：BGE 迁移后的评测运行器已真实连通。案例数为 1，不能比较模型优劣或作为简历指标；延迟包含本地模型推理，需在固定硬件、预热策略和 60–100 条独立题集下重新测量。
