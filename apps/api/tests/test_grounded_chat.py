@@ -51,7 +51,7 @@ class InvalidCitationService:
         raise DeepSeekInvalidCitationError("The model invented a citation")
 
 
-def create_chat_client() -> tuple[TestClient, UUID, DocumentChunk]:
+def create_chat_client(settings: Settings | None = None) -> tuple[TestClient, UUID, DocumentChunk]:
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -86,7 +86,7 @@ def create_chat_client() -> tuple[TestClient, UUID, DocumentChunk]:
         knowledge_base_id = knowledge_base.id
         user_id = user.id
 
-    app = create_app(Settings(app_env="test", deepseek_api_key=None, _env_file=None))
+    app = create_app(settings or Settings(app_env="test", deepseek_api_key=None, _env_file=None))
 
     def override_session():
         with session_factory() as session:
@@ -154,6 +154,10 @@ def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
         "total_tokens": 70,
         "mean_latency_ms": 12.0,
         "p95_latency_ms": 12.0,
+        "estimated_cost_call_count": 0,
+        "estimated_cost_currency": None,
+        "total_estimated_cost": None,
+        "mean_estimated_cost": None,
     }
 
 
@@ -181,6 +185,53 @@ def test_grounded_chat_refuses_when_model_citations_are_invalid() -> None:
         "model": "retrieval-guard",
         "latency_ms": 0,
         "citations": [],
+    }
+
+
+def test_grounded_chat_records_the_cost_price_snapshot() -> None:
+    client, knowledge_base_id, chunk = create_chat_client(
+        Settings(
+            app_env="test",
+            deepseek_api_key=None,
+            deepseek_input_cost_per_million_tokens=2.0,
+            deepseek_output_cost_per_million_tokens=4.0,
+            deepseek_cost_currency="CNY",
+            _env_file=None,
+        )
+    )
+    client.app.state.knowledge_base_retriever_factory = lambda: StaticRetriever(
+        [RetrievalHit(chunk=chunk, score=0.9)]
+    )
+    client.app.state.chat_service_factory = lambda: SuccessfulGroundedService(chunk.id)
+
+    response = client.post(
+        "/api/chat",
+        json={
+            "message": "What is the release process?",
+            "knowledge_base_id": str(knowledge_base_id),
+            "history": [
+                {"role": "user", "content": "Tell me about the handbook."},
+                {"role": "assistant", "content": "It contains the release process."},
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    usage_response = client.get(
+        f"/api/knowledge-bases/{knowledge_base_id}/evaluations/model-usage-summary"
+    )
+    assert usage_response.json() == {
+        "call_count": 1,
+        "usage_reported_call_count": 1,
+        "prompt_tokens": 50,
+        "completion_tokens": 20,
+        "total_tokens": 70,
+        "mean_latency_ms": 12.0,
+        "p95_latency_ms": 12.0,
+        "estimated_cost_call_count": 1,
+        "estimated_cost_currency": "CNY",
+        "total_estimated_cost": 0.00018,
+        "mean_estimated_cost": 0.00018,
     }
 
 

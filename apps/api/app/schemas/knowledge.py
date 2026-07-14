@@ -115,6 +115,10 @@ class ModelUsageSummaryRead(BaseModel):
     total_tokens: int
     mean_latency_ms: float | None
     p95_latency_ms: float | None
+    estimated_cost_call_count: int
+    estimated_cost_currency: str | None
+    total_estimated_cost: float | None
+    mean_estimated_cost: float | None
 
 
 class ConversationRead(BaseModel):

@@ -198,6 +198,10 @@ class ModelCall(Base):
     prompt_tokens: Mapped[int | None] = mapped_column(Integer)
     completion_tokens: Mapped[int | None] = mapped_column(Integer)
     total_tokens: Mapped[int | None] = mapped_column(Integer)
+    input_cost_per_million_tokens: Mapped[float | None] = mapped_column()
+    output_cost_per_million_tokens: Mapped[float | None] = mapped_column()
+    estimated_cost: Mapped[float | None] = mapped_column()
+    cost_currency: Mapped[str | None] = mapped_column(String(12))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

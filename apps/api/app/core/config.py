@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_chat_model: str = "deepseek-v4-flash"
     deepseek_timeout_seconds: float = 30.0
+    deepseek_input_cost_per_million_tokens: float | None = Field(default=None, ge=0)
+    deepseek_output_cost_per_million_tokens: float | None = Field(default=None, ge=0)
+    deepseek_cost_currency: str = Field(default="CNY", min_length=1, max_length=12)
     auth_session_days: int = 30
 
     model_config = SettingsConfigDict(

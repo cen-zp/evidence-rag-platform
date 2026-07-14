@@ -1077,9 +1077,21 @@ export default function ChatPage() {
                             : `${modelUsageSummary.mean_latency_ms.toFixed(1)} ms`}
                         </dd>
                       </div>
+                      <div>
+                        <dt>已估算成本</dt>
+                        <dd>{modelUsageSummary.estimated_cost_call_count} 次</dd>
+                      </div>
+                      <div>
+                        <dt>平均单次成本</dt>
+                        <dd>
+                          {modelUsageSummary.mean_estimated_cost === null
+                            ? "未配置"
+                            : `${modelUsageSummary.mean_estimated_cost.toFixed(6)} ${modelUsageSummary.estimated_cost_currency}`}
+                        </dd>
+                      </div>
                     </dl>
                     <p className="model-usage-note">
-                      仅统计成功的知识库证据问答；不保存问题或回答，也不等同于质量或成本结论。
+                      单价在调用时从本地配置保存为快照；未配置单价或未返回 token 的调用不会估算成本。
                     </p>
                   </>
                 )}

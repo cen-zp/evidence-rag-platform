@@ -140,6 +140,10 @@ export type ModelUsageSummary = {
   total_tokens: number;
   mean_latency_ms: number | null;
   p95_latency_ms: number | null;
+  estimated_cost_call_count: number;
+  estimated_cost_currency: string | null;
+  total_estimated_cost: number | null;
+  mean_estimated_cost: number | null;
 };
 
 export class ChatApiError extends Error {

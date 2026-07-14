@@ -239,6 +239,14 @@ def get_model_usage_summary(
     )
     latencies = sorted(call.latency_ms for call in calls)
     p95_index = max(0, (len(latencies) * 95 + 99) // 100 - 1)
+    costed_calls = [call for call in calls if call.estimated_cost is not None]
+    cost_currencies = {call.cost_currency for call in costed_calls}
+    has_single_cost_currency = len(cost_currencies) == 1
+    total_estimated_cost = (
+        round(sum(call.estimated_cost or 0 for call in costed_calls), 8)
+        if costed_calls and has_single_cost_currency
+        else None
+    )
 
     return ModelUsageSummaryRead(
         call_count=len(calls),
@@ -248,6 +256,12 @@ def get_model_usage_summary(
         total_tokens=sum(call.total_tokens or 0 for call in calls),
         mean_latency_ms=(sum(latencies) / len(latencies)) if latencies else None,
         p95_latency_ms=latencies[p95_index] if latencies else None,
+        estimated_cost_call_count=len(costed_calls),
+        estimated_cost_currency=next(iter(cost_currencies)) if has_single_cost_currency else None,
+        total_estimated_cost=total_estimated_cost,
+        mean_estimated_cost=(total_estimated_cost / len(costed_calls))
+        if total_estimated_cost is not None
+        else None,
     )
 
 

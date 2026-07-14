@@ -159,6 +159,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 model=response.model,
                 latency_ms=response.latency_ms,
                 usage=response.usage,
+                input_cost_per_million_tokens=active_settings.deepseek_input_cost_per_million_tokens,
+                output_cost_per_million_tokens=active_settings.deepseek_output_cost_per_million_tokens,
+                cost_currency=active_settings.deepseek_cost_currency,
             )
             return response
 
