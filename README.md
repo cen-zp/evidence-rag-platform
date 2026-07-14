@@ -72,8 +72,8 @@ pnpm dev
 
 页面顶部会请求 `GET /health` 显示 API 已连接或未连接；它只表示 API 服务可达，不表示模型密钥已经配置成功。
 
-## 当前数据层里程碑
+## 当前数据与处理层里程碑
 
-后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式；尚未实现文件上传、解析、Embedding 或检索。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
+后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
 
-M2-A 已支持创建知识库与上传 Markdown/PDF 文件。上传后文档会显示为 `pending`，直到后续 Worker 完成解析和索引；接口契约见 [docs/document-intake.md](docs/document-intake.md)。
+M2-A 已支持创建知识库与上传 Markdown/PDF 文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant。处理过程与本地向量基线的真实边界见 [docs/document-processing.md](docs/document-processing.md)。当前尚未实现问答检索、引用、重排序、DOCX 支持或正式语义 Embedding。

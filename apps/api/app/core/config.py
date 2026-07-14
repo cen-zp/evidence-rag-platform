@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+psycopg://evidence_rag:change-me-locally@localhost:5432/evidence_rag"
     )
+    redis_url: str = "redis://localhost:6379/0"
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "document_chunks"
+    embedding_dimension: int = 384
     deepseek_api_key: SecretStr | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_chat_model: str = "deepseek-v4-flash"

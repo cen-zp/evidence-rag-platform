@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -5,11 +7,18 @@ from app.api.knowledge_bases import router as knowledge_bases_router
 from app.core.config import Settings, get_settings
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.deepseek import DeepSeekNotConfiguredError, DeepSeekService
+from app.services.task_queue import close_document_task_queue
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     active_settings = settings or get_settings()
-    app = FastAPI(title=active_settings.app_name, version="0.1.0")
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        yield
+        await close_document_task_queue(app)
+
+    app = FastAPI(title=active_settings.app_name, version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[active_settings.web_origin],

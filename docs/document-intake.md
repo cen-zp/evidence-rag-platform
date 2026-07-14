@@ -13,4 +13,4 @@
 
 ## 状态边界
 
-上传成功时文档只能是 `pending`：它说明文件已保存、数据库记录已建立，尚未代表内容已经解析、向量化或可检索。下一阶段的 Worker 将负责 `pending -> processing -> ready/failed` 转换。
+上传接口返回时文档为 `pending`：它说明文件已保存、数据库记录已建立并已提交后台任务，尚未代表内容已经解析或可检索。启动 Worker 后，它会负责 `pending -> processing -> ready/failed` 转换；完整处理边界见 [document-processing.md](document-processing.md)。

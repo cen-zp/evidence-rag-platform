@@ -10,6 +10,7 @@ from app.core.config import PROJECT_ROOT
 from app.db.session import get_session
 from app.models import Document, DocumentStatus, KnowledgeBase
 from app.schemas.knowledge import DocumentRead, KnowledgeBaseCreate, KnowledgeBaseRead
+from app.services.task_queue import DocumentTaskQueue, get_document_task_queue
 
 router = APIRouter(prefix="/api/knowledge-bases", tags=["knowledge bases"])
 
@@ -88,6 +89,7 @@ async def upload_document(
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
     uploads_root: Path = Depends(get_uploads_root),
+    task_queue: DocumentTaskQueue = Depends(get_document_task_queue),
 ) -> Document:
     knowledge_base = get_knowledge_base_or_404(session, knowledge_base_id)
     filename, mime_type = validate_upload(file)
@@ -98,6 +100,7 @@ async def upload_document(
         status=DocumentStatus.PENDING,
     )
     destination_directory: Path | None = None
+    document_stored = False
 
     try:
         session.add(document)
@@ -120,10 +123,21 @@ async def upload_document(
 
         session.commit()
         session.refresh(document)
+        document_stored = True
+        try:
+            await task_queue.enqueue_job("process_document", str(document.id))
+        except Exception as error:
+            document.status = DocumentStatus.FAILED
+            document.error_message = "Document was stored but could not be scheduled for processing"
+            session.commit()
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Document was stored but the processing queue is unavailable",
+            ) from error
         return document
     except HTTPException:
         session.rollback()
-        if destination_directory is not None:
+        if destination_directory is not None and not document_stored:
             shutil.rmtree(destination_directory, ignore_errors=True)
         raise
     except Exception as error:
