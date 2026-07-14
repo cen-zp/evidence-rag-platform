@@ -196,14 +196,14 @@ export async function getEvaluationCases(knowledgeBaseId: string): Promise<Evalu
 export async function createEvaluationCase(
   knowledgeBaseId: string,
   question: string,
-  expectedFilename: string,
+  expectedFilenames: string[],
 ): Promise<EvaluationCase> {
   try {
     return await readJson<EvaluationCase>(
       await fetch(`${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/evaluation-cases`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, expected_filenames: [expectedFilename] }),
+        body: JSON.stringify({ question, expected_filenames: expectedFilenames }),
       }),
     );
   } catch (error) {

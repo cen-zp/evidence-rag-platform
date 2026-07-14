@@ -233,13 +233,24 @@ export default function ChatPage() {
   async function submitEvaluationCase(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const question = evaluationQuestion.trim();
-    const filename = expectedFilename.trim();
-    if (!question || !filename || !selectedKnowledgeBaseId || isSavingEvaluationCase) return;
+    const filenames = [
+      ...new Set(
+        expectedFilename
+          .split(/[，,]/)
+          .map((filename) => filename.trim())
+          .filter(Boolean),
+      ),
+    ];
+    if (!question || !filenames.length || !selectedKnowledgeBaseId || isSavingEvaluationCase) return;
+    if (filenames.length > 10) {
+      setError("每条评测案例最多填写 10 个预期来源文件名。");
+      return;
+    }
 
     setIsSavingEvaluationCase(true);
     setError(null);
     try {
-      const evaluationCase = await createEvaluationCase(selectedKnowledgeBaseId, question, filename);
+      const evaluationCase = await createEvaluationCase(selectedKnowledgeBaseId, question, filenames);
       setEvaluationCases((current) => [evaluationCase, ...current]);
       setEvaluationQuestion("");
       setExpectedFilename("");
@@ -502,9 +513,9 @@ export default function ChatPage() {
                     id="expected-filename"
                     value={expectedFilename}
                     onChange={(event) => setExpectedFilename(event.target.value)}
-                    placeholder="预期命中的文件名"
+                    placeholder="预期命中文件名（逗号分隔）"
                     list="ready-document-filenames"
-                    maxLength={512}
+                    maxLength={2_000}
                   />
                   <datalist id="ready-document-filenames">
                     {documents
@@ -519,7 +530,7 @@ export default function ChatPage() {
                   </button>
                 </form>
                 <p className="evaluation-summary">
-                  已保存 {evaluationCases.length} 条案例。指标只反映当前题集和当前检索配置。
+                  文件名可用中英文逗号分隔。已保存 {evaluationCases.length} 条案例；指标只反映当前题集和当前检索配置。
                 </p>
                 {evaluationCases.length > 0 && (
                   <ul className="evaluation-case-list" aria-label="最近评测案例">
