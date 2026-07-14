@@ -74,3 +74,13 @@
 结果文件分别为 [bge-rrf-only-smoke.json](../evals/results/bge-rrf-only-smoke.json) 与 [bge-reranker-smoke.json](../evals/results/bge-reranker-smoke.json)，其中包含 `reranker_enabled` 配置标记。
 
 结论：对比工具和配置记录可复现；只有 1 个来源文件时重排序没有改变排名，首次本地 CrossEncoder 推理增加了明显延迟。后续必须使用多文档、60–100 条独立题集并预热模型后，才能判断是否值得保留该延迟开销。
+
+## 2026-07-14：BGE + Reranker 真实证据问答复测
+
+- 知识库：`兼容性复测知识库`，使用重建后的 BGE collection 与本地 CrossEncoder 重排序。
+- 问题：`上传文件后文档处于什么状态？`
+- 结果：HTTP 200；模型为 `deepseek-v4-flash`；模型调用耗时 `2735 ms`。
+- 引用：返回 1 条 `document-intake.md` 来源，且包含服务端返回的 chunk ID。
+- 请求总耗时：`38569.9 ms`，其中包含独立进程内 BGE 与 Reranker 的冷启动加载，不可作为稳态用户延迟。
+
+结论：BGE 检索、BM25、RRF、CrossEncoder Reranker、DeepSeek 结构化回答与服务端引用校验已真实端到端连通。该次仅验证工程链路与引用约束；没有用来评估答案正确率或重排序质量。
