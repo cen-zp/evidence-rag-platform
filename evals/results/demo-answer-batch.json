@@ -1,0 +1,31 @@
+{
+  "dataset": "demo-acceptance.jsonl",
+  "purpose": "demonstration_only_not_for_resume_metrics",
+  "case_count": 20,
+  "success_count": 20,
+  "cited_success_count": 20,
+  "mean_model_latency_ms": 3646.35,
+  "p95_model_latency_ms": 4377,
+  "cases": [
+    {"id":"demo-01","status":200,"latency_ms":2655,"citations":1},
+    {"id":"demo-02","status":200,"latency_ms":3303,"citations":2},
+    {"id":"demo-03","status":200,"latency_ms":3853,"citations":2},
+    {"id":"demo-04","status":200,"latency_ms":3174,"citations":1},
+    {"id":"demo-05","status":200,"latency_ms":3063,"citations":1},
+    {"id":"demo-06","status":200,"latency_ms":2583,"citations":1},
+    {"id":"demo-07","status":200,"latency_ms":3700,"citations":2},
+    {"id":"demo-08","status":200,"latency_ms":3137,"citations":2},
+    {"id":"demo-09","status":200,"latency_ms":4259,"citations":2},
+    {"id":"demo-10","status":200,"latency_ms":4377,"citations":1},
+    {"id":"demo-11","status":200,"latency_ms":4016,"citations":4},
+    {"id":"demo-12","status":200,"latency_ms":3812,"citations":2},
+    {"id":"demo-13","status":200,"latency_ms":2950,"citations":2},
+    {"id":"demo-14","status":200,"latency_ms":3232,"citations":2},
+    {"id":"demo-15","status":200,"latency_ms":3929,"citations":1},
+    {"id":"demo-16","status":200,"latency_ms":3576,"citations":1},
+    {"id":"demo-17","status":200,"latency_ms":3746,"citations":2},
+    {"id":"demo-18","status":200,"latency_ms":2828,"citations":2},
+    {"id":"demo-19","status":200,"latency_ms":4076,"citations":2},
+    {"id":"demo-20","status":200,"latency_ms":6658,"citations":2}
+  ]
+}

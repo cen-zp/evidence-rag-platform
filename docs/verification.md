@@ -108,3 +108,11 @@
 - 数据卷：上传文件由 API/Worker 共用 `uploads_data`；本地模型缓存使用 `model_cache`，避免容器重建后重复下载。
 
 结论：完整本地交付栈已真实启动并通过 Web/API/CORS 冒烟验证。本次没有上传文件、执行检索或调用 DeepSeek，因此不构成模型效果、异步处理吞吐或端到端问答质量结论。
+
+## 2026-07-14：验收演示题集真实证据问答批次（非简历指标）
+
+- 题集：[evals/demo-acceptance.jsonl](../evals/demo-acceptance.jsonl)，20 条问题；语料和题目均来自项目自身验收文档。
+- 环境：容器化 BGE、BM25、RRF、Reranker 与 DeepSeek `deepseek-v4-flash`；首次本地模型下载完成后执行。
+- 结果：20/20 HTTP 200，20/20 返回至少一条服务端校验引用；平均模型调用耗时 `3646.4 ms`，P95 `4377 ms`。逐题非敏感汇总见 [demo-answer-batch.json](../evals/results/demo-answer-batch.json)。
+
+结论：批量真实模型调用、证据检索和服务端引用校验已连通。该题集与知识库存在同源偏差，且没有对答案或引用做独立人工判分；**不得**用于简历、公开准确率结论、模型选型或成本结论。正式答案级评测必须使用独立题集、人工评审和明确样本量。
