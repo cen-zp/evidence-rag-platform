@@ -42,3 +42,11 @@ The panel is part of the product contract. It includes compact knowledge-base
 selection, document processing status, and an explicit empty state until a
 grounded answer exists. When citations exist, render only server-validated
 document snippets and locations; never simulate sources.
+
+## Evaluation panel
+
+Keep retrieval evaluation close to the document status: users add a question
+and the expected source filename, then inspect Recall@K, MRR, and local
+retrieval latency. Treat every result as scoped to its current knowledge base,
+case set, and retrieval configuration; do not present a small smoke run as a
+general performance claim.

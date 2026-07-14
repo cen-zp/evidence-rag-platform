@@ -95,6 +95,19 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
 .document-status.failed { border-color: rgb(220 109 100 / 40%); color: #f5aaa2; }
 .document-status.processing { color: #bac3ff; }
 .panel-empty { margin: 15px 0 0; color: var(--subtle); font-size: 13px; line-height: 1.55; }
+.evaluation-section { padding: 28px 0; border-bottom: 1px solid var(--border); }
+.evaluation-section .eyebrow { margin-bottom: 10px; }
+.evaluation-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; margin-top: 16px; }
+.evaluation-form input { min-width: 0; border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; color: var(--ink); background: var(--surface); font-size: 12px; }
+.evaluation-form input:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(94 106 210 / 16%); }
+.evaluation-form button { border: 1px solid var(--border-strong); border-radius: 7px; padding: 8px 10px; color: var(--ink); background: transparent; font-size: 12px; font-weight: 600; }
+.evaluation-form button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-hover); }
+.evaluation-form button:disabled { opacity: .45; }
+.evaluation-summary { margin: 12px 0 0; color: var(--subtle); font-size: 12px; line-height: 1.55; }
+.evaluation-report { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 16px 0 0; }
+.evaluation-report div { padding: 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
+.evaluation-report dt { color: var(--subtle); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+.evaluation-report dd { margin: 5px 0 0; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 600; }
 .evidence-section { padding: 28px 0 0; }
 .evidence-section .eyebrow { margin-bottom: 10px; }
 .evidence-empty { padding: 24px 0 28px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
@@ -120,4 +133,5 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
   .status { font-size: 11px; }
   .knowledge-context { align-items: flex-start; flex-wrap: wrap; }
   .knowledge-context select { max-width: 100%; flex: 1 1 220px; }
+  .evaluation-form { grid-template-columns: 1fr; }
 }

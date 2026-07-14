@@ -37,6 +37,24 @@ export type DocumentRecord = {
   updated_at: string;
 };
 
+export type EvaluationCase = {
+  id: string;
+  knowledge_base_id: string;
+  question: string;
+  expected_filenames: string[];
+  reference_answer: string | null;
+  created_at: string;
+};
+
+export type RetrievalEvaluationReport = {
+  case_count: number;
+  top_k: number;
+  recall_at_k: number;
+  mean_reciprocal_rank: number;
+  mean_latency_ms: number;
+  p95_latency_ms: number;
+};
+
 export class ChatApiError extends Error {
   constructor(message: string) {
     super(message);
@@ -138,5 +156,52 @@ export async function uploadDocument(
   } catch (error) {
     if (error instanceof ChatApiError) throw error;
     throw new ChatApiError("无法上传文档。请确认 API、Redis 已启动后重试。");
+  }
+}
+
+export async function getEvaluationCases(knowledgeBaseId: string): Promise<EvaluationCase[]> {
+  try {
+    return await readJson<EvaluationCase[]>(
+      await fetch(`${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/evaluation-cases`),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法加载评测案例。请确认 API 已启动。");
+  }
+}
+
+export async function createEvaluationCase(
+  knowledgeBaseId: string,
+  question: string,
+  expectedFilename: string,
+): Promise<EvaluationCase> {
+  try {
+    return await readJson<EvaluationCase>(
+      await fetch(`${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/evaluation-cases`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, expected_filenames: [expectedFilename] }),
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法保存评测案例。请确认 API 已启动。");
+  }
+}
+
+export async function runRetrievalEvaluation(
+  knowledgeBaseId: string,
+  topK = 5,
+): Promise<RetrievalEvaluationReport> {
+  try {
+    return await readJson<RetrievalEvaluationReport>(
+      await fetch(
+        `${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/evaluations/retrieval?top_k=${topK}`,
+        { method: "POST" },
+      ),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法运行评测。请确认 API 与 Qdrant 已启动。");
   }
 }

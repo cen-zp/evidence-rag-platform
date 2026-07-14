@@ -6,11 +6,16 @@ import {
   ChatApiError,
   Citation,
   DocumentRecord,
+  EvaluationCase,
   KnowledgeBase,
+  RetrievalEvaluationReport,
+  createEvaluationCase,
   createKnowledgeBase,
   getApiHealth,
   getDocuments,
+  getEvaluationCases,
   getKnowledgeBases,
+  runRetrievalEvaluation,
   sendChatMessage,
   uploadDocument,
 } from "../lib/chat";
@@ -44,7 +49,13 @@ export default function ChatPage() {
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   const [selectedKnowledgeBaseId, setSelectedKnowledgeBaseId] = useState("");
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [evaluationCases, setEvaluationCases] = useState<EvaluationCase[]>([]);
+  const [evaluationReport, setEvaluationReport] = useState<RetrievalEvaluationReport | null>(null);
   const [newKnowledgeBaseName, setNewKnowledgeBaseName] = useState("");
+  const [evaluationQuestion, setEvaluationQuestion] = useState("");
+  const [expectedFilename, setExpectedFilename] = useState("");
+  const [isSavingEvaluationCase, setIsSavingEvaluationCase] = useState(false);
+  const [isRunningEvaluation, setIsRunningEvaluation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedKnowledgeBase = knowledgeBases.find(
@@ -63,6 +74,14 @@ export default function ChatPage() {
       setDocuments(await getDocuments(knowledgeBaseId));
     } catch (loadError) {
       setError(loadError instanceof ChatApiError ? loadError.message : "无法读取文档状态。");
+    }
+  }, []);
+
+  const loadEvaluationCases = useCallback(async (knowledgeBaseId: string) => {
+    try {
+      setEvaluationCases(await getEvaluationCases(knowledgeBaseId));
+    } catch (loadError) {
+      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取评测案例。");
     }
   }, []);
 
@@ -100,12 +119,15 @@ export default function ChatPage() {
       return;
     }
 
-    async function refreshDocuments() {
-      await loadDocuments(selectedKnowledgeBaseId);
+    async function refreshKnowledgeBaseData() {
+      await Promise.all([
+        loadDocuments(selectedKnowledgeBaseId),
+        loadEvaluationCases(selectedKnowledgeBaseId),
+      ]);
     }
 
-    void refreshDocuments();
-  }, [loadDocuments, selectedKnowledgeBaseId]);
+    void refreshKnowledgeBaseData();
+  }, [loadDocuments, loadEvaluationCases, selectedKnowledgeBaseId]);
 
   useEffect(() => {
     if (!selectedKnowledgeBaseId || !hasPendingDocuments) return;
@@ -184,6 +206,41 @@ export default function ChatPage() {
     }
   }
 
+  async function submitEvaluationCase(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const question = evaluationQuestion.trim();
+    const filename = expectedFilename.trim();
+    if (!question || !filename || !selectedKnowledgeBaseId || isSavingEvaluationCase) return;
+
+    setIsSavingEvaluationCase(true);
+    setError(null);
+    try {
+      const evaluationCase = await createEvaluationCase(selectedKnowledgeBaseId, question, filename);
+      setEvaluationCases((current) => [evaluationCase, ...current]);
+      setEvaluationQuestion("");
+      setExpectedFilename("");
+      setEvaluationReport(null);
+    } catch (requestError) {
+      setError(requestError instanceof ChatApiError ? requestError.message : "无法保存评测案例。");
+    } finally {
+      setIsSavingEvaluationCase(false);
+    }
+  }
+
+  async function runEvaluation() {
+    if (!selectedKnowledgeBaseId || !evaluationCases.length || isRunningEvaluation) return;
+
+    setIsRunningEvaluation(true);
+    setError(null);
+    try {
+      setEvaluationReport(await runRetrievalEvaluation(selectedKnowledgeBaseId));
+    } catch (requestError) {
+      setError(requestError instanceof ChatApiError ? requestError.message : "无法运行评测。");
+    } finally {
+      setIsRunningEvaluation(false);
+    }
+  }
+
   const scopeLabel = selectedKnowledgeBase ? "当前：证据问答" : "当前：直接模型调用";
 
   return (
@@ -216,6 +273,8 @@ export default function ChatPage() {
               value={selectedKnowledgeBaseId}
               onChange={(event) => {
                 setDocuments([]);
+                setEvaluationCases([]);
+                setEvaluationReport(null);
                 setSelectedKnowledgeBaseId(event.target.value);
               }}
             >
@@ -341,10 +400,88 @@ export default function ChatPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="panel-empty">上传 Markdown 或 PDF 后，Worker 会在此更新处理状态。</p>
+                <p className="panel-empty">上传 Markdown、PDF 或 DOCX 后，Worker 会在此更新处理状态。</p>
               )
             ) : (
               <p className="panel-empty">新建或选择知识库后即可上传资料并启用证据问答。</p>
+            )}
+          </section>
+
+          <section className="evaluation-section" aria-label="检索评测">
+            <p className="eyebrow">RETRIEVAL EVALUATION</p>
+            <div className="section-heading">
+              <h3>检索评测</h3>
+              <button
+                type="button"
+                className="text-button"
+                disabled={!selectedKnowledgeBase || !evaluationCases.length || isRunningEvaluation}
+                onClick={runEvaluation}
+              >
+                {isRunningEvaluation ? "评测中" : "运行评测"}
+              </button>
+            </div>
+            {selectedKnowledgeBase ? (
+              <>
+                <form className="evaluation-form" onSubmit={submitEvaluationCase}>
+                  <label className="sr-only" htmlFor="evaluation-question">
+                    评测问题
+                  </label>
+                  <input
+                    id="evaluation-question"
+                    value={evaluationQuestion}
+                    onChange={(event) => setEvaluationQuestion(event.target.value)}
+                    placeholder="评测问题"
+                    maxLength={2_000}
+                  />
+                  <label className="sr-only" htmlFor="expected-filename">
+                    预期命中文件名
+                  </label>
+                  <input
+                    id="expected-filename"
+                    value={expectedFilename}
+                    onChange={(event) => setExpectedFilename(event.target.value)}
+                    placeholder="预期命中的文件名"
+                    list="ready-document-filenames"
+                    maxLength={512}
+                  />
+                  <datalist id="ready-document-filenames">
+                    {documents
+                      .filter((document) => document.status === "ready")
+                      .map((document) => <option key={document.id} value={document.filename} />)}
+                  </datalist>
+                  <button
+                    type="submit"
+                    disabled={!evaluationQuestion.trim() || !expectedFilename.trim() || isSavingEvaluationCase}
+                  >
+                    {isSavingEvaluationCase ? "保存中" : "新增案例"}
+                  </button>
+                </form>
+                <p className="evaluation-summary">
+                  已保存 {evaluationCases.length} 条案例。指标只反映当前题集和当前检索配置。
+                </p>
+                {evaluationReport && (
+                  <dl className="evaluation-report">
+                    <div>
+                      <dt>Recall@{evaluationReport.top_k}</dt>
+                      <dd>{(evaluationReport.recall_at_k * 100).toFixed(1)}%</dd>
+                    </div>
+                    <div>
+                      <dt>MRR</dt>
+                      <dd>{evaluationReport.mean_reciprocal_rank.toFixed(3)}</dd>
+                    </div>
+                    <div>
+                      <dt>平均检索</dt>
+                      <dd>{evaluationReport.mean_latency_ms.toFixed(1)} ms</dd>
+                    </div>
+                    <div>
+                      <dt>P95 检索</dt>
+                      <dd>{evaluationReport.p95_latency_ms.toFixed(1)} ms</dd>
+                    </div>
+                  </dl>
+                )}
+              </>
+            ) : (
+              <p className="panel-empty">选择知识库后，可积累题集并运行本地检索评测。</p>
             )}
           </section>
 
