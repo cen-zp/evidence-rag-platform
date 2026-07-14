@@ -327,7 +327,7 @@ export default function ChatPage() {
               ref={fileInputRef}
               className="sr-only"
               type="file"
-              accept=".md,.pdf,text/markdown,text/plain,application/pdf"
+              accept=".md,.pdf,.docx,text/markdown,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               onChange={handleUpload}
             />
             {selectedKnowledgeBase ? (

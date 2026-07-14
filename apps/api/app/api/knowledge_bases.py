@@ -19,6 +19,7 @@ READ_CHUNK_BYTES = 1024 * 1024
 SUPPORTED_FILE_TYPES = {
     ".md": {"text/markdown", "text/plain"},
     ".pdf": {"application/pdf"},
+    ".docx": {"application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
 }
 
 
@@ -49,7 +50,7 @@ def validate_upload(file: UploadFile) -> tuple[str, str]:
     if allowed_mime_types is None:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Only Markdown (.md) and PDF (.pdf) files are supported",
+            detail="Only Markdown (.md), PDF (.pdf), and DOCX (.docx) files are supported",
         )
 
     mime_type = file.content_type or ""

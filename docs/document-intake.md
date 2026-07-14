@@ -1,15 +1,15 @@
 # M2-A：文档接收契约
 
-当前 API 支持创建知识库、上传 Markdown/PDF 文件并查询文档状态。
+当前 API 支持创建知识库、上传 Markdown/PDF/DOCX 文件并查询文档状态。
 
 ## 当前端点
 
 - `POST /api/knowledge-bases`：创建本地单用户知识库。
 - `GET /api/knowledge-bases`：列出知识库。
-- `POST /api/knowledge-bases/{kb_id}/documents`：上传单个 `.md` 或 `.pdf` 文件。
+- `POST /api/knowledge-bases/{kb_id}/documents`：上传单个 `.md`、`.pdf` 或 `.docx` 文件。
 - `GET /api/knowledge-bases/{kb_id}/documents`：查看该知识库的文档状态。
 
-上传接受 `text/markdown`、`text/plain`（仅 `.md`）和 `application/pdf`，单个文件上限 10 MB。文件以 `uploads/<document_id>/<filename>` 保存；`uploads/` 被 Git 忽略。
+上传接受 `text/markdown`、`text/plain`（仅 `.md`）、`application/pdf` 和 DOCX 标准 MIME 类型，单个文件上限 10 MB。文件以 `uploads/<document_id>/<filename>` 保存；`uploads/` 被 Git 忽略。
 
 ## 状态边界
 

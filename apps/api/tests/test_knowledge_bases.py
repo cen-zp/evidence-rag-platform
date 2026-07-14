@@ -107,7 +107,29 @@ def test_upload_rejects_unsupported_file_type(client: TestClient) -> None:
     )
 
     assert response.status_code == 415
-    assert response.json()["detail"] == "Only Markdown (.md) and PDF (.pdf) files are supported"
+    assert response.json()["detail"] == (
+        "Only Markdown (.md), PDF (.pdf), and DOCX (.docx) files are supported"
+    )
+
+
+def test_upload_accepts_docx_content_type(client: TestClient) -> None:
+    knowledge_base = create_knowledge_base(client)
+
+    response = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/documents",
+        files={
+            "file": (
+                "handbook.docx",
+                b"docx content is parsed by the worker",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["mime_type"] == (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
 
 
 def test_upload_rejects_file_larger_than_limit(client: TestClient, tmp_path) -> None:

@@ -9,10 +9,12 @@ pending -> processing -> ready
 
 Worker 当前能够：
 
-1. 提取 UTF-8 Markdown 或 PDF 的可读文本；PDF chunk 保留页码。
+1. 提取 UTF-8 Markdown、PDF 或 DOCX 的可读文本；PDF chunk 保留页码。
 2. 按 800 字符、120 字符重叠切分文本。
 3. 将 chunk 元数据写入 PostgreSQL，并以同一 chunk UUID 写入 Qdrant。
 4. 使用 `knowledge_base_id` 与 `document_id` 作为 Qdrant payload，供后续强制隔离过滤。
+
+DOCX 当前提取普通段落和标题文本，不保留 Word 的页码、表格、批注或图片内容；这些内容不能被当作已支持的证据来源。
 
 ## 运行方式
 

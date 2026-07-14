@@ -20,13 +20,13 @@ The current schema and PostgreSQL/Qdrant ID contract are documented in `docs/dat
 
 ## Document intake and processing
 
-The M2-A endpoints accept Markdown and PDF uploads up to 10 MB and create `pending` document records. M2-B submits processing work to Redis/ARQ; run this in a separate terminal from `apps/api`:
+The M2-A endpoints accept Markdown, PDF, and DOCX uploads up to 10 MB and create `pending` document records. M2-B submits processing work to Redis/ARQ; run this in a separate terminal from `apps/api`:
 
 ```bash
 uv run arq app.workers.document.WorkerSettings
 ```
 
-The worker parses Markdown/PDF files, creates chunks, and writes the local vector baseline to Qdrant. It changes the document state to `ready` or `failed`; see [../../docs/document-intake.md](../../docs/document-intake.md) and [../../docs/document-processing.md](../../docs/document-processing.md) for the current boundary. The hash-vector baseline is only for local pipeline verification, not semantic-retrieval quality.
+The worker parses Markdown/PDF/DOCX files, creates chunks, and writes the local vector baseline to Qdrant. It changes the document state to `ready` or `failed`; see [../../docs/document-intake.md](../../docs/document-intake.md) and [../../docs/document-processing.md](../../docs/document-processing.md) for the current boundary. The hash-vector baseline is only for local pipeline verification, not semantic-retrieval quality.
 
 ## Retrieval
 

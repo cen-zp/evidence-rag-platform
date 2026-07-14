@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from docx import Document as DocxDocument
 from pypdf import PdfReader
 
 
@@ -19,6 +20,8 @@ def parse_document(path: Path, mime_type: str) -> list[ParsedPage]:
         return [_parse_markdown(path)]
     if mime_type == "application/pdf":
         return _parse_pdf(path)
+    if mime_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        return [_parse_docx(path)]
     raise DocumentParsingError(f"Unsupported document type: {mime_type}")
 
 
@@ -44,3 +47,13 @@ def _parse_pdf(path: Path) -> list[ParsedPage]:
         raise
     except Exception as error:
         raise DocumentParsingError("PDF text extraction failed") from error
+
+
+def _parse_docx(path: Path) -> ParsedPage:
+    try:
+        document = DocxDocument(path)
+        paragraphs = (paragraph.text for paragraph in document.paragraphs)
+        text = "\n".join(paragraph for paragraph in paragraphs if paragraph.strip())
+        return ParsedPage(text=text, page_number=None)
+    except Exception as error:
+        raise DocumentParsingError("DOCX text extraction failed") from error
