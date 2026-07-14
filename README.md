@@ -71,3 +71,7 @@ pnpm dev
 在浏览器打开 `http://localhost:3000`。前端只读取 `NEXT_PUBLIC_API_BASE_URL`；DeepSeek 密钥仍只允许放在项目根目录的 `.env`。
 
 页面顶部会请求 `GET /health` 显示 API 已连接或未连接；它只表示 API 服务可达，不表示模型密钥已经配置成功。
+
+## 当前数据层里程碑
+
+后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式；尚未实现文件上传、解析、Embedding 或检索。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
