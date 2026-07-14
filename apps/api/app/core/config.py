@@ -16,8 +16,10 @@ class Settings(BaseSettings):
     )
     redis_url: str = "redis://localhost:6379/0"
     qdrant_url: str = "http://localhost:6333"
-    qdrant_collection: str = "document_chunks"
-    embedding_dimension: int = 384
+    qdrant_collection: str = "document_chunks_bge_small_zh_v1_5"
+    embedding_model: str = "BAAI/bge-small-zh-v1.5"
+    embedding_dimension: int = 512
+    embedding_device: str = "cpu"
     deepseek_api_key: SecretStr | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_chat_model: str = "deepseek-v4-flash"

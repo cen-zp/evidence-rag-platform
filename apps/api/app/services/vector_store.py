@@ -73,6 +73,8 @@ class QdrantVectorStore:
         query_vector: list[float],
         limit: int,
     ) -> list[VectorSearchHit]:
+        if not self._client.collection_exists(self._collection_name):
+            return []
         response = self._client.query_points(
             collection_name=self._collection_name,
             query=query_vector,

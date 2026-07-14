@@ -6,9 +6,9 @@ from app.core.config import get_settings
 from app.services.document_processing import create_document_processor
 
 
-async def process_document(ctx: dict, document_id: str) -> None:
+async def process_document(ctx: dict, document_id: str, force: bool = False) -> None:
     processor = ctx.get("document_processor") or create_document_processor()
-    processor.process(UUID(document_id))
+    processor.process(UUID(document_id), force=force)
 
 
 class WorkerSettings:

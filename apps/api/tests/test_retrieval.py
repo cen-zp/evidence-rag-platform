@@ -99,7 +99,7 @@ def test_retriever_enforces_knowledge_base_and_ready_document_filters() -> None:
     retriever = KnowledgeBaseRetriever(
         session_factory=session_factory,
         vector_store=vector_store,
-        embed=lambda query: [1.0, 0.0],
+        embedding_provider=FakeEmbeddingProvider(),
     )
 
     hits = retriever.search(target_knowledge_base_id, "target question", top_k=3)
@@ -111,6 +111,16 @@ def test_retriever_enforces_knowledge_base_and_ready_document_filters() -> None:
 
     Base.metadata.drop_all(engine)
     engine.dispose()
+
+
+class FakeEmbeddingProvider:
+    dimension = 2
+
+    def embed_query(self, text: str) -> list[float]:
+        return [1.0, 0.0]
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [[1.0, 0.0] for _ in texts]
 
 
 def test_bm25_ranks_matching_chunk_above_unrelated_chunk() -> None:

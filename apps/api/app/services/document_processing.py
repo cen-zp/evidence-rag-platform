@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from pathlib import Path
 from uuid import UUID
 
@@ -11,7 +10,7 @@ from app.db.session import get_session_factory
 from app.models import Document, DocumentChunk, DocumentStatus
 from app.services.chunking import chunk_pages
 from app.services.document_parsing import parse_document
-from app.services.local_hash_embedding import LocalHashEmbedding
+from app.services.embedding import EmbeddingProvider, get_embedding_provider
 from app.services.vector_store import QdrantVectorStore
 
 
@@ -20,19 +19,19 @@ class DocumentProcessor:
         self,
         session_factory: sessionmaker[Session],
         vector_store: QdrantVectorStore,
-        embed: Callable[[str], list[float]],
+        embedding_provider: EmbeddingProvider,
         uploads_root: Path,
     ) -> None:
         self._session_factory = session_factory
         self._vector_store = vector_store
-        self._embed = embed
+        self._embedding_provider = embedding_provider
         self._uploads_root = uploads_root
 
-    def process(self, document_id: UUID) -> None:
+    def process(self, document_id: UUID, force: bool = False) -> None:
         try:
             with self._session_factory() as session:
                 document = session.get(Document, document_id)
-                if document is None or document.status == DocumentStatus.READY:
+                if document is None or (document.status == DocumentStatus.READY and not force):
                     return
 
                 document.status = DocumentStatus.PROCESSING
@@ -62,7 +61,9 @@ class DocumentProcessor:
                 session.add_all(chunks)
                 session.flush()
 
-                vectors = [self._embed(chunk.content) for chunk in chunks]
+                vectors = self._embedding_provider.embed_documents(
+                    [chunk.content for chunk in chunks]
+                )
                 self._vector_store.replace_document_chunks(chunks, vectors)
                 document.status = DocumentStatus.READY
                 session.commit()
@@ -86,7 +87,6 @@ class DocumentProcessor:
 
 def create_document_processor() -> DocumentProcessor:
     settings = get_settings()
-    embedder = LocalHashEmbedding(settings.embedding_dimension)
     vector_store = QdrantVectorStore(
         client=QdrantClient(url=settings.qdrant_url),
         collection_name=settings.qdrant_collection,
@@ -95,6 +95,6 @@ def create_document_processor() -> DocumentProcessor:
     return DocumentProcessor(
         session_factory=get_session_factory(),
         vector_store=vector_store,
-        embed=embedder.embed,
+        embedding_provider=get_embedding_provider(),
         uploads_root=PROJECT_ROOT / "uploads",
     )

@@ -70,7 +70,7 @@ def test_processor_marks_markdown_ready_after_chunking_and_indexing(document_fix
     processor = DocumentProcessor(
         session_factory=session_factory,
         vector_store=vector_store,
-        embed=lambda text: [float(len(text)), 0.0],
+        embedding_provider=FakeEmbeddingProvider(),
         uploads_root=source_directory.parent,
     )
 
@@ -102,7 +102,7 @@ def test_processor_marks_document_failed_when_markdown_is_not_utf8(document_fixt
     processor = DocumentProcessor(
         session_factory=session_factory,
         vector_store=vector_store,
-        embed=lambda text: [0.0, 1.0],
+        embedding_provider=FakeEmbeddingProvider(),
         uploads_root=source_directory.parent,
     )
 
@@ -118,3 +118,35 @@ def test_processor_marks_document_failed_when_markdown_is_not_utf8(document_fixt
     assert document.error_message == "Markdown files must be UTF-8 encoded"
     assert chunks == []
     assert vector_store.deleted == [document_id]
+
+
+def test_processor_reindexes_ready_document_when_forced(document_fixture) -> None:
+    session_factory, document_id, source_directory = document_fixture
+    (source_directory / "notes.md").write_text("语义检索 " * 300, encoding="utf-8")
+    with session_factory() as session:
+        document = session.get(Document, document_id)
+        assert document is not None
+        document.status = DocumentStatus.READY
+        session.commit()
+
+    vector_store = FakeVectorStore()
+    processor = DocumentProcessor(
+        session_factory=session_factory,
+        vector_store=vector_store,
+        embedding_provider=FakeEmbeddingProvider(),
+        uploads_root=source_directory.parent,
+    )
+
+    processor.process(document_id, force=True)
+
+    assert len(vector_store.indexed) == 1
+
+
+class FakeEmbeddingProvider:
+    dimension = 2
+
+    def embed_query(self, text: str) -> list[float]:
+        return [float(len(text)), 0.0]
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [[float(len(text)), 0.0] for text in texts]

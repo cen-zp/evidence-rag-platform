@@ -31,8 +31,15 @@ uv run arq app.workers.document.WorkerSettings
 `POST /api/knowledge-bases/{kb_id}/documents/{document_id}/retry` 重新入队。该接口只接受
 `failed` 状态，避免为仍在排队或处理中任务重复投递；源文件缺失时会明确拒绝重试。
 
-## 向量基线的真实边界
+## 本地语义 Embedding
 
-当前使用 `LocalHashEmbedding`：它把英文词和中文字符稳定映射为 384 维归一化向量，因此可完全离线地验证 Qdrant 写入、ID 契约和后续检索链路。
+当前使用本地 `BAAI/bge-small-zh-v1.5` 模型生成 512 维归一化向量，默认在 CPU 上运行。模型首次启动会下载到本机 Hugging Face 缓存；之后不需要为向量调用支付 API 费用。
 
-它是**词项/字符匹配基线，不是语义 Embedding 模型**。不能据此宣称语义检索效果；正式评测前必须替换为可配置的真实 Embedding 提供方，并在同一评测集上记录效果、延迟与成本。
+模型或向量维度变更会使用新的 Qdrant collection，防止不同维度的向量混用。现有 `ready` 文档不会自动改写；确认模型可用后，使用以下命令显式重建某个知识库：
+
+```bash
+cd apps/api
+uv run python -m app.reindex --knowledge-base-id <知识库 UUID>
+```
+
+该命令会重新解析该知识库内所有 `ready` 文档并写入当前 collection。正式效果仍需在独立题集上记录 Recall@K、MRR、延迟和模型下载/推理资源取舍，不能凭单个演示问题宣称准确率。

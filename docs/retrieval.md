@@ -36,4 +36,4 @@ RRF 只使用各自的**排名**而不是原始分数，因此可以避免直接
 
 ## 当前边界
 
-检索向量仍是本地哈希基线，分数只说明字符/词项重合度，不能作为语义质量指标或固定拒答阈值。BM25 目前在应用进程中遍历当前知识库的 `ready` chunk，适合本地 MVP 和建立效果基线；文档量增长后应替换为 PostgreSQL 全文检索或 Qdrant sparse vector。该检索端点本身不调用 DeepSeek；它已被证据问答链路使用，具体的上下文约束和引用校验见 [grounded-chat.md](grounded-chat.md)。
+Dense 检索使用本地 `BAAI/bge-small-zh-v1.5` 生成 512 维归一化语义向量；RRF 分数本身仍不是概率或可靠置信度，不能直接作为固定拒答阈值。BM25 目前在应用进程中遍历当前知识库的 `ready` chunk，适合本地 MVP 和建立效果基线；文档量增长后应替换为 PostgreSQL 全文检索或 Qdrant sparse vector。该检索端点本身不调用 DeepSeek；它已被证据问答链路使用，具体的上下文约束和引用校验见 [grounded-chat.md](grounded-chat.md)。

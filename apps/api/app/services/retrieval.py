@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
 from uuid import UUID
@@ -11,7 +10,7 @@ from app.core.config import get_settings
 from app.db.session import get_session_factory
 from app.models import Document, DocumentChunk, DocumentStatus
 from app.services.bm25 import rank_bm25
-from app.services.local_hash_embedding import LocalHashEmbedding
+from app.services.embedding import EmbeddingProvider, get_embedding_provider
 from app.services.vector_store import QdrantVectorStore
 
 
@@ -26,16 +25,16 @@ class KnowledgeBaseRetriever:
         self,
         session_factory: sessionmaker[Session],
         vector_store: QdrantVectorStore,
-        embed: Callable[[str], list[float]],
+        embedding_provider: EmbeddingProvider,
     ) -> None:
         self._session_factory = session_factory
         self._vector_store = vector_store
-        self._embed = embed
+        self._embedding_provider = embedding_provider
 
     def search(self, knowledge_base_id: UUID, query: str, top_k: int) -> list[RetrievalHit]:
         vector_hits = self._vector_store.search(
             knowledge_base_id=knowledge_base_id,
-            query_vector=self._embed(query),
+            query_vector=self._embedding_provider.embed_query(query),
             limit=max(top_k * 4, 20),
         )
         with self._session_factory() as session:
@@ -94,5 +93,5 @@ def get_knowledge_base_retriever() -> KnowledgeBaseRetriever:
             collection_name=settings.qdrant_collection,
             vector_size=settings.embedding_dimension,
         ),
-        embed=LocalHashEmbedding(settings.embedding_dimension).embed,
+        embedding_provider=get_embedding_provider(),
     )
