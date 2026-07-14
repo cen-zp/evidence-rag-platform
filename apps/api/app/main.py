@@ -12,6 +12,7 @@ from app.schemas.chat import ChatCitation, ChatRequest, ChatResponse
 from app.services.deepseek import (
     DeepSeekInvalidCitationError,
     DeepSeekNotConfiguredError,
+    DeepSeekProviderError,
     DeepSeekService,
     EvidencePrompt,
 )
@@ -82,6 +83,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         "Add DEEPSEEK_API_KEY to the local .env file."
                     ),
                 ) from error
+            except DeepSeekProviderError as error:
+                raise HTTPException(status_code=error.status_code, detail=error.detail) from error
             except DeepSeekInvalidCitationError:
                 return ChatResponse(
                     answer="我无法根据当前检索到的资料生成带有效引用的回答。",
@@ -117,8 +120,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     "AI provider is not configured. Add DEEPSEEK_API_KEY to the local .env file."
                 ),
             ) from error
-
-        return await service.chat(request.message)
+        try:
+            return await service.chat(request.message)
+        except DeepSeekProviderError as error:
+            raise HTTPException(status_code=error.status_code, detail=error.detail) from error
 
     return app
 
