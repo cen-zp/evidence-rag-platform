@@ -7,7 +7,7 @@ from uuid import UUID
 from openai import APIConnectionError, APIStatusError, APITimeoutError, AsyncOpenAI
 
 from app.core.config import Settings
-from app.schemas.chat import ChatResponse
+from app.schemas.chat import ChatHistoryMessage, ChatResponse
 
 
 class DeepSeekNotConfiguredError(RuntimeError):
@@ -54,7 +54,7 @@ class DeepSeekService:
             max_retries=0,
         )
 
-    async def chat(self, message: str) -> ChatResponse:
+    async def chat(self, message: str, history: list[ChatHistoryMessage]) -> ChatResponse:
         started_at = perf_counter()
         completion = await self._create_completion(
             model=self._model,
@@ -65,6 +65,7 @@ class DeepSeekService:
                         "You are a concise assistant for an evidence-based knowledge platform."
                     ),
                 },
+                *[{"role": item.role, "content": item.content} for item in history],
                 {"role": "user", "content": message},
             ],
         )
@@ -82,6 +83,7 @@ class DeepSeekService:
         self,
         message: str,
         evidence: list[EvidencePrompt],
+        history: list[ChatHistoryMessage],
     ) -> GroundedModelResponse:
         started_at = perf_counter()
         evidence_text = "\n\n".join(
@@ -100,6 +102,7 @@ class DeepSeekService:
                         "evidence is insufficient, return an empty answer and empty citation_ids."
                     ),
                 },
+                *[{"role": item.role, "content": item.content} for item in history],
                 {
                     "role": "user",
                     "content": f"Question:\n{message}\n\nEvidence:\n{evidence_text}",

@@ -1,11 +1,18 @@
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
+class ChatHistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=2_000)
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=8_000)
     knowledge_base_id: UUID | None = None
+    history: list[ChatHistoryMessage] = Field(default_factory=list, max_length=6)
 
 
 class ChatCitation(BaseModel):

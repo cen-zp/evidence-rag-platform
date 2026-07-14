@@ -14,6 +14,11 @@ export type ChatResponse = {
   citations: Citation[];
 };
 
+export type ChatHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export type HealthResponse = {
   status: string;
   environment: string;
@@ -89,13 +94,14 @@ export async function getApiHealth(): Promise<HealthResponse> {
 export async function sendChatMessage(
   message: string,
   knowledgeBaseId?: string,
+  history: ChatHistoryMessage[] = [],
 ): Promise<ChatResponse> {
   try {
     return await readJson<ChatResponse>(
       await fetch(`${apiBaseUrl}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, knowledge_base_id: knowledgeBaseId ?? null }),
+        body: JSON.stringify({ message, knowledge_base_id: knowledgeBaseId ?? null, history }),
       }),
     );
   } catch (error) {

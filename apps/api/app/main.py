@@ -76,6 +76,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         EvidencePrompt(chunk_id=hit.chunk.id, content=hit.chunk.content)
                         for hit in hits
                     ],
+                    request.history,
                 )
             except DeepSeekNotConfiguredError as error:
                 raise HTTPException(
@@ -123,7 +124,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 ),
             ) from error
         try:
-            return await service.chat(request.message)
+            return await service.chat(request.message, request.history)
         except DeepSeekProviderError as error:
             raise HTTPException(status_code=error.status_code, detail=error.detail) from error
 

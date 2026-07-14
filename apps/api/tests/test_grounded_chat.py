@@ -28,9 +28,13 @@ class SuccessfulGroundedService:
     def __init__(self, chunk_id: UUID) -> None:
         self.chunk_id = chunk_id
 
-    async def chat_with_evidence(self, message, evidence) -> GroundedModelResponse:
+    async def chat_with_evidence(self, message, evidence, history) -> GroundedModelResponse:
         assert message == "What is the release process?"
         assert [item.chunk_id for item in evidence] == [self.chunk_id]
+        assert [(item.role, item.content) for item in history] == [
+            ("user", "Tell me about the handbook."),
+            ("assistant", "It contains the release process."),
+        ]
         return GroundedModelResponse(
             answer="Use the documented release process.",
             citation_ids=[self.chunk_id],
@@ -40,7 +44,7 @@ class SuccessfulGroundedService:
 
 
 class InvalidCitationService:
-    async def chat_with_evidence(self, message, evidence) -> GroundedModelResponse:
+    async def chat_with_evidence(self, message, evidence, history) -> GroundedModelResponse:
         raise DeepSeekInvalidCitationError("The model invented a citation")
 
 
@@ -99,6 +103,10 @@ def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
         json={
             "message": "What is the release process?",
             "knowledge_base_id": str(knowledge_base_id),
+            "history": [
+                {"role": "user", "content": "Tell me about the handbook."},
+                {"role": "assistant", "content": "It contains the release process."},
+            ],
         },
     )
 

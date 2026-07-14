@@ -4,6 +4,7 @@ import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useSta
 
 import {
   ChatApiError,
+  ChatHistoryMessage,
   Citation,
   DocumentRecord,
   EvaluationCase,
@@ -149,7 +150,11 @@ export default function ChatPage() {
     setIsSending(true);
 
     try {
-      const result = await sendChatMessage(message, selectedKnowledgeBaseId || undefined);
+      const history: ChatHistoryMessage[] = messages.slice(-6).map((item) => ({
+        role: item.role,
+        content: item.content.slice(0, 2_000),
+      }));
+      const result = await sendChatMessage(message, selectedKnowledgeBaseId || undefined, history);
       setMessages((current) => [
         ...current,
         {
@@ -289,6 +294,7 @@ export default function ChatPage() {
               id="knowledge-base"
               value={selectedKnowledgeBaseId}
               onChange={(event) => {
+                setMessages([]);
                 setDocuments([]);
                 setEvaluationCases([]);
                 setEvaluationReport(null);
@@ -358,7 +364,11 @@ export default function ChatPage() {
               disabled={isSending}
             />
             <div className="composer-footer">
-              <span>{selectedKnowledgeBase ? "只展示服务端校验过的证据" : "未选择知识库：直接模型调用"}</span>
+              <span>
+                {selectedKnowledgeBase
+                  ? "只展示服务端校验过的证据；最多携带最近 6 条对话"
+                  : "未选择知识库：直接模型调用；最多携带最近 6 条对话"}
+              </span>
               <button type="submit" disabled={!draft.trim() || isSending}>
                 {isSending ? "发送中" : "发送"}
               </button>

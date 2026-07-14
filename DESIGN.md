@@ -35,6 +35,8 @@ retrieval-grounded answer surface with inspectable evidence.
   inspectable information.
 - Failure: keep the draft message, explain that the API or its local key may
   be unavailable, and avoid exposing secrets or raw provider details.
+- Follow-up: retain a small, explicitly disclosed page-local context window;
+  clear it when the knowledge-base scope changes.
 
 ## Evidence panel
 

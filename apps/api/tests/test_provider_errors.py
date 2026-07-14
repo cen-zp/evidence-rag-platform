@@ -6,7 +6,7 @@ from app.services.deepseek import DeepSeekProviderError
 
 
 class RateLimitedService:
-    async def chat(self, message: str):
+    async def chat(self, message: str, history):
         raise DeepSeekProviderError(429, "AI provider rate limit reached. Please retry shortly.")
 
 
