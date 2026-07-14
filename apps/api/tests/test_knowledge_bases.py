@@ -14,6 +14,7 @@ from app.db.base import Base
 from app.db.session import create_session_factory, get_session
 from app.main import create_app
 from app.services.task_queue import get_document_task_queue
+from app.services.vector_store import get_vector_store
 
 
 class FakeTaskQueue:
@@ -27,6 +28,19 @@ class FakeTaskQueue:
 class FailingTaskQueue:
     async def enqueue_job(self, function: str, *args: str) -> None:
         raise OSError("Redis is unavailable")
+
+
+class FakeVectorStore:
+    def __init__(self) -> None:
+        self.deleted_knowledge_bases: list[str] = []
+
+    def delete_knowledge_base_chunks(self, knowledge_base_id) -> None:
+        self.deleted_knowledge_bases.append(str(knowledge_base_id))
+
+
+class FailingVectorStore:
+    def delete_knowledge_base_chunks(self, knowledge_base_id) -> None:
+        raise OSError("Qdrant is unavailable")
 
 
 @pytest.fixture
@@ -45,6 +59,7 @@ def client(tmp_path) -> Generator[TestClient, None, None]:
     session_factory = create_session_factory(engine)
     app = create_app(Settings(app_env="test", deepseek_api_key=None, _env_file=None))
     task_queue = FakeTaskQueue()
+    vector_store = FakeVectorStore()
 
     def override_session() -> Generator[Session, None, None]:
         with session_factory() as session:
@@ -53,7 +68,9 @@ def client(tmp_path) -> Generator[TestClient, None, None]:
     app.dependency_overrides[get_session] = override_session
     app.dependency_overrides[get_uploads_root] = lambda: tmp_path / "uploads"
     app.dependency_overrides[get_document_task_queue] = lambda: task_queue
+    app.dependency_overrides[get_vector_store] = lambda: vector_store
     app.state.task_queue = task_queue
+    app.state.vector_store = vector_store
 
     with TestClient(app) as test_client:
         yield test_client
@@ -76,6 +93,37 @@ def test_create_and_list_knowledge_bases(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json() == [created]
+
+
+def test_delete_knowledge_base_cleans_vector_records_and_uploads(
+    client: TestClient,
+    tmp_path,
+) -> None:
+    knowledge_base = create_knowledge_base(client)
+    uploaded = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/documents",
+        files={"file": ("handbook.md", b"# Release process", "text/markdown")},
+    ).json()
+
+    response = client.delete(f"/api/knowledge-bases/{knowledge_base['id']}")
+
+    assert response.status_code == 204
+    assert client.get("/api/knowledge-bases").json() == []
+    assert not (tmp_path / "uploads" / uploaded["id"]).exists()
+    assert client.app.state.vector_store.deleted_knowledge_bases == [knowledge_base["id"]]
+
+
+def test_delete_knowledge_base_keeps_records_when_vector_cleanup_fails(client: TestClient) -> None:
+    knowledge_base = create_knowledge_base(client)
+    client.app.dependency_overrides[get_vector_store] = lambda: FailingVectorStore()
+
+    response = client.delete(f"/api/knowledge-bases/{knowledge_base['id']}")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "Vector index is unavailable; knowledge base was not deleted"
+    )
+    assert client.get("/api/knowledge-bases").json() == [knowledge_base]
 
 
 def test_upload_markdown_creates_pending_document(client: TestClient, tmp_path) -> None:

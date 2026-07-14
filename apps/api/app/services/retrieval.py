@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from functools import lru_cache
 from uuid import UUID
 
-from qdrant_client import QdrantClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload, sessionmaker
 
@@ -12,7 +11,7 @@ from app.models import Document, DocumentChunk, DocumentStatus
 from app.services.bm25 import rank_bm25
 from app.services.embedding import EmbeddingProvider, get_embedding_provider
 from app.services.reranker import Reranker, get_reranker
-from app.services.vector_store import QdrantVectorStore
+from app.services.vector_store import QdrantVectorStore, get_vector_store
 
 
 @dataclass(frozen=True)
@@ -106,11 +105,7 @@ def create_knowledge_base_retriever(
     use_reranker = settings.reranker_enabled if reranker_enabled is None else reranker_enabled
     return KnowledgeBaseRetriever(
         session_factory=get_session_factory(),
-        vector_store=QdrantVectorStore(
-            client=QdrantClient(url=settings.qdrant_url),
-            collection_name=settings.qdrant_collection,
-            vector_size=settings.embedding_dimension,
-        ),
+        vector_store=get_vector_store(),
         embedding_provider=get_embedding_provider(),
         reranker=get_reranker() if use_reranker else None,
         reranker_candidate_count=settings.reranker_candidate_count,

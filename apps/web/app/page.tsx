@@ -18,6 +18,7 @@ import {
   createEvaluationCase,
   createKnowledgeBase,
   deleteEvaluationCase,
+  deleteKnowledgeBase,
   getAnswerReviewSummary,
   getApiHealth,
   getDocuments,
@@ -60,6 +61,7 @@ export default function ChatPage() {
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isCreatingKnowledgeBase, setIsCreatingKnowledgeBase] = useState(false);
+  const [isDeletingKnowledgeBase, setIsDeletingKnowledgeBase] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [retryingDocumentId, setRetryingDocumentId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -259,11 +261,42 @@ export default function ChatPage() {
       const knowledgeBase = await createKnowledgeBase(name);
       setKnowledgeBases((current) => [knowledgeBase, ...current]);
       setSelectedKnowledgeBaseId(knowledgeBase.id);
+      setModelUsageSummary(null);
       setNewKnowledgeBaseName("");
     } catch (requestError) {
       setError(requestError instanceof ChatApiError ? requestError.message : "无法创建知识库。");
     } finally {
       setIsCreatingKnowledgeBase(false);
+    }
+  }
+
+  async function removeKnowledgeBase() {
+    if (!selectedKnowledgeBase || isDeletingKnowledgeBase) return;
+    if (!window.confirm(`删除“${selectedKnowledgeBase.name}”及其所有资料、评测记录和向量？此操作无法撤销。`)) {
+      return;
+    }
+
+    setIsDeletingKnowledgeBase(true);
+    setError(null);
+    try {
+      await deleteKnowledgeBase(selectedKnowledgeBase.id);
+      const remainingKnowledgeBases = knowledgeBases.filter(
+        (knowledgeBase) => knowledgeBase.id !== selectedKnowledgeBase.id,
+      );
+      setKnowledgeBases(remainingKnowledgeBases);
+      setSelectedKnowledgeBaseId(remainingKnowledgeBases[0]?.id ?? "");
+      setMessages([]);
+      setDocuments([]);
+      setEvaluationCases([]);
+      setEvaluationReport(null);
+      setAnswerReviewSummary(null);
+      setModelUsageSummary(null);
+      setDraftEvaluationCaseId(null);
+      setReviewingEvaluationCaseId(null);
+    } catch (requestError) {
+      setError(requestError instanceof ChatApiError ? requestError.message : "无法删除知识库。");
+    } finally {
+      setIsDeletingKnowledgeBase(false);
     }
   }
 
@@ -471,9 +504,19 @@ export default function ChatPage() {
               ))}
             </select>
             {selectedKnowledgeBase && (
-              <span className="document-count">
-                {documents.filter((document) => document.status === "ready").length} 个可检索文档
-              </span>
+              <>
+                <span className="document-count">
+                  {documents.filter((document) => document.status === "ready").length} 个可检索文档
+                </span>
+                <button
+                  type="button"
+                  className="delete-knowledge-base"
+                  disabled={isDeletingKnowledgeBase}
+                  onClick={() => void removeKnowledgeBase()}
+                >
+                  {isDeletingKnowledgeBase ? "删除中" : "删除知识库"}
+                </button>
+              </>
             )}
           </section>
 

@@ -101,7 +101,7 @@ pnpm dev
 
 后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
 
-M2-A 已支持创建知识库与上传 Markdown/PDF/DOCX；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant，并可重试失败任务；M3 已提供按知识库隔离的本地向量 + BM25 + RRF 混合检索；M3-B 已实现服务端校验引用的证据问答契约、有限页面内追问上下文及前端知识库工作流；M4 已加入可复现的 JSONL 检索评测运行器、可管理的知识库级评测案例，以及不产生模型调用的人工答案/引用评审记录。处理过程、检索、问答和评测边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md)、[docs/grounded-chat.md](docs/grounded-chat.md) 与 [docs/evaluation.md](docs/evaluation.md)。
+M2-A 已支持创建、删除知识库与上传 Markdown/PDF/DOCX；删除知识库会清理 PostgreSQL 记录、Qdrant 向量和上传源文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant，并可重试失败任务；M3 已提供按知识库隔离的本地向量 + BM25 + RRF 混合检索；M3-B 已实现服务端校验引用的证据问答契约、有限页面内追问上下文及前端知识库工作流；M4 已加入可复现的 JSONL 检索评测运行器、可管理的知识库级评测案例，以及不产生模型调用的人工答案/引用评审记录。处理过程、检索、问答和评测边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md)、[docs/grounded-chat.md](docs/grounded-chat.md) 与 [docs/evaluation.md](docs/evaluation.md)。
 
 ### 自动化质量检查
 

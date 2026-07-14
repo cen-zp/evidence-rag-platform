@@ -175,6 +175,20 @@ export async function createKnowledgeBase(name: string): Promise<KnowledgeBase> 
   }
 }
 
+export async function deleteKnowledgeBase(knowledgeBaseId: string): Promise<void> {
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new ChatApiError("无法删除知识库。");
+    }
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法删除知识库。请确认 API 与 Qdrant 已启动。");
+  }
+}
+
 export async function getDocuments(knowledgeBaseId: string): Promise<DocumentRecord[]> {
   try {
     return await readJson<DocumentRecord[]>(

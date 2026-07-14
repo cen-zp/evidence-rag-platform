@@ -11,6 +11,7 @@ from app.db.session import get_session
 from app.models import Document, DocumentStatus, KnowledgeBase
 from app.schemas.knowledge import DocumentRead, KnowledgeBaseCreate, KnowledgeBaseRead
 from app.services.task_queue import DocumentTaskQueue, get_document_task_queue
+from app.services.vector_store import QdrantVectorStore, get_vector_store
 
 router = APIRouter(prefix="/api/knowledge-bases", tags=["knowledge bases"])
 
@@ -97,6 +98,31 @@ def create_knowledge_base(
 @router.get("", response_model=list[KnowledgeBaseRead])
 def list_knowledge_bases(session: Session = Depends(get_session)) -> list[KnowledgeBase]:
     return list(session.scalars(select(KnowledgeBase).order_by(KnowledgeBase.created_at.desc())))
+
+
+@router.delete("/{knowledge_base_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_knowledge_base(
+    knowledge_base_id: UUID,
+    session: Session = Depends(get_session),
+    uploads_root: Path = Depends(get_uploads_root),
+    vector_store: QdrantVectorStore = Depends(get_vector_store),
+) -> None:
+    knowledge_base = get_knowledge_base_or_404(session, knowledge_base_id)
+    document_ids = list(
+        session.scalars(select(Document.id).where(Document.knowledge_base_id == knowledge_base_id))
+    )
+    try:
+        vector_store.delete_knowledge_base_chunks(knowledge_base_id)
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Vector index is unavailable; knowledge base was not deleted",
+        ) from error
+
+    session.delete(knowledge_base)
+    session.commit()
+    for document_id in document_ids:
+        shutil.rmtree(uploads_root / str(document_id), ignore_errors=True)
 
 
 @router.post(

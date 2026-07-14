@@ -1,9 +1,11 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from uuid import UUID
 
 from qdrant_client import QdrantClient, models
 
+from app.core.config import get_settings
 from app.models import DocumentChunk
 
 
@@ -52,6 +54,8 @@ class QdrantVectorStore:
         )
 
     def delete_document_chunks(self, document_id: UUID) -> None:
+        if not self._client.collection_exists(self._collection_name):
+            return
         self._client.delete(
             collection_name=self._collection_name,
             points_selector=models.FilterSelector(
@@ -60,6 +64,24 @@ class QdrantVectorStore:
                         models.FieldCondition(
                             key="document_id",
                             match=models.MatchValue(value=str(document_id)),
+                        )
+                    ]
+                )
+            ),
+            wait=True,
+        )
+
+    def delete_knowledge_base_chunks(self, knowledge_base_id: UUID) -> None:
+        if not self._client.collection_exists(self._collection_name):
+            return
+        self._client.delete(
+            collection_name=self._collection_name,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="knowledge_base_id",
+                            match=models.MatchValue(value=str(knowledge_base_id)),
                         )
                     ]
                 )
@@ -104,3 +126,13 @@ class QdrantVectorStore:
                     distance=models.Distance.COSINE,
                 ),
             )
+
+
+@lru_cache
+def get_vector_store() -> QdrantVectorStore:
+    settings = get_settings()
+    return QdrantVectorStore(
+        client=QdrantClient(url=settings.qdrant_url),
+        collection_name=settings.qdrant_collection,
+        vector_size=settings.embedding_dimension,
+    )
