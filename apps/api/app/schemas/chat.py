@@ -1,7 +1,7 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_serializer
 
 
 class ChatHistoryMessage(BaseModel):
@@ -24,8 +24,22 @@ class ChatCitation(BaseModel):
     content: str
 
 
+class ChatUsage(BaseModel):
+    prompt_tokens: int = Field(ge=0)
+    completion_tokens: int = Field(ge=0)
+    total_tokens: int = Field(ge=0)
+
+
 class ChatResponse(BaseModel):
     answer: str
     model: str
     latency_ms: int
     citations: list[ChatCitation] = Field(default_factory=list)
+    usage: ChatUsage | None = None
+
+    @model_serializer(mode="wrap")
+    def serialize(self, handler):
+        result = handler(self)
+        if result["usage"] is None:
+            del result["usage"]
+        return result

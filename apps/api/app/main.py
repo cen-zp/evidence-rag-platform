@@ -17,6 +17,7 @@ from app.services.deepseek import (
     DeepSeekService,
     EvidencePrompt,
 )
+from app.services.model_usage import record_model_call
 from app.services.retrieval import KnowledgeBaseRetriever, get_knowledge_base_retriever
 from app.services.task_queue import close_document_task_queue
 
@@ -97,7 +98,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 )
 
             hits_by_id = {hit.chunk.id: hit for hit in hits}
-            return ChatResponse(
+            response = ChatResponse(
                 answer=grounded.answer,
                 model=grounded.model,
                 latency_ms=grounded.latency_ms,
@@ -113,7 +114,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     for citation_id in grounded.citation_ids
                     if (hit := hits_by_id.get(citation_id)) is not None
                 ],
+                usage=grounded.usage,
             )
+            record_model_call(
+                session,
+                request.knowledge_base_id,
+                model=response.model,
+                latency_ms=response.latency_ms,
+                usage=response.usage,
+            )
+            return response
 
         try:
             service = app.state.chat_service_factory()

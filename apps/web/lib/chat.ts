@@ -12,6 +12,11 @@ export type ChatResponse = {
   model: string;
   latency_ms: number;
   citations: Citation[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 };
 
 export type ChatHistoryMessage = {
@@ -84,6 +89,16 @@ export type AnswerReviewSummary = {
   answer_pass_rate: number | null;
   citation_pass_rate: number | null;
   refusal_pass_rate: number | null;
+};
+
+export type ModelUsageSummary = {
+  call_count: number;
+  usage_reported_call_count: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  mean_latency_ms: number | null;
+  p95_latency_ms: number | null;
 };
 
 export class ChatApiError extends Error {
@@ -283,6 +298,21 @@ export async function getAnswerReviewSummary(
   } catch (error) {
     if (error instanceof ChatApiError) throw error;
     throw new ChatApiError("无法读取答案评审汇总。请确认 API 已启动。");
+  }
+}
+
+export async function getModelUsageSummary(
+  knowledgeBaseId: string,
+): Promise<ModelUsageSummary> {
+  try {
+    return await readJson<ModelUsageSummary>(
+      await fetch(
+        `${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/evaluations/model-usage-summary`,
+      ),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法读取模型调用摘要。请确认 API 已启动。");
   }
 }
 

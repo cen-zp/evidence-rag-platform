@@ -10,6 +10,7 @@ from app.db.base import Base
 from app.db.session import create_session_factory, get_session
 from app.main import create_app
 from app.models import Document, DocumentChunk, DocumentStatus, KnowledgeBase
+from app.schemas.chat import ChatUsage
 from app.services.deepseek import DeepSeekInvalidCitationError, GroundedModelResponse
 from app.services.retrieval import RetrievalHit
 
@@ -40,6 +41,7 @@ class SuccessfulGroundedService:
             citation_ids=[self.chunk_id],
             model="test-model",
             latency_ms=12,
+            usage=ChatUsage(prompt_tokens=50, completion_tokens=20, total_tokens=70),
         )
 
 
@@ -115,6 +117,7 @@ def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
         "answer": "Use the documented release process.",
         "model": "test-model",
         "latency_ms": 12,
+        "usage": {"prompt_tokens": 50, "completion_tokens": 20, "total_tokens": 70},
         "citations": [
             {
                 "chunk_id": str(chunk.id),
@@ -127,6 +130,20 @@ def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
         ],
     }
     assert retriever.calls == [(knowledge_base_id, "What is the release process?", 5)]
+
+    usage_response = client.get(
+        f"/api/knowledge-bases/{knowledge_base_id}/evaluations/model-usage-summary"
+    )
+    assert usage_response.status_code == 200
+    assert usage_response.json() == {
+        "call_count": 1,
+        "usage_reported_call_count": 1,
+        "prompt_tokens": 50,
+        "completion_tokens": 20,
+        "total_tokens": 70,
+        "mean_latency_ms": 12.0,
+        "p95_latency_ms": 12.0,
+    }
 
 
 def test_grounded_chat_refuses_when_model_citations_are_invalid() -> None:

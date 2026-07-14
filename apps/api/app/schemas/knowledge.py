@@ -103,3 +103,13 @@ class AnswerReviewSummaryRead(BaseModel):
     answer_pass_rate: float | None
     citation_pass_rate: float | None
     refusal_pass_rate: float | None
+
+
+class ModelUsageSummaryRead(BaseModel):
+    call_count: int
+    usage_reported_call_count: int
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+    mean_latency_ms: float | None
+    p95_latency_ms: float | None

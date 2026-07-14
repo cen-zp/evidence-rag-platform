@@ -5,6 +5,7 @@ from app.models.knowledge import (
     DocumentStatus,
     EvaluationCase,
     KnowledgeBase,
+    ModelCall,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "DocumentStatus",
     "EvaluationCase",
     "KnowledgeBase",
+    "ModelCall",
 ]

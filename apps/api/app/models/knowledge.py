@@ -44,6 +44,7 @@ class KnowledgeBase(Base):
     evaluation_cases: Mapped[list["EvaluationCase"]] = relationship(
         back_populates="knowledge_base", cascade="all, delete-orphan"
     )
+    model_calls: Mapped[list["ModelCall"]] = relationship(back_populates="knowledge_base")
 
 
 class Document(Base):
@@ -163,3 +164,29 @@ class AnswerReview(Base):
     )
 
     evaluation_case: Mapped[EvaluationCase] = relationship(back_populates="answer_reviews")
+
+
+class ModelCall(Base):
+    """Privacy-preserving metadata for successful knowledge-base model calls."""
+
+    __tablename__ = "model_calls"
+    __table_args__ = (
+        Index("ix_model_calls_knowledge_base_id_created_at", "knowledge_base_id", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    knowledge_base_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("knowledge_bases.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    model: Mapped[str] = mapped_column(String(120), nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    prompt_tokens: Mapped[int | None] = mapped_column(Integer)
+    completion_tokens: Mapped[int | None] = mapped_column(Integer)
+    total_tokens: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    knowledge_base: Mapped[KnowledgeBase] = relationship(back_populates="model_calls")

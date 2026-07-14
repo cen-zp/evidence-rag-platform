@@ -7,7 +7,7 @@ from uuid import UUID
 from openai import APIConnectionError, APIStatusError, APITimeoutError, AsyncOpenAI
 
 from app.core.config import Settings
-from app.schemas.chat import ChatHistoryMessage, ChatResponse
+from app.schemas.chat import ChatHistoryMessage, ChatResponse, ChatUsage
 
 
 class DeepSeekNotConfiguredError(RuntimeError):
@@ -39,6 +39,7 @@ class GroundedModelResponse:
     citation_ids: list[UUID]
     model: str
     latency_ms: int
+    usage: ChatUsage | None = None
 
 
 class DeepSeekService:
@@ -77,6 +78,7 @@ class DeepSeekService:
             answer=answer,
             model=completion.model or self._model,
             latency_ms=round((perf_counter() - started_at) * 1000),
+            usage=_completion_usage(completion),
         )
 
     async def chat_with_evidence(
@@ -130,6 +132,7 @@ class DeepSeekService:
             citation_ids=list(dict.fromkeys(citation_ids)),
             model=completion.model or self._model,
             latency_ms=round((perf_counter() - started_at) * 1000),
+            usage=_completion_usage(completion),
         )
 
     async def _create_completion(self, **kwargs: Any) -> Any:
@@ -163,4 +166,24 @@ def _provider_status_error(error: APIStatusError) -> DeepSeekProviderError:
     return DeepSeekProviderError(
         status_code=502,
         detail="AI provider returned an upstream error. Please try again.",
+    )
+
+
+def _completion_usage(completion: Any) -> ChatUsage | None:
+    usage = getattr(completion, "usage", None)
+    if usage is None:
+        return None
+
+    values = (
+        getattr(usage, "prompt_tokens", None),
+        getattr(usage, "completion_tokens", None),
+        getattr(usage, "total_tokens", None),
+    )
+    if not all(isinstance(value, int) and value >= 0 for value in values):
+        return None
+
+    return ChatUsage(
+        prompt_tokens=values[0],
+        completion_tokens=values[1],
+        total_tokens=values[2],
     )

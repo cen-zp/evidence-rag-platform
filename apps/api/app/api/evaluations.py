@@ -7,13 +7,14 @@ from sqlalchemy.orm import Session, selectinload
 from app.api.knowledge_bases import get_knowledge_base_or_404
 from app.db.session import get_session
 from app.evaluation.retrieval import RetrievalEvaluationCase, evaluate_retrieval
-from app.models import AnswerReview, DocumentChunk, EvaluationCase
+from app.models import AnswerReview, DocumentChunk, EvaluationCase, ModelCall
 from app.schemas.knowledge import (
     AnswerReviewCreate,
     AnswerReviewRead,
     AnswerReviewSummaryRead,
     EvaluationCaseCreate,
     EvaluationCaseRead,
+    ModelUsageSummaryRead,
     RetrievalEvaluationReportRead,
     ReviewVerdict,
 )
@@ -209,6 +210,36 @@ def get_answer_review_summary(
         answer_pass_rate=pass_rate("answer_verdict"),
         citation_pass_rate=pass_rate("citation_verdict"),
         refusal_pass_rate=pass_rate("refusal_verdict"),
+    )
+
+
+@router.get(
+    "/{knowledge_base_id}/evaluations/model-usage-summary",
+    response_model=ModelUsageSummaryRead,
+)
+def get_model_usage_summary(
+    knowledge_base_id: UUID,
+    session: Session = Depends(get_session),
+) -> ModelUsageSummaryRead:
+    get_knowledge_base_or_404(session, knowledge_base_id)
+    calls = list(
+        session.scalars(
+            select(ModelCall)
+            .where(ModelCall.knowledge_base_id == knowledge_base_id)
+            .order_by(ModelCall.created_at.asc())
+        )
+    )
+    latencies = sorted(call.latency_ms for call in calls)
+    p95_index = max(0, (len(latencies) * 95 + 99) // 100 - 1)
+
+    return ModelUsageSummaryRead(
+        call_count=len(calls),
+        usage_reported_call_count=sum(call.total_tokens is not None for call in calls),
+        prompt_tokens=sum(call.prompt_tokens or 0 for call in calls),
+        completion_tokens=sum(call.completion_tokens or 0 for call in calls),
+        total_tokens=sum(call.total_tokens or 0 for call in calls),
+        mean_latency_ms=(sum(latencies) / len(latencies)) if latencies else None,
+        p95_latency_ms=latencies[p95_index] if latencies else None,
     )
 
 

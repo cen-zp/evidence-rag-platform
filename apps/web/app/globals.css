@@ -119,10 +119,11 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
 .evaluation-case-actions button:hover:not(:disabled) { color: var(--ink); }
 .evaluation-case-actions button:disabled { opacity: .45; }
 .evaluation-case-actions .delete-evaluation-case { color: #f5aaa2; }
-.evaluation-report, .answer-review-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 16px 0 0; }
-.evaluation-report div, .answer-review-summary div { padding: 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
-.evaluation-report dt, .answer-review-summary dt { color: var(--subtle); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
-.evaluation-report dd, .answer-review-summary dd { margin: 5px 0 0; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 600; }
+.evaluation-report, .answer-review-summary, .model-usage-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 16px 0 0; }
+.evaluation-report div, .answer-review-summary div, .model-usage-summary div { padding: 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
+.evaluation-report dt, .answer-review-summary dt, .model-usage-summary dt { color: var(--subtle); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }
+.evaluation-report dd, .answer-review-summary dd, .model-usage-summary dd { margin: 5px 0 0; color: var(--ink); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 600; }
+.model-usage-note { margin: 10px 0 0; color: var(--subtle); font-size: 11px; line-height: 1.55; }
 .answer-review-form { display: grid; gap: 12px; margin-top: 18px; padding: 14px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); }
 .answer-review-title { margin: 0; color: var(--ink); font-size: 13px; font-weight: 600; }
 .answer-review-answer { display: -webkit-box; overflow: hidden; margin: 0; color: var(--muted); -webkit-box-orient: vertical; -webkit-line-clamp: 4; font-size: 12px; line-height: 1.55; white-space: pre-wrap; }

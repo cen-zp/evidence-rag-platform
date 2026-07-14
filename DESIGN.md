@@ -55,3 +55,6 @@ retrieval latency. Treat every result as scoped to its current knowledge base,
 case set, and retrieval configuration; do not present a small smoke run as a
 general performance claim. Show a compact recent-case list with a deliberate
 delete action so incorrect cases can be removed before they contaminate a run.
+Place human-review and model-usage summaries in the same compact metric-card
+system. Model metadata must state that it covers successful grounded calls
+only, stores no question or answer content, and is not a quality or cost claim.

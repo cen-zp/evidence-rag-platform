@@ -6,10 +6,12 @@ import {
   AnswerReviewSummary,
   ChatApiError,
   ChatHistoryMessage,
+  ChatResponse,
   Citation,
   DocumentRecord,
   EvaluationCase,
   KnowledgeBase,
+  ModelUsageSummary,
   RetrievalEvaluationReport,
   ReviewVerdict,
   createAnswerReview,
@@ -21,6 +23,7 @@ import {
   getDocuments,
   getEvaluationCases,
   getKnowledgeBases,
+  getModelUsageSummary,
   retryDocument,
   runRetrievalEvaluation,
   sendChatMessage,
@@ -33,6 +36,7 @@ type Message = {
   content: string;
   model?: string;
   latencyMs?: number;
+  usage?: ChatResponse["usage"];
   citations?: Citation[];
   evaluationCaseId?: string;
 };
@@ -66,6 +70,7 @@ export default function ChatPage() {
   const [evaluationCases, setEvaluationCases] = useState<EvaluationCase[]>([]);
   const [evaluationReport, setEvaluationReport] = useState<RetrievalEvaluationReport | null>(null);
   const [answerReviewSummary, setAnswerReviewSummary] = useState<AnswerReviewSummary | null>(null);
+  const [modelUsageSummary, setModelUsageSummary] = useState<ModelUsageSummary | null>(null);
   const [newKnowledgeBaseName, setNewKnowledgeBaseName] = useState("");
   const [evaluationQuestion, setEvaluationQuestion] = useState("");
   const [expectedFilename, setExpectedFilename] = useState("");
@@ -123,6 +128,14 @@ export default function ChatPage() {
     }
   }, []);
 
+  const loadModelUsageSummary = useCallback(async (knowledgeBaseId: string) => {
+    try {
+      setModelUsageSummary(await getModelUsageSummary(knowledgeBaseId));
+    } catch (loadError) {
+      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取模型调用摘要。");
+    }
+  }, []);
+
   useEffect(() => {
     let isActive = true;
 
@@ -162,11 +175,18 @@ export default function ChatPage() {
         loadDocuments(selectedKnowledgeBaseId),
         loadEvaluationCases(selectedKnowledgeBaseId),
         loadAnswerReviewSummary(selectedKnowledgeBaseId),
+        loadModelUsageSummary(selectedKnowledgeBaseId),
       ]);
     }
 
     void refreshKnowledgeBaseData();
-  }, [loadAnswerReviewSummary, loadDocuments, loadEvaluationCases, selectedKnowledgeBaseId]);
+  }, [
+    loadAnswerReviewSummary,
+    loadDocuments,
+    loadEvaluationCases,
+    loadModelUsageSummary,
+    selectedKnowledgeBaseId,
+  ]);
 
   useEffect(() => {
     if (!selectedKnowledgeBaseId || !hasPendingDocuments) return;
@@ -212,9 +232,11 @@ export default function ChatPage() {
           model: result.model,
           latencyMs: result.latency_ms,
           citations: result.citations,
+          usage: result.usage,
           evaluationCaseId,
         },
       ]);
+      if (selectedKnowledgeBaseId) await loadModelUsageSummary(selectedKnowledgeBaseId);
     } catch (requestError) {
       setError(
         requestError instanceof ChatApiError
@@ -435,6 +457,7 @@ export default function ChatPage() {
                 setEvaluationCases([]);
                 setEvaluationReport(null);
                 setAnswerReviewSummary(null);
+                setModelUsageSummary(null);
                 setDraftEvaluationCaseId(null);
                 setReviewingEvaluationCaseId(null);
                 setSelectedKnowledgeBaseId(event.target.value);
@@ -481,6 +504,7 @@ export default function ChatPage() {
                     <div className="message-meta">
                       <span>{message.model}</span>
                       <span>{message.latencyMs} ms</span>
+                      {message.usage && <span>{message.usage.total_tokens} tokens</span>}
                       {message.citations && <span>{message.citations.length} 条已校验证据</span>}
                     </div>
                   )}
@@ -737,6 +761,35 @@ export default function ChatPage() {
                       </dd>
                     </div>
                   </dl>
+                )}
+                {modelUsageSummary && (
+                  <>
+                    <dl className="model-usage-summary">
+                      <div>
+                        <dt>已记录调用</dt>
+                        <dd>{modelUsageSummary.call_count} 次</dd>
+                      </div>
+                      <div>
+                        <dt>返回 token</dt>
+                        <dd>{modelUsageSummary.usage_reported_call_count} 次</dd>
+                      </div>
+                      <div>
+                        <dt>累计 token</dt>
+                        <dd>{modelUsageSummary.total_tokens}</dd>
+                      </div>
+                      <div>
+                        <dt>平均模型耗时</dt>
+                        <dd>
+                          {modelUsageSummary.mean_latency_ms === null
+                            ? "—"
+                            : `${modelUsageSummary.mean_latency_ms.toFixed(1)} ms`}
+                        </dd>
+                      </div>
+                    </dl>
+                    <p className="model-usage-note">
+                      仅统计成功的知识库证据问答；不保存问题或回答，也不等同于质量或成本结论。
+                    </p>
+                  </>
                 )}
                 {reviewingEvaluationCaseId &&
                   latestReviewableAnswer?.evaluationCaseId === reviewingEvaluationCaseId && (
