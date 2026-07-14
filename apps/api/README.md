@@ -31,3 +31,7 @@ The worker parses Markdown/PDF files, creates chunks, and writes the local vecto
 ## Retrieval
 
 `POST /api/knowledge-bases/{kb_id}/search` searches only the selected knowledge base and returns traceable chunk IDs, source text, file name, page number, and score. It uses both a Qdrant payload filter and a PostgreSQL `ready`-document check. See [../../docs/retrieval.md](../../docs/retrieval.md).
+
+## Grounded chat
+
+Pass `knowledge_base_id` with a `POST /api/chat` request to enable evidence-grounded generation. The server refuses without calling the model when no evidence is retrieved, and validates the model's structured citation IDs against the same retrieval result. See [../../docs/grounded-chat.md](../../docs/grounded-chat.md).
