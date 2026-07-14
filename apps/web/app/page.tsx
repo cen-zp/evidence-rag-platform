@@ -12,6 +12,7 @@ import {
   RetrievalEvaluationReport,
   createEvaluationCase,
   createKnowledgeBase,
+  deleteEvaluationCase,
   getApiHealth,
   getDocuments,
   getEvaluationCases,
@@ -58,6 +59,7 @@ export default function ChatPage() {
   const [evaluationQuestion, setEvaluationQuestion] = useState("");
   const [expectedFilename, setExpectedFilename] = useState("");
   const [isSavingEvaluationCase, setIsSavingEvaluationCase] = useState(false);
+  const [deletingEvaluationCaseId, setDeletingEvaluationCaseId] = useState<string | null>(null);
   const [isRunningEvaluation, setIsRunningEvaluation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -260,6 +262,22 @@ export default function ChatPage() {
       setError(requestError instanceof ChatApiError ? requestError.message : "无法运行评测。");
     } finally {
       setIsRunningEvaluation(false);
+    }
+  }
+
+  async function removeEvaluationCase(evaluationCaseId: string) {
+    if (!selectedKnowledgeBaseId || deletingEvaluationCaseId) return;
+
+    setDeletingEvaluationCaseId(evaluationCaseId);
+    setError(null);
+    try {
+      await deleteEvaluationCase(selectedKnowledgeBaseId, evaluationCaseId);
+      setEvaluationCases((current) => current.filter((item) => item.id !== evaluationCaseId));
+      setEvaluationReport(null);
+    } catch (requestError) {
+      setError(requestError instanceof ChatApiError ? requestError.message : "无法删除评测案例。");
+    } finally {
+      setDeletingEvaluationCaseId(null);
     }
   }
 
@@ -503,6 +521,26 @@ export default function ChatPage() {
                 <p className="evaluation-summary">
                   已保存 {evaluationCases.length} 条案例。指标只反映当前题集和当前检索配置。
                 </p>
+                {evaluationCases.length > 0 && (
+                  <ul className="evaluation-case-list" aria-label="最近评测案例">
+                    {evaluationCases.slice(0, 3).map((evaluationCase) => (
+                      <li key={evaluationCase.id}>
+                        <div>
+                          <p>{evaluationCase.question}</p>
+                          <span>预期：{evaluationCase.expected_filenames.join("、")}</span>
+                        </div>
+                        <button
+                          type="button"
+                          aria-label={`删除案例：${evaluationCase.question}`}
+                          disabled={deletingEvaluationCaseId !== null}
+                          onClick={() => void removeEvaluationCase(evaluationCase.id)}
+                        >
+                          {deletingEvaluationCaseId === evaluationCase.id ? "删除中" : "删除"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {evaluationReport && (
                   <dl className="evaluation-report">
                     <div>

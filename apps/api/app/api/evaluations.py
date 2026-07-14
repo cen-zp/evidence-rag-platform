@@ -55,6 +55,31 @@ def list_evaluation_cases(
     return list(session.scalars(statement))
 
 
+@router.delete(
+    "/{knowledge_base_id}/evaluation-cases/{evaluation_case_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_evaluation_case(
+    knowledge_base_id: UUID,
+    evaluation_case_id: UUID,
+    session: Session = Depends(get_session),
+) -> None:
+    get_knowledge_base_or_404(session, knowledge_base_id)
+    evaluation_case = session.scalar(
+        select(EvaluationCase).where(
+            EvaluationCase.id == evaluation_case_id,
+            EvaluationCase.knowledge_base_id == knowledge_base_id,
+        )
+    )
+    if evaluation_case is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evaluation case not found in this knowledge base",
+        )
+    session.delete(evaluation_case)
+    session.commit()
+
+
 @router.post(
     "/{knowledge_base_id}/evaluations/retrieval",
     response_model=RetrievalEvaluationReportRead,

@@ -110,6 +110,13 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
 .evaluation-form button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-hover); }
 .evaluation-form button:disabled { opacity: .45; }
 .evaluation-summary { margin: 12px 0 0; color: var(--subtle); font-size: 12px; line-height: 1.55; }
+.evaluation-case-list { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.evaluation-case-list li { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); }
+.evaluation-case-list p { display: -webkit-box; overflow: hidden; margin: 0; color: var(--muted); -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 12px; line-height: 1.45; }
+.evaluation-case-list span { display: block; overflow: hidden; margin-top: 4px; color: var(--subtle); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.evaluation-case-list button { border: 0; padding: 2px 0; color: #f5aaa2; background: transparent; font-size: 11px; }
+.evaluation-case-list button:hover:not(:disabled) { color: var(--ink); }
+.evaluation-case-list button:disabled { opacity: .45; }
 .evaluation-report { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 16px 0 0; }
 .evaluation-report div { padding: 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
 .evaluation-report dt { color: var(--subtle); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; }

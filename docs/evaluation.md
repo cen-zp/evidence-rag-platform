@@ -6,11 +6,12 @@
 
 - `POST /api/knowledge-bases/{kb_id}/evaluation-cases`：保存问题、预期来源文件名和可选参考答案。
 - `GET /api/knowledge-bases/{kb_id}/evaluation-cases`：查看该知识库已积累的案例。
+- `DELETE /api/knowledge-bases/{kb_id}/evaluation-cases/{case_id}`：删除误录或过期案例。
 - `POST /api/knowledge-bases/{kb_id}/evaluations/retrieval?top_k=5`：使用这些案例运行当前检索基线。
 
 API 返回的指标与下方 CLI 一致；它不会调用模型，因此只统计检索延迟。
 
-前端工作台也提供同一组 API 的最小操作入口：选择知识库后，填写问题和预期命中的文件名即可保存案例，再点击“运行评测”查看结果。页面上的小样本结果只用于回归检查，不能当作真实效果结论。
+前端工作台也提供同一组 API 的最小操作入口：选择知识库后，填写问题和预期命中的文件名即可保存案例；最近案例可删除，再点击“运行评测”查看结果。页面上的小样本结果只用于回归检查，不能当作真实效果结论。
 
 ## 题集格式
 

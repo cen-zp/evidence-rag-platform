@@ -212,6 +212,24 @@ export async function createEvaluationCase(
   }
 }
 
+export async function deleteEvaluationCase(
+  knowledgeBaseId: string,
+  evaluationCaseId: string,
+): Promise<void> {
+  try {
+    const response = await fetch(
+      `${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/evaluation-cases/${evaluationCaseId}`,
+      { method: "DELETE" },
+    );
+    if (!response.ok) {
+      throw new ChatApiError("无法删除评测案例。");
+    }
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法删除评测案例。请确认 API 已启动。");
+  }
+}
+
 export async function runRetrievalEvaluation(
   knowledgeBaseId: string,
   topK = 5,

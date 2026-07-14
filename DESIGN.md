@@ -53,4 +53,5 @@ Keep retrieval evaluation close to the document status: users add a question
 and the expected source filename, then inspect Recall@K, MRR, and local
 retrieval latency. Treat every result as scoped to its current knowledge base,
 case set, and retrieval configuration; do not present a small smoke run as a
-general performance claim.
+general performance claim. Show a compact recent-case list with a deliberate
+delete action so incorrect cases can be removed before they contaminate a run.

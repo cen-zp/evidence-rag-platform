@@ -231,6 +231,12 @@ def test_create_and_list_evaluation_cases(client: TestClient) -> None:
     assert list_response.status_code == 200
     assert list_response.json() == [evaluation_case]
 
+    delete_response = client.delete(
+        f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases/{evaluation_case['id']}"
+    )
+    assert delete_response.status_code == 204
+    assert client.get(f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases").json() == []
+
 
 def test_run_evaluation_requires_cases(client: TestClient) -> None:
     knowledge_base = create_knowledge_base(client)
