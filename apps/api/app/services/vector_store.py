@@ -1,9 +1,16 @@
 from collections.abc import Sequence
+from dataclasses import dataclass
 from uuid import UUID
 
 from qdrant_client import QdrantClient, models
 
 from app.models import DocumentChunk
+
+
+@dataclass(frozen=True)
+class VectorSearchHit:
+    chunk_id: UUID
+    score: float
 
 
 class QdrantVectorStore:
@@ -59,6 +66,32 @@ class QdrantVectorStore:
             ),
             wait=True,
         )
+
+    def search(
+        self,
+        knowledge_base_id: UUID,
+        query_vector: list[float],
+        limit: int,
+    ) -> list[VectorSearchHit]:
+        response = self._client.query_points(
+            collection_name=self._collection_name,
+            query=query_vector,
+            query_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="knowledge_base_id",
+                        match=models.MatchValue(value=str(knowledge_base_id)),
+                    )
+                ]
+            ),
+            limit=limit,
+            with_payload=False,
+            with_vectors=False,
+        )
+        return [
+            VectorSearchHit(chunk_id=UUID(str(point.id)), score=point.score)
+            for point in response.points
+        ]
 
     def _ensure_collection(self) -> None:
         if not self._client.collection_exists(self._collection_name):

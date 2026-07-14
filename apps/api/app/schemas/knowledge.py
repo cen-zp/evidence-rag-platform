@@ -29,3 +29,18 @@ class DocumentRead(BaseModel):
     error_message: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class RetrievalRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=2_000)
+    top_k: int = Field(default=5, ge=1, le=10)
+
+
+class RetrievalHitRead(BaseModel):
+    chunk_id: UUID
+    document_id: UUID
+    filename: str
+    content: str
+    page_number: int | None
+    chunk_index: int
+    score: float

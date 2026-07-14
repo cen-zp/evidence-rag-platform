@@ -76,4 +76,4 @@ pnpm dev
 
 后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
 
-M2-A 已支持创建知识库与上传 Markdown/PDF 文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant。处理过程与本地向量基线的真实边界见 [docs/document-processing.md](docs/document-processing.md)。当前尚未实现问答检索、引用、重排序、DOCX 支持或正式语义 Embedding。
+M2-A 已支持创建知识库与上传 Markdown/PDF 文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant；M3-A 已提供按知识库强制隔离的检索 API。处理过程、向量基线和检索边界见 [docs/document-processing.md](docs/document-processing.md) 与 [docs/retrieval.md](docs/retrieval.md)。当前尚未实现基于证据的问答、引用校验、重排序、DOCX 支持或正式语义 Embedding。

@@ -27,3 +27,7 @@ uv run arq app.workers.document.WorkerSettings
 ```
 
 The worker parses Markdown/PDF files, creates chunks, and writes the local vector baseline to Qdrant. It changes the document state to `ready` or `failed`; see [../../docs/document-intake.md](../../docs/document-intake.md) and [../../docs/document-processing.md](../../docs/document-processing.md) for the current boundary. The hash-vector baseline is only for local pipeline verification, not semantic-retrieval quality.
+
+## Retrieval
+
+`POST /api/knowledge-bases/{kb_id}/search` searches only the selected knowledge base and returns traceable chunk IDs, source text, file name, page number, and score. It uses both a Qdrant payload filter and a PostgreSQL `ready`-document check. See [../../docs/retrieval.md](../../docs/retrieval.md).
