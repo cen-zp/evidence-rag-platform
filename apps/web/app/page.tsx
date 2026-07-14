@@ -15,6 +15,7 @@ import {
   getDocuments,
   getEvaluationCases,
   getKnowledgeBases,
+  retryDocument,
   runRetrievalEvaluation,
   sendChatMessage,
   uploadDocument,
@@ -44,6 +45,7 @@ export default function ChatPage() {
   const [isSending, setIsSending] = useState(false);
   const [isCreatingKnowledgeBase, setIsCreatingKnowledgeBase] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [retryingDocumentId, setRetryingDocumentId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
@@ -203,6 +205,21 @@ export default function ChatPage() {
       setError(requestError instanceof ChatApiError ? requestError.message : "无法上传文档。");
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function retryFailedDocument(documentId: string) {
+    if (!selectedKnowledgeBaseId || retryingDocumentId) return;
+
+    setRetryingDocumentId(documentId);
+    setError(null);
+    try {
+      const document = await retryDocument(selectedKnowledgeBaseId, documentId);
+      setDocuments((current) => current.map((item) => (item.id === document.id ? document : item)));
+    } catch (requestError) {
+      setError(requestError instanceof ChatApiError ? requestError.message : "无法重新处理文档。");
+    } finally {
+      setRetryingDocumentId(null);
     }
   }
 
@@ -394,8 +411,25 @@ export default function ChatPage() {
                 <ul className="document-list">
                   {documents.slice(0, 5).map((document) => (
                     <li key={document.id}>
-                      <span className="document-name">{document.filename}</span>
-                      <span className={`document-status ${document.status}`}>{document.status}</span>
+                      <div className="document-details">
+                        <span className="document-name">{document.filename}</span>
+                        {document.status === "failed" && document.error_message && (
+                          <span className="document-error">{document.error_message}</span>
+                        )}
+                      </div>
+                      <div className="document-actions">
+                        <span className={`document-status ${document.status}`}>{document.status}</span>
+                        {document.status === "failed" && (
+                          <button
+                            type="button"
+                            className="document-retry"
+                            disabled={retryingDocumentId !== null}
+                            onClick={() => void retryFailedDocument(document.id)}
+                          >
+                            {retryingDocumentId === document.id ? "重试中" : "重试"}
+                          </button>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>

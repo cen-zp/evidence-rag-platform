@@ -37,6 +37,25 @@ def get_knowledge_base_or_404(session: Session, knowledge_base_id: UUID) -> Know
     return knowledge_base
 
 
+def get_document_or_404(
+    session: Session,
+    knowledge_base_id: UUID,
+    document_id: UUID,
+) -> Document:
+    document = session.scalar(
+        select(Document).where(
+            Document.id == document_id,
+            Document.knowledge_base_id == knowledge_base_id,
+        )
+    )
+    if document is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found in this knowledge base",
+        )
+    return document
+
+
 def validate_upload(file: UploadFile) -> tuple[str, str]:
     filename = Path(file.filename or "").name
     if not filename:
@@ -165,3 +184,47 @@ def list_documents(
         .order_by(Document.created_at.desc())
     )
     return list(session.scalars(statement))
+
+
+@router.post(
+    "/{knowledge_base_id}/documents/{document_id}/retry",
+    response_model=DocumentRead,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def retry_failed_document(
+    knowledge_base_id: UUID,
+    document_id: UUID,
+    session: Session = Depends(get_session),
+    uploads_root: Path = Depends(get_uploads_root),
+    task_queue: DocumentTaskQueue = Depends(get_document_task_queue),
+) -> Document:
+    get_knowledge_base_or_404(session, knowledge_base_id)
+    document = get_document_or_404(session, knowledge_base_id, document_id)
+    if document.status != DocumentStatus.FAILED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only failed documents can be retried",
+        )
+
+    source_path = uploads_root / str(document.id) / document.filename
+    if not source_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The uploaded source file is missing and cannot be retried",
+        )
+
+    document.status = DocumentStatus.PENDING
+    document.error_message = None
+    session.commit()
+    session.refresh(document)
+    try:
+        await task_queue.enqueue_job("process_document", str(document.id))
+    except Exception as error:
+        document.status = DocumentStatus.FAILED
+        document.error_message = "Document could not be scheduled for retry"
+        session.commit()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Document queue is unavailable; retry again after Redis recovers",
+        ) from error
+    return document

@@ -41,7 +41,9 @@ retrieval-grounded answer surface with inspectable evidence.
 The panel is part of the product contract. It includes compact knowledge-base
 selection, document processing status, and an explicit empty state until a
 grounded answer exists. When citations exist, render only server-validated
-document snippets and locations; never simulate sources.
+document snippets and locations; never simulate sources. Failed documents show
+a compact error and retry action, while pending and processing documents never
+offer a duplicate enqueue action.
 
 ## Evaluation panel
 

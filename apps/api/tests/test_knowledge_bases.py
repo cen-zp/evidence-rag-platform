@@ -171,6 +171,45 @@ def test_upload_marks_document_failed_when_queue_enqueue_fails(client: TestClien
     )
 
 
+def test_retry_failed_document_requeues_stored_file(client: TestClient) -> None:
+    knowledge_base = create_knowledge_base(client)
+    client.app.dependency_overrides[get_document_task_queue] = lambda: FailingTaskQueue()
+
+    failed_upload = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/documents",
+        files={"file": ("handbook.md", b"# Release process", "text/markdown")},
+    )
+    assert failed_upload.status_code == 503
+    documents_response = client.get(f"/api/knowledge-bases/{knowledge_base['id']}/documents")
+    document_id = documents_response.json()[0]["id"]
+
+    retry_queue = FakeTaskQueue()
+    client.app.dependency_overrides[get_document_task_queue] = lambda: retry_queue
+    retry_response = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/documents/{document_id}/retry"
+    )
+
+    assert retry_response.status_code == 202
+    assert retry_response.json()["status"] == "pending"
+    assert retry_response.json()["error_message"] is None
+    assert retry_queue.jobs == [("process_document", (document_id,))]
+
+
+def test_retry_rejects_document_that_is_not_failed(client: TestClient) -> None:
+    knowledge_base = create_knowledge_base(client)
+    pending_upload = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/documents",
+        files={"file": ("handbook.md", b"# Release process", "text/markdown")},
+    )
+
+    response = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/documents/{pending_upload.json()['id']}/retry"
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Only failed documents can be retried"
+
+
 def test_create_and_list_evaluation_cases(client: TestClient) -> None:
     knowledge_base = create_knowledge_base(client)
 

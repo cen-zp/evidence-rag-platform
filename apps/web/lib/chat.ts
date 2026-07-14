@@ -159,6 +159,23 @@ export async function uploadDocument(
   }
 }
 
+export async function retryDocument(
+  knowledgeBaseId: string,
+  documentId: string,
+): Promise<DocumentRecord> {
+  try {
+    return await readJson<DocumentRecord>(
+      await fetch(
+        `${apiBaseUrl}/api/knowledge-bases/${knowledgeBaseId}/documents/${documentId}/retry`,
+        { method: "POST" },
+      ),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法重新处理文档。请确认 Redis 与 API 已启动。");
+  }
+}
+
 export async function getEvaluationCases(knowledgeBaseId: string): Promise<EvaluationCase[]> {
   try {
     return await readJson<EvaluationCase[]>(

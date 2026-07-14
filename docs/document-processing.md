@@ -27,6 +27,10 @@ uv run arq app.workers.document.WorkerSettings
 
 上传成功后，轮询 `GET /api/knowledge-bases/{kb_id}/documents`，直到状态从 `pending` 变为 `ready` 或 `failed`。
 
+如果 Redis 暂时不可用或解析失败，保留的源文件可通过
+`POST /api/knowledge-bases/{kb_id}/documents/{document_id}/retry` 重新入队。该接口只接受
+`failed` 状态，避免为仍在排队或处理中任务重复投递；源文件缺失时会明确拒绝重试。
+
 ## 向量基线的真实边界
 
 当前使用 `LocalHashEmbedding`：它把英文词和中文字符稳定映射为 384 维归一化向量，因此可完全离线地验证 Qdrant 写入、ID 契约和后续检索链路。
