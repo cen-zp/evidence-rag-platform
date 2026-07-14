@@ -1,5 +1,5 @@
 import sqlite3
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.pool import StaticPool
@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from app.db.base import Base
 from app.db.session import create_session_factory
 from app.models import Document, DocumentChunk, DocumentStatus, KnowledgeBase
+from app.services.bm25 import rank_bm25
 from app.services.retrieval import KnowledgeBaseRetriever
 from app.services.vector_store import VectorSearchHit
 
@@ -105,8 +106,23 @@ def test_retriever_enforces_knowledge_base_and_ready_document_filters() -> None:
 
     assert [hit.chunk.id for hit in hits] == [target_chunk_id]
     assert hits[0].chunk.document.filename == "target.md"
-    assert hits[0].score == 0.9
-    assert vector_store.calls == [(target_knowledge_base_id, [1.0, 0.0], 3)]
+    assert hits[0].score > 0
+    assert vector_store.calls == [(target_knowledge_base_id, [1.0, 0.0], 20)]
 
     Base.metadata.drop_all(engine)
     engine.dispose()
+
+
+def test_bm25_ranks_matching_chunk_above_unrelated_chunk() -> None:
+    unrelated_chunk_id = uuid4()
+    matching_chunk_id = uuid4()
+
+    ranked_chunk_ids = rank_bm25(
+        "release verification",
+        [
+            (unrelated_chunk_id, "meeting notes about design tokens"),
+            (matching_chunk_id, "release verification checklist and release notes"),
+        ],
+    )
+
+    assert ranked_chunk_ids == [matching_chunk_id]

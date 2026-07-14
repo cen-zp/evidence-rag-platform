@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, selectinload, sessionmaker
 from app.core.config import get_settings
 from app.db.session import get_session_factory
 from app.models import Document, DocumentChunk, DocumentStatus
+from app.services.bm25 import rank_bm25
 from app.services.local_hash_embedding import LocalHashEmbedding
 from app.services.vector_store import QdrantVectorStore
 
@@ -35,30 +36,52 @@ class KnowledgeBaseRetriever:
         vector_hits = self._vector_store.search(
             knowledge_base_id=knowledge_base_id,
             query_vector=self._embed(query),
-            limit=top_k,
+            limit=max(top_k * 4, 20),
         )
-        if not vector_hits:
-            return []
-
-        chunk_ids = [hit.chunk_id for hit in vector_hits]
         with self._session_factory() as session:
             statement = (
                 select(DocumentChunk)
                 .join(Document)
                 .options(selectinload(DocumentChunk.document))
                 .where(
-                    DocumentChunk.id.in_(chunk_ids),
                     DocumentChunk.knowledge_base_id == knowledge_base_id,
                     Document.status == DocumentStatus.READY,
                 )
             )
-            chunks_by_id = {chunk.id: chunk for chunk in session.scalars(statement)}
+            ready_chunks = list(session.scalars(statement))
 
-        return [
-            RetrievalHit(chunk=chunks_by_id[hit.chunk_id], score=hit.score)
-            for hit in vector_hits
+        chunks_by_id = {chunk.id: chunk for chunk in ready_chunks}
+        dense_ranks = {
+            hit.chunk_id: rank
+            for rank, hit in enumerate(vector_hits, start=1)
             if hit.chunk_id in chunks_by_id
+        }
+        lexical_ranks = {
+            chunk_id: rank
+            for rank, chunk_id in enumerate(
+                rank_bm25(query, [(chunk.id, chunk.content) for chunk in ready_chunks]),
+                start=1,
+            )
+        }
+        fused_scores = _reciprocal_rank_fusion(dense_ranks, lexical_ranks)
+
+        ranked_scores = sorted(fused_scores.items(), key=lambda item: item[1], reverse=True)
+        return [
+            RetrievalHit(chunk=chunks_by_id[chunk_id], score=score)
+            for chunk_id, score in ranked_scores[:top_k]
         ]
+
+
+def _reciprocal_rank_fusion(
+    dense_ranks: dict[UUID, int],
+    lexical_ranks: dict[UUID, int],
+    k: int = 60,
+) -> dict[UUID, float]:
+    scores: dict[UUID, float] = {}
+    for rankings in (dense_ranks, lexical_ranks):
+        for chunk_id, rank in rankings.items():
+            scores[chunk_id] = scores.get(chunk_id, 0.0) + 1 / (k + rank)
+    return scores
 
 
 @lru_cache

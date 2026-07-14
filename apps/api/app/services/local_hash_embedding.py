@@ -13,7 +13,7 @@ class LocalHashEmbedding:
 
     def embed(self, text: str) -> list[float]:
         vector = [0.0] * self.dimension
-        tokens = TOKEN_PATTERN.findall(text.lower())
+        tokens = tokenize(text)
         for token in tokens:
             index, sign = self._bucket(token)
             vector[index] += sign
@@ -27,3 +27,7 @@ class LocalHashEmbedding:
         digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
         number = int.from_bytes(digest, byteorder="big")
         return number % self.dimension, 1 if number & 1 else -1
+
+
+def tokenize(text: str) -> list[str]:
+    return TOKEN_PATTERN.findall(text.lower())
