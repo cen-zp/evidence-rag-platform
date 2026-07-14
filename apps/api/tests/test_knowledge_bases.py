@@ -169,3 +169,36 @@ def test_upload_marks_document_failed_when_queue_enqueue_fails(client: TestClien
     assert documents_response.json()[0]["error_message"] == (
         "Document was stored but could not be scheduled for processing"
     )
+
+
+def test_create_and_list_evaluation_cases(client: TestClient) -> None:
+    knowledge_base = create_knowledge_base(client)
+
+    response = client.post(
+        f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases",
+        json={
+            "question": "Where is the release process?",
+            "expected_filenames": ["handbook.md"],
+            "reference_answer": "The handbook documents the release process.",
+        },
+    )
+
+    assert response.status_code == 201
+    evaluation_case = response.json()
+    assert evaluation_case["knowledge_base_id"] == knowledge_base["id"]
+    assert evaluation_case["expected_filenames"] == ["handbook.md"]
+
+    list_response = client.get(f"/api/knowledge-bases/{knowledge_base['id']}/evaluation-cases")
+    assert list_response.status_code == 200
+    assert list_response.json() == [evaluation_case]
+
+
+def test_run_evaluation_requires_cases(client: TestClient) -> None:
+    knowledge_base = create_knowledge_base(client)
+
+    response = client.post(f"/api/knowledge-bases/{knowledge_base['id']}/evaluations/retrieval")
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Add at least one evaluation case before running retrieval evaluation"
+    )

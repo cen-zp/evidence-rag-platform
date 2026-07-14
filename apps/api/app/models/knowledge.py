@@ -41,6 +41,9 @@ class KnowledgeBase(Base):
     documents: Mapped[list["Document"]] = relationship(
         back_populates="knowledge_base", cascade="all, delete-orphan"
     )
+    evaluation_cases: Mapped[list["EvaluationCase"]] = relationship(
+        back_populates="knowledge_base", cascade="all, delete-orphan"
+    )
 
 
 class Document(Base):
@@ -109,3 +112,23 @@ class DocumentChunk(Base):
         if self.id is None:
             raise ValueError("DocumentChunk must be persisted before indexing")
         return str(self.id)
+
+
+class EvaluationCase(Base):
+    __tablename__ = "evaluation_cases"
+    __table_args__ = (Index("ix_evaluation_cases_knowledge_base_id", "knowledge_base_id"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    knowledge_base_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("knowledge_bases.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    question: Mapped[str] = mapped_column(Text, nullable=False)
+    expected_filenames: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    reference_answer: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    knowledge_base: Mapped[KnowledgeBase] = relationship(back_populates="evaluation_cases")

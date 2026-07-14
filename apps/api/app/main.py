@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.api import knowledge_bases
+from app.api.evaluations import router as evaluations_router
 from app.api.retrieval import router as retrieval_router
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
@@ -38,6 +39,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(knowledge_bases.router)
+    app.include_router(evaluations_router)
     app.include_router(retrieval_router)
 
     @app.get("/health", tags=["system"])

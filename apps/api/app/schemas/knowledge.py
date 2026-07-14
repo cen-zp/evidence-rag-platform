@@ -44,3 +44,26 @@ class RetrievalHitRead(BaseModel):
     page_number: int | None
     chunk_index: int
     score: float
+
+
+class EvaluationCaseCreate(BaseModel):
+    question: str = Field(min_length=1, max_length=2_000)
+    expected_filenames: list[str] = Field(min_length=1, max_length=10)
+    reference_answer: str | None = Field(default=None, max_length=8_000)
+
+
+class EvaluationCaseRead(EvaluationCaseCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    knowledge_base_id: UUID
+    created_at: datetime
+
+
+class RetrievalEvaluationReportRead(BaseModel):
+    case_count: int
+    top_k: int
+    recall_at_k: float
+    mean_reciprocal_rank: float
+    mean_latency_ms: float
+    p95_latency_ms: float

@@ -2,6 +2,14 @@
 
 当前项目已经提供一个可复现的离线检索评测运行器，用于比较同一知识库、同一题集和同一 `top_k` 下的检索配置。
 
+也可以通过 API 将案例持久化到指定知识库：
+
+- `POST /api/knowledge-bases/{kb_id}/evaluation-cases`：保存问题、预期来源文件名和可选参考答案。
+- `GET /api/knowledge-bases/{kb_id}/evaluation-cases`：查看该知识库已积累的案例。
+- `POST /api/knowledge-bases/{kb_id}/evaluations/retrieval?top_k=5`：使用这些案例运行当前检索基线。
+
+API 返回的指标与下方 CLI 一致；它不会调用模型，因此只统计检索延迟。
+
 ## 题集格式
 
 题集是 UTF-8 JSONL：每一行一个案例，最少填写唯一 ID、问题和至少一个预期来源文件名。模板见 [../evals/template.jsonl](../evals/template.jsonl)。
