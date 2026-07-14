@@ -21,7 +21,7 @@ POST /api/knowledge-bases/{kb_id}/search
 
 当前实现将两条候选列表以 Reciprocal Rank Fusion（RRF，`k=60`）合并：
 
-1. Qdrant 中的本地哈希向量 Top-N（`max(4 × top_k, 20)`）。
+1. Qdrant 中的本地 BGE 语义向量 Top-N（`max(4 × top_k, 20)`）。
 2. 当前知识库所有 `ready` chunk 的内存 BM25 关键词排序。
 
 RRF 只使用各自的**排名**而不是原始分数，因此可以避免直接比较不同检索器的分值尺度。API 返回的 `score` 是 RRF 排序分数，不是概率、置信度或准确率。

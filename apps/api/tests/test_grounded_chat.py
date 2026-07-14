@@ -123,6 +123,7 @@ def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert UUID(payload.pop("conversation_id"))
+    assert UUID(payload.pop("assistant_message_id"))
     assert payload == {
         "answer": "Use the documented release process.",
         "model": "test-model",
@@ -174,12 +175,39 @@ def test_grounded_chat_refuses_when_model_citations_are_invalid() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert UUID(payload.pop("conversation_id"))
+    assert UUID(payload.pop("assistant_message_id"))
     assert payload == {
         "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
         "model": "retrieval-guard",
         "latency_ms": 0,
         "citations": [],
     }
+
+
+def test_grounded_chat_stream_returns_progress_then_validated_result() -> None:
+    client, knowledge_base_id, chunk = create_chat_client()
+    client.app.state.knowledge_base_retriever_factory = lambda: StaticRetriever(
+        [RetrievalHit(chunk=chunk, score=0.9)]
+    )
+    client.app.state.chat_service_factory = lambda: SuccessfulGroundedService(chunk.id)
+
+    response = client.post(
+        "/api/chat/stream",
+        json={
+            "message": "What is the release process?",
+            "knowledge_base_id": str(knowledge_base_id),
+            "history": [
+                {"role": "user", "content": "Tell me about the handbook."},
+                {"role": "assistant", "content": "It contains the release process."},
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert 'event: status\ndata: {"phase": "retrieving"}' in response.text
+    assert 'event: result\ndata: {"answer": "Use the documented release process."' in response.text
+    assert '"citations": [{"chunk_id":' in response.text
 
 
 def test_grounded_chat_persists_conversation_messages_and_feedback() -> None:

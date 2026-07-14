@@ -38,6 +38,7 @@ class ChatResponse(BaseModel):
     citations: list[ChatCitation] = Field(default_factory=list)
     usage: ChatUsage | None = None
     conversation_id: UUID | None = None
+    assistant_message_id: UUID | None = None
 
     @model_serializer(mode="wrap")
     def serialize(self, handler):

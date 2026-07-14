@@ -10,7 +10,7 @@
 
 - 上传并解析 PDF、DOCX、Markdown 文件
 - 异步分块、向量化并写入知识库
-- 支持同一页面会话内的有限多轮追问，并在回答中展示来源片段
+- 支持知识库内持久化会话、会话回看、回答反馈与 SSE 问答进度流
 - 基于本地 BGE 语义向量、BM25、RRF 与 CrossEncoder 重排序生成上下文
 - 无检索证据或模型返回非法引用时拒答
 - 展示模型名称、端到端模型耗时与检索评测指标
@@ -79,7 +79,7 @@ docker compose down
 
 ## 前端 RAG 工作台（当前里程碑）
 
-`apps/web` 是一个 Next.js 知识库问答工作台：可创建/选择知识库、上传 Markdown/PDF/DOCX、轮询文档处理状态，并对失败任务重新入队；还能积累检索评测案例，并在指定知识库后调用 `POST /api/chat` 展示服务端校验过的来源片段。未选择知识库时，页面会明确标示为“直接模型调用”，不会模拟来源证据。
+`apps/web` 是一个 Next.js 知识库问答工作台：可创建/选择知识库、上传 Markdown/PDF/DOCX、轮询文档处理状态，并对失败任务重新入队；还能积累检索评测案例，并在指定知识库后通过 `POST /api/chat/stream` 消费 SSE 状态和最终的服务端校验回答。页面支持打开同一知识库的历史会话，并可对持久化回答点赞或踩。未选择知识库时，页面会明确标示为“直接模型调用”，不会模拟来源证据。
 
 ```bash
 # Terminal 1: start the API
@@ -107,7 +107,7 @@ pnpm dev
 
 ## 当前数据与处理层里程碑
 
-后端已定义 `KnowledgeBase`、`Document`、`DocumentChunk` 最小数据模型和 Alembic 初始迁移。当前仍是本地单用户模式。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
+后端已定义账户、会话、知识库、文档、文档分块、评测与模型调用数据模型，并通过 Alembic 管理迁移。数据隔离与 PostgreSQL/Qdrant ID 规则见 [docs/data-model.md](docs/data-model.md)。
 
 M2-A 已支持创建、删除知识库与上传 Markdown/PDF/DOCX；删除知识库会清理 PostgreSQL 记录、Qdrant 向量和上传源文件；M2-B 已接入 Redis/ARQ Worker，将文件解析、分块并写入 PostgreSQL/Qdrant，并可重试失败任务；M3 已提供按知识库隔离的本地向量 + BM25 + RRF 混合检索；M3-B 已实现服务端校验引用的证据问答契约、服务端持久化的有限会话上下文及前端知识库工作流；M4 已加入可复现的 JSONL 检索评测运行器、可管理的知识库级评测案例，以及不产生模型调用的人工答案/引用评审记录。处理过程、检索、问答和评测边界见 [docs/document-processing.md](docs/document-processing.md)、[docs/retrieval.md](docs/retrieval.md)、[docs/grounded-chat.md](docs/grounded-chat.md)、[docs/conversations.md](docs/conversations.md) 与 [docs/evaluation.md](docs/evaluation.md)。
 
@@ -115,12 +115,12 @@ M2-A 已支持创建、删除知识库与上传 Markdown/PDF/DOCX；删除知识
 
 仓库已配置 GitHub Actions CI：对 push 和 pull request 运行 API 的锁定依赖安装、pytest、Ruff，以及 Web 的锁定依赖安装、ESLint 和 production build。首次推送到 GitHub 后可在 Actions 页面查看实际运行记录。
 
-### 尚未完成的关键能力
+### 尚未完成的关键验收证据
 
-- 正式语义 Embedding 与同题集的效果、延迟、成本对比
-- 基于可靠阈值的低置信度拒答
-- 账户/权限、持久化会话、请求日志与答案反馈
+- 独立 60–100 条题集上的检索命中率、引用正确率、端到端延迟和单次成本
+- 基于独立标注和固定环境校准的低置信度阈值
+- 3–5 分钟的端到端演示视频
 
-这些项目没有被计入已完成能力。BGE 已提供正式语义向量，但仍需用独立题集记录真实的检索效果、延迟与成本，不能在没有评测数据时宣称准确率。
+这些项目没有被计入已完成能力。BGE 语义向量、账户隔离、持久化会话、模型调用记录与回答反馈均已实现；但任何准确率、延迟和成本结论仍需用独立题集在固定环境中实际测量。
 
 最近一次本地真实链路验收记录见 [docs/verification.md](docs/verification.md)。

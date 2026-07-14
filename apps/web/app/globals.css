@@ -70,6 +70,15 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
 .delete-knowledge-base { border: 0; padding: 2px 0; color: #f5aaa2; background: transparent; font-size: 12px; }
 .delete-knowledge-base:hover:not(:disabled) { color: var(--ink); }
 .delete-knowledge-base:disabled { opacity: .45; }
+.conversation-history { display: grid; gap: 8px; width: min(100%, 760px); margin: 14px auto 0; }
+.conversation-history-heading { display: flex; align-items: center; justify-content: space-between; color: var(--subtle); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 600; letter-spacing: .08em; }
+.conversation-history-heading button { border: 0; padding: 2px 0; color: var(--accent-hover); background: transparent; font-family: inherit; font-size: 11px; }
+.conversation-history-heading button:hover { color: var(--ink); }
+.conversation-history-list { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.conversation-history-list button { overflow: hidden; max-width: 190px; border: 1px solid var(--border); border-radius: 999px; padding: 5px 9px; color: var(--muted); background: var(--surface); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.conversation-history-list button:hover:not(:disabled), .conversation-history-list button.active { border-color: var(--accent); color: var(--ink); }
+.conversation-history-list button:disabled { opacity: .45; }
+.conversation-history-empty { color: var(--subtle); font-size: 12px; }
 
 .conversation { display: flex; flex: 1; flex-direction: column; gap: 16px; justify-content: center; width: min(100%, 760px); margin: 24px auto; }
 .empty-state { max-width: 620px; padding: 34px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
@@ -85,6 +94,10 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
 .message-role { margin-bottom: 8px; color: var(--subtle); font-size: 12px; font-weight: 600; }
 .message-content { margin-bottom: 0; white-space: pre-wrap; font-size: 15px; line-height: 1.7; }
 .message-meta { display: flex; gap: 12px; margin-top: 14px; color: var(--subtle); }
+.message-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 12px; color: var(--subtle); font-size: 11px; }
+.message-feedback button { border: 1px solid var(--border); border-radius: 999px; padding: 4px 7px; color: var(--muted); background: transparent; font-size: 11px; }
+.message-feedback button:hover:not(:disabled), .message-feedback button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-hover); }
+.message-feedback button:disabled { opacity: .45; }
 .sending { margin: 0; color: var(--muted); font-size: 14px; }
 
 .composer { width: min(100%, 760px); margin: 0 auto; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface-raised); }

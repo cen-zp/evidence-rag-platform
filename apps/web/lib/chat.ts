@@ -18,6 +18,7 @@ export type ChatResponse = {
     total_tokens: number;
   };
   conversation_id?: string;
+  assistant_message_id?: string;
 };
 
 export type ChatHistoryMessage = {
@@ -46,6 +47,33 @@ export type KnowledgeBase = {
   owner_id: string | null;
   name: string;
   description: string | null;
+  created_at: string;
+};
+
+export type Conversation = {
+  id: string;
+  knowledge_base_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ConversationMessage = {
+  id: string;
+  conversation_id: string;
+  role: "user" | "assistant";
+  content: string;
+  citations: Citation[];
+  model: string | null;
+  latency_ms: number | null;
+  created_at: string;
+};
+
+export type MessageFeedback = {
+  id: string;
+  message_id: string;
+  rating: 1 | -1;
+  comment: string | null;
   created_at: string;
 };
 
@@ -241,6 +269,77 @@ export async function sendChatMessage(
   }
 }
 
+export async function sendChatMessageStream(
+  message: string,
+  knowledgeBaseId?: string,
+  history: ChatHistoryMessage[] = [],
+  conversationId?: string,
+  onStatus?: (phase: string) => void,
+): Promise<ChatResponse> {
+  try {
+    const response = await request("/api/chat/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        knowledge_base_id: knowledgeBaseId ?? null,
+        history,
+        conversation_id: conversationId ?? null,
+      }),
+    });
+    if (!response.ok) return await readJson<ChatResponse>(response);
+    if (!response.body) throw new ChatApiError("浏览器不支持流式响应，请刷新后重试。");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let result: ChatResponse | null = null;
+
+    function consumeEvent(record: string): void {
+      const event = record
+        .split("\n")
+        .find((line) => line.startsWith("event: "))
+        ?.slice("event: ".length);
+      const data = record
+        .split("\n")
+        .filter((line) => line.startsWith("data: "))
+        .map((line) => line.slice("data: ".length))
+        .join("\n");
+      if (!event || !data) return;
+
+      try {
+        const payload = JSON.parse(data) as ChatResponse | { phase?: string; detail?: string };
+        if (event === "status") onStatus?.((payload as { phase?: string }).phase ?? "working");
+        if (event === "error") {
+          throw new ChatApiError((payload as { detail?: string }).detail ?? "本次请求未完成，请稍后重试。");
+        }
+        if (event === "result") result = payload as ChatResponse;
+      } catch (error) {
+        if (error instanceof ChatApiError) throw error;
+        throw new ChatApiError("流式响应格式异常，请稍后重试。");
+      }
+    }
+
+    while (true) {
+      const { done, value } = await reader.read();
+      buffer += decoder.decode(value, { stream: !done });
+      let separatorIndex = buffer.indexOf("\n\n");
+      while (separatorIndex >= 0) {
+        consumeEvent(buffer.slice(0, separatorIndex));
+        buffer = buffer.slice(separatorIndex + 2);
+        separatorIndex = buffer.indexOf("\n\n");
+      }
+      if (done) break;
+    }
+
+    if (result) return result;
+    throw new ChatApiError("流式响应在返回结果前中断，请重试。");
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法连接 API。请确认 FastAPI 已在 http://localhost:8000 启动。");
+  }
+}
+
 export async function getKnowledgeBases(): Promise<KnowledgeBase[]> {
   try {
     return await readJson<KnowledgeBase[]>(await request("/api/knowledge-bases"));
@@ -276,6 +375,54 @@ export async function deleteKnowledgeBase(knowledgeBaseId: string): Promise<void
   } catch (error) {
     if (error instanceof ChatApiError) throw error;
     throw new ChatApiError("无法删除知识库。请确认 API 与 Qdrant 已启动。");
+  }
+}
+
+export async function getConversations(knowledgeBaseId: string): Promise<Conversation[]> {
+  try {
+    return await readJson<Conversation[]>(
+      await request(`/api/knowledge-bases/${knowledgeBaseId}/conversations`),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法加载会话记录。请确认 API 已启动。");
+  }
+}
+
+export async function getConversationMessages(
+  knowledgeBaseId: string,
+  conversationId: string,
+): Promise<ConversationMessage[]> {
+  try {
+    return await readJson<ConversationMessage[]>(
+      await request(`/api/knowledge-bases/${knowledgeBaseId}/conversations/${conversationId}/messages`),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法加载会话消息。请确认 API 已启动。");
+  }
+}
+
+export async function saveMessageFeedback(
+  knowledgeBaseId: string,
+  conversationId: string,
+  messageId: string,
+  rating: 1 | -1,
+): Promise<MessageFeedback> {
+  try {
+    return await readJson<MessageFeedback>(
+      await request(
+        `/api/knowledge-bases/${knowledgeBaseId}/conversations/${conversationId}/messages/${messageId}/feedback`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rating }),
+        },
+      ),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法保存反馈。请确认 API 已启动。");
   }
 }
 

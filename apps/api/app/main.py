@@ -1,8 +1,10 @@
+import json
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -90,7 +92,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     latency_ms=0,
                     conversation_id=conversation.id,
                 )
-                _persist_conversation_turn(session, conversation, request.message, response)
+                response.assistant_message_id = _persist_conversation_turn(
+                    session, conversation, request.message, response
+                ).id
                 session.commit()
                 return response
 
@@ -120,7 +124,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     latency_ms=0,
                     conversation_id=conversation.id,
                 )
-                _persist_conversation_turn(session, conversation, request.message, response)
+                response.assistant_message_id = _persist_conversation_turn(
+                    session, conversation, request.message, response
+                ).id
                 session.commit()
                 return response
 
@@ -144,7 +150,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 usage=grounded.usage,
                 conversation_id=conversation.id,
             )
-            _persist_conversation_turn(session, conversation, request.message, response)
+            response.assistant_message_id = _persist_conversation_turn(
+                session, conversation, request.message, response
+            ).id
             record_model_call(
                 session,
                 request.knowledge_base_id,
@@ -168,7 +176,41 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except DeepSeekProviderError as error:
             raise HTTPException(status_code=error.status_code, detail=error.detail) from error
 
+    @app.post("/api/chat/stream", tags=["chat"])
+    async def chat_stream(
+        request: ChatRequest,
+        session: Session = Depends(get_session),
+        current_user: User = Depends(get_current_user),
+    ) -> StreamingResponse:
+        async def event_stream():
+            yield _sse_event("status", {"phase": "retrieving"})
+            try:
+                response = await chat(request, session, current_user)
+            except HTTPException as error:
+                yield _sse_event(
+                    "error",
+                    {"status_code": error.status_code, "detail": str(error.detail)},
+                )
+                return
+            except Exception:
+                yield _sse_event(
+                    "error",
+                    {"status_code": 500, "detail": "The chat request could not be completed."},
+                )
+                return
+            yield _sse_event("result", response.model_dump(mode="json", exclude_none=True))
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
     return app
+
+
+def _sse_event(event: str, data: dict) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
 def _get_or_create_conversation(
@@ -221,21 +263,24 @@ def _persist_conversation_turn(
     conversation: Conversation,
     user_message: str,
     response: ChatResponse,
-) -> None:
+) -> ConversationMessage:
+    assistant_message = ConversationMessage(
+        conversation=conversation,
+        role="assistant",
+        content=response.answer,
+        citations=[citation.model_dump(mode="json") for citation in response.citations],
+        model=response.model,
+        latency_ms=response.latency_ms,
+    )
     session.add_all(
         [
             ConversationMessage(conversation=conversation, role="user", content=user_message),
-            ConversationMessage(
-                conversation=conversation,
-                role="assistant",
-                content=response.answer,
-                citations=[citation.model_dump(mode="json") for citation in response.citations],
-                model=response.model,
-                latency_ms=response.latency_ms,
-            ),
+            assistant_message,
         ]
     )
     conversation.updated_at = datetime.now(UTC)
+    session.flush()
+    return assistant_message
 
 
 app = create_app()

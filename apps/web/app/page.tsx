@@ -9,6 +9,7 @@ import {
   ChatHistoryMessage,
   ChatResponse,
   Citation,
+  Conversation,
   DocumentRecord,
   EvaluationCase,
   KnowledgeBase,
@@ -22,6 +23,8 @@ import {
   deleteKnowledgeBase,
   getAnswerReviewSummary,
   getApiHealth,
+  getConversationMessages,
+  getConversations,
   getDocuments,
   getEvaluationCases,
   getKnowledgeBases,
@@ -33,12 +36,13 @@ import {
   runRetrievalEvaluation,
   register,
   saveSession,
-  sendChatMessage,
+  saveMessageFeedback,
+  sendChatMessageStream,
   uploadDocument,
 } from "../lib/chat";
 
 type Message = {
-  id: number;
+  id: string;
   role: "user" | "assistant";
   content: string;
   model?: string;
@@ -46,6 +50,7 @@ type Message = {
   usage?: ChatResponse["usage"];
   citations?: Citation[];
   evaluationCaseId?: string;
+  feedbackRating?: 1 | -1;
 };
 
 type ApiStatus = "checking" | "connected" | "disconnected";
@@ -81,6 +86,10 @@ export default function ChatPage() {
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   const [selectedKnowledgeBaseId, setSelectedKnowledgeBaseId] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
+  const [savingFeedbackMessageId, setSavingFeedbackMessageId] = useState<string | null>(null);
+  const [streamPhase, setStreamPhase] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [evaluationCases, setEvaluationCases] = useState<EvaluationCase[]>([]);
   const [evaluationReport, setEvaluationReport] = useState<RetrievalEvaluationReport | null>(null);
@@ -151,6 +160,14 @@ export default function ChatPage() {
     }
   }, []);
 
+  const loadConversations = useCallback(async (knowledgeBaseId: string) => {
+    try {
+      setConversations(await getConversations(knowledgeBaseId));
+    } catch (loadError) {
+      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取会话记录。");
+    }
+  }, []);
+
   useEffect(() => {
     let isActive = true;
 
@@ -197,6 +214,7 @@ export default function ChatPage() {
         loadEvaluationCases(selectedKnowledgeBaseId),
         loadAnswerReviewSummary(selectedKnowledgeBaseId),
         loadModelUsageSummary(selectedKnowledgeBaseId),
+        loadConversations(selectedKnowledgeBaseId),
       ]);
     }
 
@@ -205,6 +223,7 @@ export default function ChatPage() {
     loadAnswerReviewSummary,
     loadDocuments,
     loadEvaluationCases,
+    loadConversations,
     loadModelUsageSummary,
     selectedKnowledgeBaseId,
   ]);
@@ -227,7 +246,7 @@ export default function ChatPage() {
       ? draftEvaluationCaseId ?? undefined
       : undefined;
     const userMessage: Message = {
-      id: Date.now(),
+      id: `local-${Date.now()}`,
       role: "user",
       content: message,
       evaluationCaseId,
@@ -237,23 +256,25 @@ export default function ChatPage() {
     setDraftEvaluationCaseId(null);
     setError(null);
     setIsSending(true);
+    setStreamPhase("retrieving");
 
     try {
       const history: ChatHistoryMessage[] = messages.slice(-6).map((item) => ({
         role: item.role,
         content: item.content.slice(0, 2_000),
       }));
-      const result = await sendChatMessage(
+      const result = await sendChatMessageStream(
         message,
         selectedKnowledgeBaseId || undefined,
         history,
         conversationId ?? undefined,
+        setStreamPhase,
       );
       setConversationId(result.conversation_id ?? null);
       setMessages((current) => [
         ...current,
         {
-          id: Date.now() + 1,
+          id: result.assistant_message_id ?? `local-${Date.now() + 1}`,
           role: "assistant",
           content: result.answer,
           model: result.model,
@@ -263,7 +284,12 @@ export default function ChatPage() {
           evaluationCaseId,
         },
       ]);
-      if (selectedKnowledgeBaseId) await loadModelUsageSummary(selectedKnowledgeBaseId);
+      if (selectedKnowledgeBaseId) {
+        await Promise.all([
+          loadModelUsageSummary(selectedKnowledgeBaseId),
+          loadConversations(selectedKnowledgeBaseId),
+        ]);
+      }
     } catch (requestError) {
       setError(
         requestError instanceof ChatApiError
@@ -272,6 +298,50 @@ export default function ChatPage() {
       );
     } finally {
       setIsSending(false);
+      setStreamPhase(null);
+    }
+  }
+
+  async function openConversation(nextConversationId: string) {
+    if (!selectedKnowledgeBaseId || isLoadingConversation) return;
+    setIsLoadingConversation(true);
+    setError(null);
+    try {
+      const storedMessages = await getConversationMessages(
+        selectedKnowledgeBaseId,
+        nextConversationId,
+      );
+      setMessages(
+        storedMessages.map((message) => ({
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          model: message.model ?? undefined,
+          latencyMs: message.latency_ms ?? undefined,
+          citations: message.citations,
+        })),
+      );
+      setConversationId(nextConversationId);
+    } catch (loadError) {
+      setError(loadError instanceof ChatApiError ? loadError.message : "无法加载该会话。");
+    } finally {
+      setIsLoadingConversation(false);
+    }
+  }
+
+  async function submitMessageFeedback(messageId: string, rating: 1 | -1) {
+    if (!selectedKnowledgeBaseId || !conversationId || savingFeedbackMessageId) return;
+    setSavingFeedbackMessageId(messageId);
+    setError(null);
+    try {
+      await saveMessageFeedback(selectedKnowledgeBaseId, conversationId, messageId, rating);
+      setMessages((current) =>
+        current.map((message) => (message.id === messageId ? { ...message, feedbackRating: rating } : message)),
+      );
+    } catch (requestError) {
+      setError(requestError instanceof ChatApiError ? requestError.message : "无法保存反馈。");
+    } finally {
+      setSavingFeedbackMessageId(null);
     }
   }
 
@@ -322,6 +392,7 @@ export default function ChatPage() {
     setKnowledgeBases([]);
     setSelectedKnowledgeBaseId("");
     setConversationId(null);
+    setConversations([]);
     setDocuments([]);
     setMessages([]);
     setEvaluationCases([]);
@@ -346,6 +417,7 @@ export default function ChatPage() {
       setKnowledgeBases(remainingKnowledgeBases);
       setSelectedKnowledgeBaseId(remainingKnowledgeBases[0]?.id ?? "");
       setConversationId(null);
+      setConversations([]);
       setMessages([]);
       setDocuments([]);
       setEvaluationCases([]);
@@ -601,6 +673,7 @@ export default function ChatPage() {
               onChange={(event) => {
                 setMessages([]);
                 setConversationId(null);
+                setConversations([]);
                 setDocuments([]);
                 setEvaluationCases([]);
                 setEvaluationReport(null);
@@ -635,6 +708,40 @@ export default function ChatPage() {
             )}
           </section>
 
+          {selectedKnowledgeBase && (
+            <section className="conversation-history" aria-label="当前知识库会话记录">
+              <div className="conversation-history-heading">
+                <span>会话记录</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConversationId(null);
+                    setMessages([]);
+                  }}
+                >
+                  新建对话
+                </button>
+              </div>
+              {conversations.length ? (
+                <div className="conversation-history-list">
+                  {conversations.slice(0, 5).map((conversation) => (
+                    <button
+                      key={conversation.id}
+                      type="button"
+                      className={conversation.id === conversationId ? "active" : ""}
+                      disabled={isLoadingConversation}
+                      onClick={() => void openConversation(conversation.id)}
+                    >
+                      {conversation.title}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="conversation-history-empty">当前资料库还没有已保存的问答。</span>
+              )}
+            </section>
+          )}
+
           <div className="conversation" aria-live="polite">
             {messages.length === 0 ? (
               <div className="empty-state">
@@ -659,17 +766,44 @@ export default function ChatPage() {
                   <p className="message-role">{message.role === "user" ? "你" : "模型回答"}</p>
                   <p className="message-content">{message.content}</p>
                   {message.role === "assistant" && (
-                    <div className="message-meta">
-                      <span>{message.model}</span>
-                      <span>{message.latencyMs} ms</span>
-                      {message.usage && <span>{message.usage.total_tokens} tokens</span>}
-                      {message.citations && <span>{message.citations.length} 条已校验证据</span>}
-                    </div>
+                    <>
+                      <div className="message-meta">
+                        <span>{message.model ?? "retrieval-guard"}</span>
+                        <span>{message.latencyMs ?? 0} ms</span>
+                        {message.usage && <span>{message.usage.total_tokens} tokens</span>}
+                        {message.citations && <span>{message.citations.length} 条已校验证据</span>}
+                      </div>
+                      {selectedKnowledgeBaseId && !message.id.startsWith("local-") && (
+                        <div className="message-feedback" aria-label="回答反馈">
+                          <span>这条回答有帮助吗？</span>
+                          <button
+                            type="button"
+                            aria-pressed={message.feedbackRating === 1}
+                            disabled={savingFeedbackMessageId === message.id}
+                            onClick={() => void submitMessageFeedback(message.id, 1)}
+                          >
+                            有帮助
+                          </button>
+                          <button
+                            type="button"
+                            aria-pressed={message.feedbackRating === -1}
+                            disabled={savingFeedbackMessageId === message.id}
+                            onClick={() => void submitMessageFeedback(message.id, -1)}
+                          >
+                            不支持
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </article>
               ))
             )}
-            {isSending && <p className="sending">正在检索证据并请求回答…</p>}
+            {isSending && (
+              <p className="sending">
+                {streamPhase === "retrieving" ? "正在检索证据并生成回答…" : "正在请求回答…"}
+              </p>
+            )}
           </div>
 
           <form className="composer" onSubmit={submitMessage}>

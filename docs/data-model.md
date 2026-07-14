@@ -1,14 +1,17 @@
-# M1 数据模型与 ID 契约
+# 数据模型与 ID 契约
 
-当前阶段采用本地单用户模式，只持久化完成文档入库与检索闭环所需的三个实体：
+当前本地工作台持久化以下核心实体：
 
-- `KnowledgeBase`：资料集合。
+- `User` 与 `UserSession`：scrypt 密码哈希和可撤销 Bearer 会话；不保存明文密码。
+- `KnowledgeBase`：资料集合，必须归属一个账户。
 - `Document`：上传文件及其处理状态。
 - `DocumentChunk`：可检索的原文片段及位置元数据。
+- `Conversation`、`ConversationMessage` 与 `MessageFeedback`：知识库内的会话、服务端校验后的回答快照与点赞/踩。
+- `EvaluationCase`、`AnswerReview` 与 `ModelCall`：检索案例、人工答案/引用评审及不含正文的模型调用元数据。
 
 ## 隔离规则
 
-`DocumentChunk` 同时保存 `document_id` 和 `knowledge_base_id`，数据库使用复合外键保证它不能引用其他知识库中的文档。后续检索必须始终携带 `knowledge_base_id` 过滤条件。
+`KnowledgeBase.owner_id` 是 API 所有读写的第一层过滤条件；不能列出、读取或修改其他账户的知识库、文档、检索、评测、会话或模型调用记录。`DocumentChunk` 同时保存 `document_id` 和 `knowledge_base_id`，数据库使用复合外键保证它不能引用其他知识库中的文档。后续检索必须始终携带 `knowledge_base_id` 过滤条件。
 
 ## PostgreSQL 与 Qdrant ID 规则
 
@@ -18,4 +21,4 @@
 
 ## 当前边界
 
-当前已实现本地单用户的文件上传、Markdown/PDF 解析、分块、Qdrant 写入、知识库隔离检索和服务端引用校验。Qdrant 向量目前由本地哈希向量器生成，只用于验证索引工程链路，并不代表语义检索效果。`User`、`Conversation`、`Message` 与评测会在真实产品流程需要时再加入，避免一次性建立尚未验证的数据结构。
+当前已实现本地账户隔离、Markdown/PDF/DOCX 上传、异步解析、分块、BGE 向量写入、知识库隔离检索、服务端引用校验、持久化会话和回答反馈。该模式仍是本地演示交付：没有邮箱验证、找回密码、管理员能力或生产级身份提供商集成。BGE、BM25、RRF 和重排序的工程链路已验证，但效果结论仍必须来自独立题集和人工标注。
