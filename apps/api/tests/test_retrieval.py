@@ -112,9 +112,19 @@ def test_retriever_enforces_knowledge_base_and_ready_document_filters() -> None:
     assert hits[0].score > 0
     assert vector_store.calls == [(target_knowledge_base_id, [1.0, 0.0], 20)]
 
+    baseline = KnowledgeBaseRetriever(
+        session_factory=session_factory,
+        vector_store=FakeVectorStore([VectorSearchHit(chunk_id=target_chunk_id, score=0.9)]),
+        embedding_provider=FakeEmbeddingProvider(),
+        reranker=None,
+        reranker_candidate_count=10,
+    )
+    baseline_hits = baseline.search(target_knowledge_base_id, "target question", top_k=3)
+    assert [hit.chunk.id for hit in baseline_hits] == [target_chunk_id]
+    assert baseline_hits[0].score > 0
+
     Base.metadata.drop_all(engine)
     engine.dispose()
-
 
 class FakeEmbeddingProvider:
     dimension = 2

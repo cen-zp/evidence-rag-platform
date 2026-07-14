@@ -9,7 +9,7 @@ from app.evaluation.retrieval import (
     RetrievalEvaluationReport,
     evaluate_retrieval,
 )
-from app.services.retrieval import get_knowledge_base_retriever
+from app.services.retrieval import create_knowledge_base_retriever
 
 
 def load_cases(path: Path) -> list[RetrievalEvaluationCase]:
@@ -28,8 +28,9 @@ def run(
     knowledge_base_id: UUID,
     cases: Sequence[RetrievalEvaluationCase],
     top_k: int,
+    reranker_enabled: bool = True,
 ) -> RetrievalEvaluationReport:
-    retriever = get_knowledge_base_retriever()
+    retriever = create_knowledge_base_retriever(reranker_enabled=reranker_enabled)
 
     def retrieve_filenames(question: str, limit: int) -> list[str]:
         return [
@@ -45,13 +46,25 @@ def main() -> None:
     parser.add_argument("--knowledge-base-id", required=True, type=UUID)
     parser.add_argument("--cases", required=True, type=Path)
     parser.add_argument("--top-k", type=int, default=5)
+    parser.add_argument(
+        "--disable-reranker",
+        action="store_true",
+        help="Evaluate the Dense + BM25 + RRF baseline without CrossEncoder reranking",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.top_k < 1:
         parser.error("--top-k must be positive")
 
-    report = run(args.knowledge_base_id, load_cases(args.cases), args.top_k)
-    serialized_report = json.dumps(report.to_dict(), ensure_ascii=False, indent=2)
+    reranker_enabled = not args.disable_reranker
+    report = run(
+        args.knowledge_base_id,
+        load_cases(args.cases),
+        args.top_k,
+        reranker_enabled=reranker_enabled,
+    )
+    report_data = report.to_dict() | {"reranker_enabled": reranker_enabled}
+    serialized_report = json.dumps(report_data, ensure_ascii=False, indent=2)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(serialized_report + "\n", encoding="utf-8")

@@ -61,3 +61,16 @@
 - 真实链路：对 `兼容性复测知识库` 的“上传文件后如何查看状态？”查询，返回当前知识库内的 `document-intake.md`；本地混合检索加重排测得约 `316.5 ms`。
 
 结论：Dense、BM25、RRF 与本地 CrossEncoder 重排序已经真实串联。该知识库只有 1 个来源文件，不能从本次结果推断重排序效果；需扩充独立题集和多文档候选后进行 A/B 对比。
+
+## 2026-07-14：RRF-only 与 Reranker 对比烟雾评测
+
+同一条案例、同一知识库、`top_k=3` 下的可追溯结果：
+
+| 配置 | Recall@3 | MRR | 本地检索延迟 |
+| --- | ---: | ---: | ---: |
+| BGE + BM25 + RRF | 1.0 | 1.0 | 170.6 ms |
+| BGE + BM25 + RRF + Reranker | 1.0 | 1.0 | 1290.4 ms |
+
+结果文件分别为 [bge-rrf-only-smoke.json](../evals/results/bge-rrf-only-smoke.json) 与 [bge-reranker-smoke.json](../evals/results/bge-reranker-smoke.json)，其中包含 `reranker_enabled` 配置标记。
+
+结论：对比工具和配置记录可复现；只有 1 个来源文件时重排序没有改变排名，首次本地 CrossEncoder 推理增加了明显延迟。后续必须使用多文档、60–100 条独立题集并预热模型后，才能判断是否值得保留该延迟开销。

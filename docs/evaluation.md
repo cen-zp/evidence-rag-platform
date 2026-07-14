@@ -37,6 +37,20 @@ uv run python -m app.evaluation.runner \
   --output ../../evals/results/baseline.json
 ```
 
+对比重排序前后时，先运行默认配置（`reranker_enabled=true`），再添加
+`--disable-reranker` 运行 RRF-only 基线，并保存为不同结果文件：
+
+```bash
+uv run python -m app.evaluation.runner \
+  --knowledge-base-id <知识库 UUID> \
+  --cases ../../evals/my-cases.jsonl \
+  --top-k 5 \
+  --disable-reranker \
+  --output ../../evals/results/rrf-only.json
+```
+
+CLI 结果会记录 `reranker_enabled`，使两个报告的配置可追溯。
+
 运行器输出：
 
 - `recall_at_k`：至少一个预期来源出现在 Top-K 的案例比例。

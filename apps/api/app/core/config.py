@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     embedding_dimension: int = 512
     embedding_device: str = "cpu"
     reranker_model: str = "BAAI/bge-reranker-base"
+    reranker_enabled: bool = True
     reranker_candidate_count: int = 10
     reranker_device: str = "cpu"
     deepseek_api_key: SecretStr | None = None

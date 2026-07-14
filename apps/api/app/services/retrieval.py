@@ -27,7 +27,7 @@ class KnowledgeBaseRetriever:
         session_factory: sessionmaker[Session],
         vector_store: QdrantVectorStore,
         embedding_provider: EmbeddingProvider,
-        reranker: Reranker,
+        reranker: Reranker | None,
         reranker_candidate_count: int,
     ) -> None:
         self._session_factory = session_factory
@@ -70,6 +70,12 @@ class KnowledgeBaseRetriever:
         fused_scores = _reciprocal_rank_fusion(dense_ranks, lexical_ranks)
 
         ranked_scores = sorted(fused_scores.items(), key=lambda item: item[1], reverse=True)
+        if self._reranker is None:
+            return [
+                RetrievalHit(chunk=chunks_by_id[chunk_id], score=score)
+                for chunk_id, score in ranked_scores[:top_k]
+            ]
+
         rerank_candidates = [
             (chunk_id, chunks_by_id[chunk_id].content)
             for chunk_id, _ in ranked_scores[: max(top_k, self._reranker_candidate_count)]
@@ -93,9 +99,11 @@ def _reciprocal_rank_fusion(
     return scores
 
 
-@lru_cache
-def get_knowledge_base_retriever() -> KnowledgeBaseRetriever:
+def create_knowledge_base_retriever(
+    reranker_enabled: bool | None = None,
+) -> KnowledgeBaseRetriever:
     settings = get_settings()
+    use_reranker = settings.reranker_enabled if reranker_enabled is None else reranker_enabled
     return KnowledgeBaseRetriever(
         session_factory=get_session_factory(),
         vector_store=QdrantVectorStore(
@@ -104,6 +112,11 @@ def get_knowledge_base_retriever() -> KnowledgeBaseRetriever:
             vector_size=settings.embedding_dimension,
         ),
         embedding_provider=get_embedding_provider(),
-        reranker=get_reranker(),
+        reranker=get_reranker() if use_reranker else None,
         reranker_candidate_count=settings.reranker_candidate_count,
     )
+
+
+@lru_cache
+def get_knowledge_base_retriever() -> KnowledgeBaseRetriever:
+    return create_knowledge_base_retriever()
