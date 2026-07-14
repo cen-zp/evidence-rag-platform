@@ -17,6 +17,7 @@ export type ChatResponse = {
     completion_tokens: number;
     total_tokens: number;
   };
+  conversation_id?: string;
 };
 
 export type ChatHistoryMessage = {
@@ -219,13 +220,19 @@ export async function sendChatMessage(
   message: string,
   knowledgeBaseId?: string,
   history: ChatHistoryMessage[] = [],
+  conversationId?: string,
 ): Promise<ChatResponse> {
   try {
     return await readJson<ChatResponse>(
       await request("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, knowledge_base_id: knowledgeBaseId ?? null, history }),
+        body: JSON.stringify({
+          message,
+          knowledge_base_id: knowledgeBaseId ?? null,
+          history,
+          conversation_id: conversationId ?? null,
+        }),
       }),
     );
   } catch (error) {

@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     JSON,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
@@ -52,6 +53,9 @@ class KnowledgeBase(Base):
         back_populates="knowledge_base", cascade="all, delete-orphan"
     )
     model_calls: Mapped[list["ModelCall"]] = relationship(back_populates="knowledge_base")
+    conversations: Mapped[list["Conversation"]] = relationship(
+        back_populates="knowledge_base", cascade="all, delete-orphan"
+    )
     owner: Mapped["User | None"] = relationship(back_populates="knowledge_bases")
 
 
@@ -198,3 +202,87 @@ class ModelCall(Base):
     )
 
     knowledge_base: Mapped[KnowledgeBase] = relationship(back_populates="model_calls")
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+    __table_args__ = (
+        Index("ix_conversations_knowledge_base_id_updated_at", "knowledge_base_id", "updated_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    knowledge_base_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("knowledge_bases.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    owner_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    title: Mapped[str] = mapped_column(String(120), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    knowledge_base: Mapped[KnowledgeBase] = relationship(back_populates="conversations")
+    messages: Mapped[list["ConversationMessage"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
+    )
+
+
+class ConversationMessage(Base):
+    __tablename__ = "conversation_messages"
+    __table_args__ = (
+        Index(
+            "ix_conversation_messages_conversation_id_created_at",
+            "conversation_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    conversation_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    citations: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    model: Mapped[str | None] = mapped_column(String(120))
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    conversation: Mapped[Conversation] = relationship(back_populates="messages")
+    feedback: Mapped["MessageFeedback | None"] = relationship(
+        back_populates="message", cascade="all, delete-orphan", uselist=False
+    )
+
+
+class MessageFeedback(Base):
+    __tablename__ = "message_feedback"
+    __table_args__ = (
+        CheckConstraint("rating IN (-1, 1)", name="ck_message_feedback_rating"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    message_id: Mapped[UUID] = mapped_column(
+        Uuid,
+        ForeignKey("conversation_messages.id", ondelete="CASCADE"),
+        unique=True,
+        nullable=False,
+    )
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    message: Mapped[ConversationMessage] = relationship(back_populates="feedback")

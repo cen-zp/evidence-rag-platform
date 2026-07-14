@@ -1,17 +1,20 @@
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api import knowledge_bases
 from app.api.auth import router as auth_router
+from app.api.conversations import router as conversations_router
 from app.api.evaluations import router as evaluations_router
 from app.api.retrieval import router as retrieval_router
 from app.core.config import Settings, get_settings
 from app.db.session import get_session
-from app.models import User
-from app.schemas.chat import ChatCitation, ChatRequest, ChatResponse
+from app.models import Conversation, ConversationMessage, User
+from app.schemas.chat import ChatCitation, ChatHistoryMessage, ChatRequest, ChatResponse
 from app.services.auth import get_current_user
 from app.services.deepseek import (
     DeepSeekInvalidCitationError,
@@ -45,6 +48,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(knowledge_bases.router)
     app.include_router(auth_router)
+    app.include_router(conversations_router)
     app.include_router(evaluations_router)
     app.include_router(retrieval_router)
 
@@ -64,6 +68,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 request.knowledge_base_id,
                 current_user.id,
             )
+            conversation = _get_or_create_conversation(session, request, current_user)
+            history = (
+                _conversation_history(session, conversation)
+                if request.conversation_id is not None
+                else request.history
+            )
             try:
                 retriever: KnowledgeBaseRetriever = app.state.knowledge_base_retriever_factory()
                 hits = retriever.search(request.knowledge_base_id, request.message, top_k=5)
@@ -74,11 +84,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 ) from error
 
             if not hits:
-                return ChatResponse(
+                response = ChatResponse(
                     answer="我无法根据当前知识库中的资料回答这个问题。",
                     model="retrieval-guard",
                     latency_ms=0,
+                    conversation_id=conversation.id,
                 )
+                _persist_conversation_turn(session, conversation, request.message, response)
+                session.commit()
+                return response
 
             try:
                 grounded = await app.state.chat_service_factory().chat_with_evidence(
@@ -87,7 +101,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         EvidencePrompt(chunk_id=hit.chunk.id, content=hit.chunk.content)
                         for hit in hits
                     ],
-                    request.history,
+                    history,
                 )
             except DeepSeekNotConfiguredError as error:
                 raise HTTPException(
@@ -100,11 +114,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             except DeepSeekProviderError as error:
                 raise HTTPException(status_code=error.status_code, detail=error.detail) from error
             except DeepSeekInvalidCitationError:
-                return ChatResponse(
+                response = ChatResponse(
                     answer="我无法根据当前检索到的资料生成带有效引用的回答。",
                     model="retrieval-guard",
                     latency_ms=0,
+                    conversation_id=conversation.id,
                 )
+                _persist_conversation_turn(session, conversation, request.message, response)
+                session.commit()
+                return response
 
             hits_by_id = {hit.chunk.id: hit for hit in hits}
             response = ChatResponse(
@@ -124,7 +142,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     if (hit := hits_by_id.get(citation_id)) is not None
                 ],
                 usage=grounded.usage,
+                conversation_id=conversation.id,
             )
+            _persist_conversation_turn(session, conversation, request.message, response)
             record_model_call(
                 session,
                 request.knowledge_base_id,
@@ -149,6 +169,73 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(status_code=error.status_code, detail=error.detail) from error
 
     return app
+
+
+def _get_or_create_conversation(
+    session: Session,
+    request: ChatRequest,
+    current_user: User,
+) -> Conversation:
+    if request.conversation_id is not None:
+        conversation = session.scalar(
+            select(Conversation).where(
+                Conversation.id == request.conversation_id,
+                Conversation.knowledge_base_id == request.knowledge_base_id,
+                Conversation.owner_id == current_user.id,
+            )
+        )
+        if conversation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conversation not found",
+            )
+        return conversation
+
+    conversation = Conversation(
+        knowledge_base_id=request.knowledge_base_id,
+        owner_id=current_user.id,
+        title=request.message.strip()[:120],
+    )
+    session.add(conversation)
+    session.flush()
+    return conversation
+
+
+def _conversation_history(session: Session, conversation: Conversation) -> list[ChatHistoryMessage]:
+    messages = list(
+        session.scalars(
+            select(ConversationMessage)
+            .where(ConversationMessage.conversation_id == conversation.id)
+            .order_by(ConversationMessage.created_at.desc())
+            .limit(6)
+        )
+    )
+    return [
+        ChatHistoryMessage(role=message.role, content=message.content[:2_000])
+        for message in reversed(messages)
+    ]
+
+
+def _persist_conversation_turn(
+    session: Session,
+    conversation: Conversation,
+    user_message: str,
+    response: ChatResponse,
+) -> None:
+    session.add_all(
+        [
+            ConversationMessage(conversation=conversation, role="user", content=user_message),
+            ConversationMessage(
+                conversation=conversation,
+                role="assistant",
+                content=response.answer,
+                citations=[citation.model_dump(mode="json") for citation in response.citations],
+                model=response.model,
+                latency_ms=response.latency_ms,
+            ),
+        ]
+    )
+    conversation.updated_at = datetime.now(UTC)
 
 
 app = create_app()

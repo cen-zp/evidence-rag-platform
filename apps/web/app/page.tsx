@@ -80,6 +80,7 @@ export default function ChatPage() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
   const [selectedKnowledgeBaseId, setSelectedKnowledgeBaseId] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [evaluationCases, setEvaluationCases] = useState<EvaluationCase[]>([]);
   const [evaluationReport, setEvaluationReport] = useState<RetrievalEvaluationReport | null>(null);
@@ -242,7 +243,13 @@ export default function ChatPage() {
         role: item.role,
         content: item.content.slice(0, 2_000),
       }));
-      const result = await sendChatMessage(message, selectedKnowledgeBaseId || undefined, history);
+      const result = await sendChatMessage(
+        message,
+        selectedKnowledgeBaseId || undefined,
+        history,
+        conversationId ?? undefined,
+      );
+      setConversationId(result.conversation_id ?? null);
       setMessages((current) => [
         ...current,
         {
@@ -279,6 +286,7 @@ export default function ChatPage() {
       const knowledgeBase = await createKnowledgeBase(name);
       setKnowledgeBases((current) => [knowledgeBase, ...current]);
       setSelectedKnowledgeBaseId(knowledgeBase.id);
+      setConversationId(null);
       setModelUsageSummary(null);
       setNewKnowledgeBaseName("");
     } catch (requestError) {
@@ -313,6 +321,7 @@ export default function ChatPage() {
     setAuthSession(null);
     setKnowledgeBases([]);
     setSelectedKnowledgeBaseId("");
+    setConversationId(null);
     setDocuments([]);
     setMessages([]);
     setEvaluationCases([]);
@@ -336,6 +345,7 @@ export default function ChatPage() {
       );
       setKnowledgeBases(remainingKnowledgeBases);
       setSelectedKnowledgeBaseId(remainingKnowledgeBases[0]?.id ?? "");
+      setConversationId(null);
       setMessages([]);
       setDocuments([]);
       setEvaluationCases([]);
@@ -590,6 +600,7 @@ export default function ChatPage() {
               value={selectedKnowledgeBaseId}
               onChange={(event) => {
                 setMessages([]);
+                setConversationId(null);
                 setDocuments([]);
                 setEvaluationCases([]);
                 setEvaluationReport(null);

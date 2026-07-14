@@ -121,7 +121,9 @@ def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
     )
 
     assert response.status_code == 200
-    assert response.json() == {
+    payload = response.json()
+    assert UUID(payload.pop("conversation_id"))
+    assert payload == {
         "answer": "Use the documented release process.",
         "model": "test-model",
         "latency_ms": 12,
@@ -170,9 +172,51 @@ def test_grounded_chat_refuses_when_model_citations_are_invalid() -> None:
     )
 
     assert response.status_code == 200
-    assert response.json() == {
+    payload = response.json()
+    assert UUID(payload.pop("conversation_id"))
+    assert payload == {
         "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
         "model": "retrieval-guard",
         "latency_ms": 0,
         "citations": [],
     }
+
+
+def test_grounded_chat_persists_conversation_messages_and_feedback() -> None:
+    client, knowledge_base_id, chunk = create_chat_client()
+    client.app.state.knowledge_base_retriever_factory = lambda: StaticRetriever(
+        [RetrievalHit(chunk=chunk, score=0.9)]
+    )
+    client.app.state.chat_service_factory = lambda: SuccessfulGroundedService(chunk.id)
+
+    response = client.post(
+        "/api/chat",
+        json={
+            "message": "What is the release process?",
+            "knowledge_base_id": str(knowledge_base_id),
+            "history": [
+                {"role": "user", "content": "Tell me about the handbook."},
+                {"role": "assistant", "content": "It contains the release process."},
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    conversation_id = response.json()["conversation_id"]
+    messages_response = client.get(
+        f"/api/knowledge-bases/{knowledge_base_id}/conversations/{conversation_id}/messages"
+    )
+    assert messages_response.status_code == 200
+    messages = messages_response.json()
+    assert [(message["role"], message["content"]) for message in messages] == [
+        ("user", "What is the release process?"),
+        ("assistant", "Use the documented release process."),
+    ]
+
+    feedback_response = client.post(
+        f"/api/knowledge-bases/{knowledge_base_id}/conversations/{conversation_id}/messages/"
+        f"{messages[1]['id']}/feedback",
+        json={"rating": 1, "comment": "Supported by the handbook."},
+    )
+    assert feedback_response.status_code == 201
+    assert feedback_response.json()["rating"] == 1

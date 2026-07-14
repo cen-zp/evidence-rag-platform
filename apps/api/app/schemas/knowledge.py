@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -114,3 +115,39 @@ class ModelUsageSummaryRead(BaseModel):
     total_tokens: int
     mean_latency_ms: float | None
     p95_latency_ms: float | None
+
+
+class ConversationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    knowledge_base_id: UUID
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationMessageRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    conversation_id: UUID
+    role: Literal["user", "assistant"]
+    content: str
+    citations: list[dict]
+    model: str | None
+    latency_ms: int | None
+    created_at: datetime
+
+
+class MessageFeedbackCreate(BaseModel):
+    rating: Literal[-1, 1]
+    comment: str | None = Field(default=None, max_length=2_000)
+
+
+class MessageFeedbackRead(MessageFeedbackCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    message_id: UUID
+    created_at: datetime

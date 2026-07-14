@@ -12,6 +12,7 @@ class ChatHistoryMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=8_000)
     knowledge_base_id: UUID | None = None
+    conversation_id: UUID | None = None
     history: list[ChatHistoryMessage] = Field(default_factory=list, max_length=6)
 
 
@@ -36,6 +37,7 @@ class ChatResponse(BaseModel):
     latency_ms: int
     citations: list[ChatCitation] = Field(default_factory=list)
     usage: ChatUsage | None = None
+    conversation_id: UUID | None = None
 
     @model_serializer(mode="wrap")
     def serialize(self, handler):
