@@ -1,0 +1,9 @@
+{
+  "case_count": 72,
+  "top_k": 3,
+  "recall_at_k": 0.8472222222222222,
+  "mean_reciprocal_rank": 0.8194444444444444,
+  "mean_latency_ms": 1546.9703149305553,
+  "p95_latency_ms": 2071.7338340000424,
+  "reranker_enabled": true
+}

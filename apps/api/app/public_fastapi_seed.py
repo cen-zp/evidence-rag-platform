@@ -19,8 +19,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import PROJECT_ROOT
 from app.db.session import get_session_factory
-from app.evaluation.runner import load_cases
 from app.evaluation.retrieval import RetrievalEvaluationCase
+from app.evaluation.runner import load_cases
 from app.models import Document, EvaluationCase, KnowledgeBase, User
 from app.services.document_processing import DocumentProcessor, create_document_processor
 

@@ -148,3 +148,18 @@
 - 自动化覆盖：后端测试使用临时上传文件与假向量存储，验证删除会清理上传源文件、请求当前知识库的向量删除，并移除数据库记录。
 
 结论：知识库删除的 API、容器链路与数据清理契约已验证。页面删除操作会先要求确认；本次只操作临时验收数据，未删除任何既有知识库。
+
+## 2026-07-15：FastAPI 官方语料与 AI 协助题集草案基线
+
+- 语料：9 篇公开 FastAPI 官方教程，来源清单和 SHA-256 见 [fastapi-official-2026-07-14/source-manifest.json](../evals/corpora/fastapi-official-2026-07-14/source-manifest.json)。
+- 导入：本地单账号环境中已创建明确标注“题集待人工复核”的知识库；9/9 Markdown 文档状态均为 `ready`，72/72 条草案题目已保存。
+- 配置：同一知识库、同一 72 条题目、`top_k=3`；分别运行 BGE + BM25 + RRF 与启用本地 `BAAI/bge-reranker-base` 的配置。
+
+| 配置 | Recall@3 | MRR | 平均检索耗时 | P95 检索耗时 |
+| --- | ---: | ---: | ---: | ---: |
+| BGE + BM25 + RRF | 0.847 | 0.743 | 65.2 ms | 79.6 ms |
+| BGE + BM25 + RRF + Reranker | 0.847 | 0.819 | 1547.0 ms | 2071.7 ms |
+
+结果文件：[fastapi-official-draft-rrf-only.json](../evals/results/fastapi-official-draft-rrf-only.json) 与 [fastapi-official-draft-reranker.json](../evals/results/fastapi-official-draft-reranker.json)。当前 CLI 的第一次检索会惰性加载本地 BGE/CrossEncoder，因此这些耗时包含冷启动，不能当作稳态用户延迟；后续正式运行应先预热并另行记录端到端延迟。
+
+结论：公开语料导入、72 条题集读取与两套检索配置均已真实运行。Reranker 在这套**AI 协助、待人工复核**草案上改善了第一个正确来源的平均排名，但没有改善 Top-3 命中率。该题集 manifest 仍为 `needs_human_review`，正式模式已按设计拒绝运行；这些数字仅用于调试与后续人工复核，不得用于简历、公开效果结论或模型选型。

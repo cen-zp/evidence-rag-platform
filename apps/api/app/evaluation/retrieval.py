@@ -10,6 +10,7 @@ class RetrievalEvaluationCase(BaseModel):
     id: str = Field(min_length=1)
     question: str = Field(min_length=1)
     expected_filenames: list[str] = Field(min_length=1)
+    reference_answer: str | None = None
 
 
 @dataclass(frozen=True)

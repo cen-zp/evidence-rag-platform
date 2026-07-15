@@ -41,7 +41,10 @@ def test_seed_public_corpus_is_idempotent_and_keeps_account_scope(tmp_path: Path
     source_paths[1].write_text("query source", encoding="utf-8")
     cases = [
         RetrievalEvaluationCase(
-            id="path-01", question="如何声明路径参数？", expected_filenames=["path.md"]
+            id="path-01",
+            question="如何声明路径参数？",
+            expected_filenames=["path.md"],
+            reference_answer="在路径中声明同名参数。",
         ),
         RetrievalEvaluationCase(
             id="query-01", question="如何声明查询参数？", expected_filenames=["query.md"]
@@ -81,6 +84,10 @@ def test_seed_public_corpus_is_idempotent_and_keeps_account_scope(tmp_path: Path
         assert knowledge_base.owner_id is not None
         assert len(documents) == 2
         assert len(evaluation_cases) == 2
+        assert {case.reference_answer for case in evaluation_cases} == {
+            None,
+            "在路径中声明同名参数。",
+        }
 
         repeated = seed_public_fastapi_knowledge_base(
             session_factory, processor, tmp_path / "uploads", source_paths, cases
