@@ -7,6 +7,8 @@ COPY apps/web/package.json apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml 
 RUN pnpm install --frozen-lockfile
 
 COPY apps/web ./
+COPY evals/results/fastapi-official-formal-answer-batch.json ./review-data/fastapi-official-formal-answer-batch.json
+COPY evals/independent/fastapi-official-cases.jsonl ./review-data/fastapi-official-cases.jsonl
 
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
@@ -24,6 +26,7 @@ COPY --from=builder /workspace/apps/web/pnpm-lock.yaml ./
 COPY --from=builder /workspace/apps/web/pnpm-workspace.yaml ./
 COPY --from=builder /workspace/apps/web/node_modules ./node_modules
 COPY --from=builder /workspace/apps/web/.next ./.next
+COPY --from=builder /workspace/apps/web/review-data ./review-data
 
 EXPOSE 3000
 

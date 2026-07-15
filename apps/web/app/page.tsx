@@ -649,6 +649,7 @@ export default function ChatPage() {
           <span className={`status-dot ${apiStatus}`} />
           {apiStatusLabel[apiStatus]}
         </div>
+        <a className="formal-review-nav" href="/review">72 题真人审核</a>
         <div className="account-menu">
           <span>{authSession.user.email}</span>
           <button type="button" onClick={() => void signOut()}>退出</button>

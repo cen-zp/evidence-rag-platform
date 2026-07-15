@@ -37,6 +37,8 @@ button:disabled { cursor: not-allowed; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(39 166 68 / 12%); }
 .status-dot.checking { background: var(--subtle); box-shadow: 0 0 0 3px rgb(112 116 125 / 12%); }
 .status-dot.disconnected { background: #dc6d64; box-shadow: 0 0 0 3px rgb(220 109 100 / 12%); }
+.formal-review-nav { color: var(--accent-hover); font-size: 12px; text-decoration: none; }
+.formal-review-nav:hover { color: var(--ink); }
 .account-menu { display: inline-flex; align-items: center; gap: 12px; color: var(--subtle); font-size: 12px; }
 .account-menu button, .auth-switch { border: 0; padding: 0; color: var(--accent-hover); background: transparent; font-size: 12px; }
 .account-menu button:hover, .auth-switch:hover { color: var(--ink); }

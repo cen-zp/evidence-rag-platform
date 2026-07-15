@@ -12,4 +12,5 @@ __pycache__
 **/node_modules
 uploads
 logs
-evals/results
+evals/results/*
+!evals/results/fastapi-official-formal-answer-batch.json
