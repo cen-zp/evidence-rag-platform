@@ -88,8 +88,10 @@ class DeepSeekService:
         history: list[ChatHistoryMessage],
     ) -> GroundedModelResponse:
         started_at = perf_counter()
+        source_keys = {f"S{index}": item.chunk_id for index, item in enumerate(evidence, start=1)}
         evidence_text = "\n\n".join(
-            f"[source:{item.chunk_id}]\n{item.content}" for item in evidence
+            f"[source:{source_key}]\n{item.content}"
+            for source_key, item in zip(source_keys, evidence, strict=True)
         )
         completion = await self._create_completion(
             model=self._model,
@@ -99,9 +101,10 @@ class DeepSeekService:
                     "role": "system",
                     "content": (
                         "Answer only from supplied evidence. Return JSON with two keys: answer "
-                        "(string) and citation_ids (a non-empty array of source UUID strings). "
-                        "Every citation ID must be a source ID supplied in the evidence. If the "
-                        "evidence is insufficient, return an empty answer and empty citation_ids."
+                        "(string) and citation_keys (a non-empty array of source labels such as "
+                        "S1). Every citation key must exactly match a source label supplied in the "
+                        "evidence. If the evidence is insufficient, return an empty answer and "
+                        "empty citation_keys."
                     ),
                 },
                 *[{"role": item.role, "content": item.content} for item in history],
@@ -118,13 +121,11 @@ class DeepSeekService:
         try:
             payload = json.loads(content)
             answer = payload["answer"]
-            citation_ids = [UUID(item) for item in payload["citation_ids"]]
+            citation_ids = _citation_ids_from_payload(payload, source_keys)
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
             raise DeepSeekInvalidCitationError("DeepSeek returned invalid grounded JSON") from error
 
-        allowed_ids = {item.chunk_id for item in evidence}
-        citations_are_valid = citation_ids and set(citation_ids).issubset(allowed_ids)
-        if not isinstance(answer, str) or not citations_are_valid:
+        if not isinstance(answer, str) or not answer.strip() or not citation_ids:
             raise DeepSeekInvalidCitationError("DeepSeek returned invalid citations")
 
         return GroundedModelResponse(
@@ -134,6 +135,28 @@ class DeepSeekService:
             latency_ms=round((perf_counter() - started_at) * 1000),
             usage=_completion_usage(completion),
         )
+
+
+def _citation_ids_from_payload(payload: dict[str, Any], source_keys: dict[str, UUID]) -> list[UUID]:
+    """Map compact model-facing source labels back to immutable chunk IDs.
+
+    UUIDs are difficult for a model to reproduce exactly.  The client-facing response
+    still returns UUIDs, but the model only has to select from short, per-request labels.
+    The legacy UUID key is accepted during rollout so an in-flight provider response
+    cannot silently lose its citations.
+    """
+    citation_keys = payload.get("citation_keys")
+    if isinstance(citation_keys, list):
+        return [source_keys[str(item)] for item in citation_keys]
+
+    legacy_citation_ids = payload.get("citation_ids")
+    if not isinstance(legacy_citation_ids, list):
+        raise ValueError("Grounded response is missing citation keys")
+    citation_ids = [UUID(str(item)) for item in legacy_citation_ids]
+    allowed_ids = set(source_keys.values())
+    if not set(citation_ids).issubset(allowed_ids):
+        raise ValueError("Grounded response contains an unknown citation")
+    return citation_ids
 
     async def _create_completion(self, **kwargs: Any) -> Any:
         try:
