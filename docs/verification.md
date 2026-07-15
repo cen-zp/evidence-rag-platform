@@ -164,13 +164,21 @@
 
 结论：在这套经人工复核的公开文档题集上，Reranker 提升了第一个正确来源的平均排名（MRR），但没有提升 Top-3 命中率，且在 CPU 上显著增加检索耗时。该结果可用于说明检索配置取舍；它只评测来源文件命中，不等同于答案正确率、引用充分性、拒答恰当性、端到端延迟或模型调用成本。
 
-## 2026-07-15：FastAPI 官方文档真实答案批次（待人工判分）
+## 2026-07-15：FastAPI 官方文档真实答案批次
 
 - 题集与知识库：使用同一套 72 条已完成问题/参考答案/来源映射人工复核的 FastAPI 官方公开文档题集；启用 `BAAI/bge-small-zh-v1.5`、BM25、RRF 与 `BAAI/bge-reranker-base`，`top_k=5`。
 - 结果：72 条均执行检索；49 条得到带服务端校验引用的模型回答，21 条因模型输出了不属于本轮检索结果的引用而被 `retrieval_guard_invalid_citation` 拒答，2 条为上游 provider error。成功回答的模型耗时均值 `4090.7 ms`、P95 `7546 ms`；供应商共返回 `61139` prompt tokens、`18342` completion tokens、`79481` total tokens。
-- 产物：[批次报告](../evals/results/fastapi-official-formal-answer-batch.json) 与 [待填写人工审核表](../evals/independent/fastapi-official-formal-answer-review.csv)。报告记录当次模型/Embedding/Reranker、设备和 `top_k`，审核工具会在填写完成后将审核表与该报告逐字段校验并输出哈希。
+- 产物：[批次报告](../evals/results/fastapi-official-formal-answer-batch.json) 与 [人工审核表](../evals/independent/fastapi-official-formal-answer-review-human.csv)。报告记录当次模型/Embedding/Reranker、设备和 `top_k`；审核工具已将审核表与报告逐字段校验并输出哈希。
 
-结论：正式公开语料上的真实检索、模型调用与服务端引用守卫已完成一次批处理记录。`49/72` 不是答案正确率，`21/72` 也不是拒答恰当率；在独立人工逐题填写答案、引用和拒答 verdict 前，不能将本节写作任何质量通过率或成本结论。模型耗时不包含完整 HTTP/前端交互链路，不能称为端到端延迟。
+结论：正式公开语料上的真实检索、模型调用与服务端引用守卫已完成一次批处理记录。模型耗时不包含完整 HTTP/前端交互链路，不能称为端到端延迟；当次未设置可复核单价快照，不能据此得出成本结论。
+
+## 2026-07-15：FastAPI 官方答案批次的单人声明式人工审核
+
+- 审核范围：固定批次中 49 条 `answered`、21 条 `retrieval_guard_invalid_citation` 和 2 条 `provider_error`；后两条 provider error 按规则不进入任一质量分母。
+- 校验：审核表覆盖全部 72 条，`review_method` 均为 `human`，`reviewer_count=1`；工具将每行的问题、回答、引用、模型、耗时和 outcome 与不可变批次报告逐字段比对通过。批次 SHA-256 为 `07f49a9a7c818fb04dc32ddb5cf9eee5a50f613d087eca9f84a9731131383f18`，审核表 SHA-256 为 `3a4551400d7d3a34aa79b722340e3633f306236f934a3b8e2b4ffabd1c4da8b3`。
+- 结果：答案 `47/49 (95.9%)`，引用 `45/49 (91.8%)`，拒答 `0/21 (0.0%)`。
+
+结论：这是对一次真实模型批次的单人逐题人工判断，可作为带样本量和审核限定的项目事实；校验程序不能证明评审者的真实身份或独立性，故不得夸大为多评审一致性结论。21 条拒答发生在模型产生非法引用后，不能解释为“没有检索命中”。该批次在短 `S1/S2` 引用键修复前生成，后续需以同一题集新跑真实批次，才能判断拒答是否改善。
 
 ## 2026-07-15：FastAPI 官方答案批次的模型辅助复核（非人工验收）
 
