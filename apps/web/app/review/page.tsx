@@ -293,6 +293,20 @@ export default function FormalReviewPage() {
             ) : (
               <>
                 <p>先判断回答是否符合参考要点，再判断引用是否足够支持回答。</p>
+                <div className={styles.quickDecision}>
+                  <button
+                    className={
+                      currentDraft?.answerVerdict === "pass" && currentDraft.citationVerdict === "pass"
+                        ? styles.selectedPass
+                        : ""
+                    }
+                    onClick={() => updateDraft(currentCase.case_id, {
+                      answerVerdict: "pass",
+                      citationVerdict: "pass",
+                    })}
+                  >答案与引用均通过</button>
+                  <span>若任一项有问题，再在下方单独标记。</span>
+                </div>
                 <div className={styles.row}><span>答案</span><div className={styles.buttons}>
                   <button className={currentDraft?.answerVerdict === "pass" ? styles.selectedPass : ""} onClick={() => updateDraft(currentCase.case_id, { answerVerdict: "pass" })}>通过</button>
                   <button className={currentDraft?.answerVerdict === "fail" ? styles.selectedFail : ""} onClick={() => updateDraft(currentCase.case_id, { answerVerdict: "fail" })}>不通过</button>
