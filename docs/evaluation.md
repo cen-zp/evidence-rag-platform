@@ -189,7 +189,7 @@ uv run python -m app.evaluation.review_sheet \
 
 由与题集生成者独立的人工评审者逐行核对问题、参考答案和预期来源，并填写 `approved` / `pass`、评审别名和 UTC 时间。审核表是声明式审计证据，不会、也不能自动证明评审者的真实身份；使用者必须如实保留评审过程。每个题目恰好一行且所有 verdict 通过后，才可将 manifest 的 `human_review_status` 改为 `approved`。正式报告会记录审核表 SHA-256、覆盖案例数和评审别名数量。
 
-`fastapi-official-cases.jsonl` 是基于公开 FastAPI 官方文档建立的 72 条中文 AI 协助题目。其问题、参考答案和预期来源已按 `fastapi-official-review.csv` 完成声明式独立人工逐题复核，因此可进入正式**检索**评测。固定真实模型批次的答案审核已保存在 `fastapi-official-formal-answer-review-human.csv`，并通过完整性校验；该表是单人声明式人工审核，不应夸大为独立多评审结论。旧版 `fastapi-official-formal-answer-review.csv` 保留为原始待审核文件，不作为结果证据。
+`fastapi-official-cases.jsonl` 是基于公开 FastAPI 官方文档建立的 72 条中文 AI 协助题目。其问题、参考答案和预期来源已按 `fastapi-official-review.csv` 由 1 位评审者完成声明式逐题复核，因此可进入正式**检索**评测。固定真实模型批次的答案审核已保存在 `fastapi-official-formal-answer-review-human.csv`，并通过完整性校验；两份审核均不应夸大为独立第三方或多评审结论。旧版 `fastapi-official-formal-answer-review.csv` 保留为原始待审核文件，不作为结果证据。
 
 ## 公开 FastAPI 语料导入
 

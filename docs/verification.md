@@ -151,7 +151,7 @@
 
 ## 2026-07-15：FastAPI 官方文档正式检索评测
 
-- 语料与题集：9 篇 FastAPI 官方公开教程；72 条中文 AI 协助题目。每条问题、参考答案与预期来源均已按 [fastapi-official-review.csv](../evals/independent/fastapi-official-review.csv) 记录为独立人工复核通过。
+- 语料与题集：9 篇 FastAPI 官方公开教程；72 条中文 AI 协助题目。每条问题、参考答案与预期来源均已按 [fastapi-official-review.csv](../evals/independent/fastapi-official-review.csv) 由 1 位评审者声明式逐题复核；这不是独立第三方或多评审结论。
 - 证据：正式报告包含题集、manifest 和审核表 SHA-256；三份 artifact 的哈希分别为 `5d75df…261ac1`、`c62132…e7ec7` 与 `fa9cf3…f4bde`，并记录 72 条审核覆盖、1 个评审别名。
 - 环境：Docker Compose；本地 `BAAI/bge-small-zh-v1.5`、BM25、RRF，重排时使用 `BAAI/bge-reranker-base`；`top_k=3`，每个配置先执行 3 条不计入指标的预热检索。
 
