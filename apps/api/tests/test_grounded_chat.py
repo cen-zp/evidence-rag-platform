@@ -323,6 +323,32 @@ def test_grounded_chat_persists_conversation_messages_and_feedback() -> None:
         ("user", "What is the release process?"),
         ("assistant", "Use the documented release process."),
     ]
+    assistant_message = messages[1]
+    assert assistant_message["retrieval_latency_ms"] >= 0
+    assert assistant_message["total_latency_ms"] >= assistant_message["retrieval_latency_ms"]
+    assert assistant_message["browser_end_to_end_latency_ms"] is None
+
+    latency_response = client.post(
+        f"/api/knowledge-bases/{knowledge_base_id}/conversations/{conversation_id}/messages/"
+        f"{assistant_message['id']}/browser-latency",
+        json={"browser_end_to_end_latency_ms": 25},
+    )
+    assert latency_response.status_code == 200
+    assert latency_response.json()["browser_end_to_end_latency_ms"] == 25
+
+    latency_summary_response = client.get(
+        f"/api/knowledge-bases/{knowledge_base_id}/evaluations/end-to-end-latency-summary"
+    )
+    assert latency_summary_response.status_code == 200
+    latency_summary = latency_summary_response.json()
+    assert latency_summary["message_count"] == 1
+    assert latency_summary["answered_count"] == 1
+    assert latency_summary["guarded_count"] == 0
+    assert latency_summary["retrieval_reported_count"] == 1
+    assert latency_summary["server_total_reported_count"] == 1
+    assert latency_summary["browser_reported_count"] == 1
+    assert latency_summary["mean_browser_end_to_end_latency_ms"] == 25.0
+    assert latency_summary["p95_browser_end_to_end_latency_ms"] == 25
 
     feedback_response = client.post(
         f"/api/knowledge-bases/{knowledge_base_id}/conversations/{conversation_id}/messages/"

@@ -121,6 +121,21 @@ class ModelUsageSummaryRead(BaseModel):
     mean_estimated_cost: float | None
 
 
+class EndToEndLatencySummaryRead(BaseModel):
+    message_count: int
+    answered_count: int
+    guarded_count: int
+    retrieval_reported_count: int
+    mean_retrieval_latency_ms: float | None
+    p95_retrieval_latency_ms: int | None
+    server_total_reported_count: int
+    mean_server_total_latency_ms: float | None
+    p95_server_total_latency_ms: int | None
+    browser_reported_count: int
+    mean_browser_end_to_end_latency_ms: float | None
+    p95_browser_end_to_end_latency_ms: int | None
+
+
 class ConversationRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -141,7 +156,14 @@ class ConversationMessageRead(BaseModel):
     citations: list[dict]
     model: str | None
     latency_ms: int | None
+    retrieval_latency_ms: int | None
+    total_latency_ms: int | None
+    browser_end_to_end_latency_ms: int | None
     created_at: datetime
+
+
+class BrowserLatencyCreate(BaseModel):
+    browser_end_to_end_latency_ms: int = Field(ge=0, le=600_000)
 
 
 class MessageFeedbackCreate(BaseModel):

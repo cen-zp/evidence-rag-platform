@@ -8,6 +8,7 @@ from app.api.knowledge_bases import get_knowledge_base_or_404
 from app.db.session import get_session
 from app.models import Conversation, ConversationMessage, MessageFeedback, User
 from app.schemas.knowledge import (
+    BrowserLatencyCreate,
     ConversationMessageRead,
     ConversationRead,
     MessageFeedbackCreate,
@@ -34,6 +35,26 @@ def get_conversation_or_404(
     if conversation is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     return conversation
+
+
+def get_assistant_message_or_404(
+    session: Session,
+    conversation_id: UUID,
+    message_id: UUID,
+) -> ConversationMessage:
+    message = session.scalar(
+        select(ConversationMessage).where(
+            ConversationMessage.id == message_id,
+            ConversationMessage.conversation_id == conversation_id,
+            ConversationMessage.role == "assistant",
+        )
+    )
+    if message is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Assistant message not found",
+        )
+    return message
 
 
 @router.get("/{knowledge_base_id}/conversations", response_model=list[ConversationRead])
@@ -91,18 +112,7 @@ def create_or_replace_feedback(
 ) -> MessageFeedback:
     get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
     get_conversation_or_404(session, knowledge_base_id, conversation_id, current_user.id)
-    message = session.scalar(
-        select(ConversationMessage).where(
-            ConversationMessage.id == message_id,
-            ConversationMessage.conversation_id == conversation_id,
-            ConversationMessage.role == "assistant",
-        )
-    )
-    if message is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Assistant message not found",
-        )
+    message = get_assistant_message_or_404(session, conversation_id, message_id)
 
     feedback = session.scalar(
         select(MessageFeedback).where(MessageFeedback.message_id == message_id)
@@ -116,3 +126,24 @@ def create_or_replace_feedback(
     session.commit()
     session.refresh(feedback)
     return feedback
+
+
+@router.post(
+    "/{knowledge_base_id}/conversations/{conversation_id}/messages/{message_id}/browser-latency",
+    response_model=ConversationMessageRead,
+)
+def record_browser_latency(
+    knowledge_base_id: UUID,
+    conversation_id: UUID,
+    message_id: UUID,
+    payload: BrowserLatencyCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> ConversationMessage:
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
+    get_conversation_or_404(session, knowledge_base_id, conversation_id, current_user.id)
+    message = get_assistant_message_or_404(session, conversation_id, message_id)
+    message.browser_end_to_end_latency_ms = payload.browser_end_to_end_latency_ms
+    session.commit()
+    session.refresh(message)
+    return message

@@ -11,6 +11,7 @@ import {
   Citation,
   Conversation,
   DocumentRecord,
+  EndToEndLatencySummary,
   EvaluationCase,
   KnowledgeBase,
   ModelUsageSummary,
@@ -26,6 +27,7 @@ import {
   getConversationMessages,
   getConversations,
   getDocuments,
+  getEndToEndLatencySummary,
   getEvaluationCases,
   getKnowledgeBases,
   getModelUsageSummary,
@@ -37,6 +39,7 @@ import {
   register,
   saveSession,
   saveMessageFeedback,
+  saveBrowserLatency,
   sendChatMessageStream,
   uploadDocument,
 } from "../lib/chat";
@@ -98,6 +101,7 @@ export default function ChatPage() {
   const [evaluationReport, setEvaluationReport] = useState<RetrievalEvaluationReport | null>(null);
   const [answerReviewSummary, setAnswerReviewSummary] = useState<AnswerReviewSummary | null>(null);
   const [modelUsageSummary, setModelUsageSummary] = useState<ModelUsageSummary | null>(null);
+  const [latencySummary, setLatencySummary] = useState<EndToEndLatencySummary | null>(null);
   const [newKnowledgeBaseName, setNewKnowledgeBaseName] = useState("");
   const [evaluationQuestion, setEvaluationQuestion] = useState("");
   const [expectedFilename, setExpectedFilename] = useState("");
@@ -163,6 +167,14 @@ export default function ChatPage() {
     }
   }, []);
 
+  const loadLatencySummary = useCallback(async (knowledgeBaseId: string) => {
+    try {
+      setLatencySummary(await getEndToEndLatencySummary(knowledgeBaseId));
+    } catch (loadError) {
+      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取端到端耗时摘要。");
+    }
+  }, []);
+
   const loadConversations = useCallback(async (knowledgeBaseId: string) => {
     try {
       setConversations(await getConversations(knowledgeBaseId));
@@ -217,6 +229,7 @@ export default function ChatPage() {
         loadEvaluationCases(selectedKnowledgeBaseId),
         loadAnswerReviewSummary(selectedKnowledgeBaseId),
         loadModelUsageSummary(selectedKnowledgeBaseId),
+        loadLatencySummary(selectedKnowledgeBaseId),
         loadConversations(selectedKnowledgeBaseId),
       ]);
     }
@@ -227,6 +240,7 @@ export default function ChatPage() {
     loadDocuments,
     loadEvaluationCases,
     loadConversations,
+    loadLatencySummary,
     loadModelUsageSummary,
     selectedKnowledgeBaseId,
   ]);
@@ -292,9 +306,22 @@ export default function ChatPage() {
           evaluationCaseId,
         },
       ]);
+      if (
+        selectedKnowledgeBaseId &&
+        result.conversation_id &&
+        result.assistant_message_id
+      ) {
+        await saveBrowserLatency(
+          selectedKnowledgeBaseId,
+          result.conversation_id,
+          result.assistant_message_id,
+          endToEndLatencyMs,
+        );
+      }
       if (selectedKnowledgeBaseId) {
         await Promise.all([
           loadModelUsageSummary(selectedKnowledgeBaseId),
+          loadLatencySummary(selectedKnowledgeBaseId),
           loadConversations(selectedKnowledgeBaseId),
         ]);
       }
@@ -326,6 +353,9 @@ export default function ChatPage() {
           content: message.content,
           model: message.model ?? undefined,
           latencyMs: message.latency_ms ?? undefined,
+          retrievalLatencyMs: message.retrieval_latency_ms ?? undefined,
+          serviceLatencyMs: message.total_latency_ms ?? undefined,
+          endToEndLatencyMs: message.browser_end_to_end_latency_ms ?? undefined,
           citations: message.citations,
         })),
       );
@@ -366,6 +396,7 @@ export default function ChatPage() {
       setSelectedKnowledgeBaseId(knowledgeBase.id);
       setConversationId(null);
       setModelUsageSummary(null);
+      setLatencySummary(null);
       setNewKnowledgeBaseName("");
     } catch (requestError) {
       setError(requestError instanceof ChatApiError ? requestError.message : "无法创建知识库。");
@@ -407,6 +438,7 @@ export default function ChatPage() {
     setEvaluationReport(null);
     setAnswerReviewSummary(null);
     setModelUsageSummary(null);
+    setLatencySummary(null);
   }
 
   async function removeKnowledgeBase() {
@@ -432,6 +464,7 @@ export default function ChatPage() {
       setEvaluationReport(null);
       setAnswerReviewSummary(null);
       setModelUsageSummary(null);
+      setLatencySummary(null);
       setDraftEvaluationCaseId(null);
       setReviewingEvaluationCaseId(null);
     } catch (requestError) {
@@ -688,6 +721,7 @@ export default function ChatPage() {
                 setEvaluationReport(null);
                 setAnswerReviewSummary(null);
                 setModelUsageSummary(null);
+                setLatencySummary(null);
                 setDraftEvaluationCaseId(null);
                 setReviewingEvaluationCaseId(null);
                 setSelectedKnowledgeBaseId(event.target.value);
@@ -1110,6 +1144,71 @@ export default function ChatPage() {
                     </dl>
                     <p className="model-usage-note">
                       单价在调用时从本地配置保存为快照；未配置单价或未返回 token 的调用不会估算成本。
+                    </p>
+                  </>
+                )}
+                {latencySummary && (
+                  <>
+                    <dl className="model-usage-summary">
+                      <div>
+                        <dt>已记录回答</dt>
+                        <dd>{latencySummary.message_count} 条</dd>
+                      </div>
+                      <div>
+                        <dt>回答 / 拒答</dt>
+                        <dd>{latencySummary.answered_count} / {latencySummary.guarded_count}</dd>
+                      </div>
+                      <div>
+                        <dt>平均检索耗时</dt>
+                        <dd>
+                          {latencySummary.mean_retrieval_latency_ms === null
+                            ? "—"
+                            : `${latencySummary.mean_retrieval_latency_ms.toFixed(1)} ms`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>P95 检索耗时</dt>
+                        <dd>
+                          {latencySummary.p95_retrieval_latency_ms === null
+                            ? "—"
+                            : `${latencySummary.p95_retrieval_latency_ms} ms`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>平均服务端全链路</dt>
+                        <dd>
+                          {latencySummary.mean_server_total_latency_ms === null
+                            ? "—"
+                            : `${latencySummary.mean_server_total_latency_ms.toFixed(1)} ms`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>P95 服务端全链路</dt>
+                        <dd>
+                          {latencySummary.p95_server_total_latency_ms === null
+                            ? "—"
+                            : `${latencySummary.p95_server_total_latency_ms} ms`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>平均浏览器端到端</dt>
+                        <dd>
+                          {latencySummary.mean_browser_end_to_end_latency_ms === null
+                            ? "—"
+                            : `${latencySummary.mean_browser_end_to_end_latency_ms.toFixed(1)} ms`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>P95 浏览器端到端</dt>
+                        <dd>
+                          {latencySummary.p95_browser_end_to_end_latency_ms === null
+                            ? "—"
+                            : `${latencySummary.p95_browser_end_to_end_latency_ms} ms`}
+                        </dd>
+                      </div>
+                    </dl>
+                    <p className="model-usage-note">
+                      浏览器端到端耗时从发起 SSE 到收到并解析最终结果；历史旧消息没有该字段。
                     </p>
                   </>
                 )}

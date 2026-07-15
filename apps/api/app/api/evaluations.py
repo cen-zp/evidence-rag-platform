@@ -7,11 +7,20 @@ from sqlalchemy.orm import Session, selectinload
 from app.api.knowledge_bases import get_knowledge_base_or_404
 from app.db.session import get_session
 from app.evaluation.retrieval import RetrievalEvaluationCase, evaluate_retrieval
-from app.models import AnswerReview, DocumentChunk, EvaluationCase, ModelCall, User
+from app.models import (
+    AnswerReview,
+    Conversation,
+    ConversationMessage,
+    DocumentChunk,
+    EvaluationCase,
+    ModelCall,
+    User,
+)
 from app.schemas.knowledge import (
     AnswerReviewCreate,
     AnswerReviewRead,
     AnswerReviewSummaryRead,
+    EndToEndLatencySummaryRead,
     EvaluationCaseCreate,
     EvaluationCaseRead,
     ModelUsageSummaryRead,
@@ -22,6 +31,14 @@ from app.services.auth import get_current_user
 from app.services.retrieval import get_knowledge_base_retriever
 
 router = APIRouter(prefix="/api/knowledge-bases", tags=["evaluations"])
+
+
+def _latency_summary(values: list[int]) -> tuple[float | None, int | None]:
+    if not values:
+        return None, None
+    ordered = sorted(values)
+    p95_index = max(0, (len(ordered) * 95 + 99) // 100 - 1)
+    return sum(ordered) / len(ordered), ordered[p95_index]
 
 
 def get_evaluation_case_or_404(
@@ -265,6 +282,61 @@ def get_model_usage_summary(
     )
 
 
+@router.get(
+    "/{knowledge_base_id}/evaluations/end-to-end-latency-summary",
+    response_model=EndToEndLatencySummaryRead,
+)
+def get_end_to_end_latency_summary(
+    knowledge_base_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> EndToEndLatencySummaryRead:
+    get_knowledge_base_or_404(session, knowledge_base_id, current_user.id)
+    messages = list(
+        session.scalars(
+            select(ConversationMessage)
+            .join(Conversation)
+            .where(
+                Conversation.knowledge_base_id == knowledge_base_id,
+                Conversation.owner_id == current_user.id,
+                ConversationMessage.role == "assistant",
+            )
+            .order_by(ConversationMessage.created_at.asc())
+        )
+    )
+    retrieval_latencies = [
+        message.retrieval_latency_ms
+        for message in messages
+        if message.retrieval_latency_ms is not None
+    ]
+    server_total_latencies = [
+        message.total_latency_ms for message in messages if message.total_latency_ms is not None
+    ]
+    browser_latencies = [
+        message.browser_end_to_end_latency_ms
+        for message in messages
+        if message.browser_end_to_end_latency_ms is not None
+    ]
+    mean_retrieval, p95_retrieval = _latency_summary(retrieval_latencies)
+    mean_server_total, p95_server_total = _latency_summary(server_total_latencies)
+    mean_browser, p95_browser = _latency_summary(browser_latencies)
+    return EndToEndLatencySummaryRead(
+        message_count=len(messages),
+        answered_count=sum(
+            message.model is not None and message.model != "retrieval-guard"
+            for message in messages
+        ),
+        guarded_count=sum(message.model == "retrieval-guard" for message in messages),
+        retrieval_reported_count=len(retrieval_latencies),
+        mean_retrieval_latency_ms=mean_retrieval,
+        p95_retrieval_latency_ms=p95_retrieval,
+        server_total_reported_count=len(server_total_latencies),
+        mean_server_total_latency_ms=mean_server_total,
+        p95_server_total_latency_ms=p95_server_total,
+        browser_reported_count=len(browser_latencies),
+        mean_browser_end_to_end_latency_ms=mean_browser,
+        p95_browser_end_to_end_latency_ms=p95_browser,
+    )
 @router.post(
     "/{knowledge_base_id}/evaluations/retrieval",
     response_model=RetrievalEvaluationReportRead,

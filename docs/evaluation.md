@@ -104,6 +104,14 @@ GET /api/knowledge-bases/{knowledge_base_id}/evaluations/model-usage-summary
 
 这是成本和延迟评测的观测基础，不包含检索耗时，也不会把模型未返回 token 的调用估算成 token 或费用。若要计算单次成本，先在本地 `.env` 同时设置当次模型适用的 `DEEPSEEK_INPUT_COST_PER_MILLION_TOKENS`、`DEEPSEEK_OUTPUT_COST_PER_MILLION_TOKENS` 和可选的 `DEEPSEEK_COST_CURRENCY`。系统会把单价和估算成本写入**该次**模型调用记录，避免日后价格变化回写历史；未配置单价和历史记录会显示为未估算。
 
+真实浏览器问答完成后，工作台会把检索耗时、服务端问答管线耗时和浏览器端到端耗时绑定到助手消息，并通过以下接口按知识库汇总样本量、回答/拒答构成、均值和 P95：
+
+```text
+GET /api/knowledge-bases/{knowledge_base_id}/evaluations/end-to-end-latency-summary
+```
+
+该汇总只统计实际存在的字段，旧消息不会被填入推测值。正式验收至少应记录一条正常回答和一条守卫拒答，并明确小样本不能代表稳定性能分布。
+
 价格应在正式运行当天从供应商价格页人工核对，并在评测报告中写明模型、币种、输入/输出单价与生效时间。汇总只在所有可估算调用使用同一币种时返回总成本和平均单次成本；它仍不等同于质量结论。
 
 这不是自动判分器。只有来自独立问题、独立人工标注，并写明样本量和评审规则的结果，才能作为项目效果证据；项目验收文档演示题集不得使用这些指标。

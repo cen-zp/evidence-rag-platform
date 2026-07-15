@@ -262,6 +262,9 @@ class ConversationMessage(Base):
     citations: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
     model: Mapped[str | None] = mapped_column(String(120))
     latency_ms: Mapped[int | None] = mapped_column(Integer)
+    retrieval_latency_ms: Mapped[int | None] = mapped_column(Integer)
+    total_latency_ms: Mapped[int | None] = mapped_column(Integer)
+    browser_end_to_end_latency_ms: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

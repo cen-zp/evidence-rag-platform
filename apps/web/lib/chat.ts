@@ -68,6 +68,9 @@ export type ConversationMessage = {
   citations: Citation[];
   model: string | null;
   latency_ms: number | null;
+  retrieval_latency_ms: number | null;
+  total_latency_ms: number | null;
+  browser_end_to_end_latency_ms: number | null;
   created_at: string;
 };
 
@@ -146,6 +149,21 @@ export type ModelUsageSummary = {
   estimated_cost_currency: string | null;
   total_estimated_cost: number | null;
   mean_estimated_cost: number | null;
+};
+
+export type EndToEndLatencySummary = {
+  message_count: number;
+  answered_count: number;
+  guarded_count: number;
+  retrieval_reported_count: number;
+  mean_retrieval_latency_ms: number | null;
+  p95_retrieval_latency_ms: number | null;
+  server_total_reported_count: number;
+  mean_server_total_latency_ms: number | null;
+  p95_server_total_latency_ms: number | null;
+  browser_reported_count: number;
+  mean_browser_end_to_end_latency_ms: number | null;
+  p95_browser_end_to_end_latency_ms: number | null;
 };
 
 export class ChatApiError extends Error {
@@ -570,6 +588,46 @@ export async function getModelUsageSummary(
   } catch (error) {
     if (error instanceof ChatApiError) throw error;
     throw new ChatApiError("无法读取模型调用摘要。请确认 API 已启动。");
+  }
+}
+
+export async function getEndToEndLatencySummary(
+  knowledgeBaseId: string,
+): Promise<EndToEndLatencySummary> {
+  try {
+    return await readJson<EndToEndLatencySummary>(
+      await request(
+        `/api/knowledge-bases/${knowledgeBaseId}/evaluations/end-to-end-latency-summary`,
+      ),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("无法读取端到端耗时摘要。请确认 API 已启动。");
+  }
+}
+
+export async function saveBrowserLatency(
+  knowledgeBaseId: string,
+  conversationId: string,
+  messageId: string,
+  browserEndToEndLatencyMs: number,
+): Promise<ConversationMessage> {
+  try {
+    return await readJson<ConversationMessage>(
+      await request(
+        `/api/knowledge-bases/${knowledgeBaseId}/conversations/${conversationId}/messages/${messageId}/browser-latency`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            browser_end_to_end_latency_ms: browserEndToEndLatencyMs,
+          }),
+        },
+      ),
+    );
+  } catch (error) {
+    if (error instanceof ChatApiError) throw error;
+    throw new ChatApiError("回答已完成，但浏览器端到端耗时未能保存。");
   }
 }
 

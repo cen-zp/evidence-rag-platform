@@ -97,11 +97,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     retrieval_latency_ms=retrieval_latency_ms,
                     conversation_id=conversation.id,
                 )
+                response.total_latency_ms = _elapsed_ms(request_started_at)
                 response.assistant_message_id = _persist_conversation_turn(
                     session, conversation, request.message, response
                 ).id
                 session.commit()
-                response.total_latency_ms = _elapsed_ms(request_started_at)
                 return response
 
             try:
@@ -131,11 +131,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     retrieval_latency_ms=retrieval_latency_ms,
                     conversation_id=conversation.id,
                 )
+                response.total_latency_ms = _elapsed_ms(request_started_at)
                 response.assistant_message_id = _persist_conversation_turn(
                     session, conversation, request.message, response
                 ).id
                 session.commit()
-                response.total_latency_ms = _elapsed_ms(request_started_at)
                 return response
 
             hits_by_id = {hit.chunk.id: hit for hit in hits}
@@ -159,6 +159,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 usage=grounded.usage,
                 conversation_id=conversation.id,
             )
+            response.total_latency_ms = _elapsed_ms(request_started_at)
             response.assistant_message_id = _persist_conversation_turn(
                 session, conversation, request.message, response
             ).id
@@ -172,7 +173,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 output_cost_per_million_tokens=active_settings.deepseek_output_cost_per_million_tokens,
                 cost_currency=active_settings.deepseek_cost_currency,
             )
-            response.total_latency_ms = _elapsed_ms(request_started_at)
             return response
 
         try:
@@ -290,6 +290,8 @@ def _persist_conversation_turn(
         citations=[citation.model_dump(mode="json") for citation in response.citations],
         model=response.model,
         latency_ms=response.latency_ms,
+        retrieval_latency_ms=response.retrieval_latency_ms,
+        total_latency_ms=response.total_latency_ms,
     )
     session.add_all(
         [
