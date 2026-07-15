@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 
 from app.evaluation.answer_review import (
+    LEGACY_ANSWER_REVIEW_HEADERS,
+    migrate_legacy_model_assisted_review,
     validate_answer_batch_reviews,
     write_pending_answer_review_sheet,
 )
@@ -62,6 +64,7 @@ def _complete_sheet(path: Path) -> None:
         headers = input_file.seek(0) or next(csv.reader(input_file))
     rows[0].update(
         review_status="approved",
+        review_method="human",
         answer_verdict="pass",
         citation_verdict="pass",
         refusal_verdict="not_applicable",
@@ -70,6 +73,7 @@ def _complete_sheet(path: Path) -> None:
     )
     rows[1].update(
         review_status="approved",
+        review_method="human",
         answer_verdict="not_applicable",
         citation_verdict="not_applicable",
         refusal_verdict="pass",
@@ -78,6 +82,7 @@ def _complete_sheet(path: Path) -> None:
     )
     rows[2].update(
         review_status="approved",
+        review_method="human",
         answer_verdict="not_applicable",
         citation_verdict="not_applicable",
         refusal_verdict="not_applicable",
@@ -106,3 +111,86 @@ def test_answer_review_requires_completed_matching_sheet(tmp_path: Path) -> None
     assert result["answer_pass_rate"] == 1.0
     assert result["citation_pass_rate"] == 1.0
     assert result["refusal_pass_rate"] == 1.0
+    assert result["is_human_review"] is True
+
+
+def test_legacy_review_migration_restores_batch_content_and_marks_model_assisted(
+    tmp_path: Path,
+) -> None:
+    report_path = tmp_path / "report.json"
+    legacy_path = tmp_path / "legacy.csv"
+    output_path = tmp_path / "migrated.csv"
+    report_path.write_text(json.dumps(_report()), encoding="utf-8")
+    legacy_rows = [
+        [
+            "answer-1",
+            "edited question",
+            "edited reference",
+            "edited answer, with a comma",
+            "edited source",
+            "edited chunk",
+            "edited model",
+            "999",
+            "99.9",
+            "edited outcome",
+            "approved",
+            "pass",
+            "pass",
+            "not_applicable",
+            "legacy-reviewer",
+            "2026-07-15T12:00:00+00:00",
+            "legacy note",
+        ],
+        [
+            "guard-1",
+            "question",
+            "",
+            "answer",
+            "",
+            "",
+            "retrieval-guard",
+            "0",
+            "2.0",
+            "retrieval_guard_no_hits",
+            "approved",
+            "not_applicable",
+            "not_applicable",
+            "pass",
+            "legacy-reviewer",
+            "2026-07-15T12:00:00+00:00",
+            "legacy note",
+        ],
+        [
+            "error-1",
+            "question",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "1.0",
+            "provider_error",
+            "approved",
+            "not_applicable",
+            "not_applicable",
+            "not_applicable",
+            "legacy-reviewer",
+            "2026-07-15T12:00:00+00:00",
+            "legacy note",
+        ],
+    ]
+    with legacy_path.open("w", encoding="utf-8-sig", newline="") as output_file:
+        writer = csv.writer(output_file)
+        writer.writerow(LEGACY_ANSWER_REVIEW_HEADERS)
+        writer.writerows(legacy_rows)
+
+    migrate_legacy_model_assisted_review(report_path, legacy_path, output_path)
+    result = validate_answer_batch_reviews(report_path, output_path)
+
+    assert result["is_human_review"] is False
+    assert result["review_method_counts"] == {"human": 0, "model_assisted": 3}
+    with output_path.open(encoding="utf-8-sig", newline="") as input_file:
+        first_row = next(csv.DictReader(input_file))
+    assert first_row["answer"] == "Use TestClient."
+    assert first_row["reviewer_alias"] == "deepseek-assisted-review"

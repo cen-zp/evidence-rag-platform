@@ -46,7 +46,19 @@ uv run python -m app.evaluation.answer_review \
   --initialize
 ```
 
-评审者需要逐行核对回答与引用片段：`answered` 行必须填写答案与引用的 `pass` / `fail`，拒答为 `not_applicable`；`retrieval_guard_*` 行必须填写拒答的 `pass` / `fail`，答案和引用为 `not_applicable`；`provider_error` / `retrieval_error` 三项均为 `not_applicable`。填写 `approved`、评审别名和 UTC 时间后，用同一工具去掉 `--initialize` 校验审核表与该批次报告逐字段一致，并输出可复核的 SHA-256 与人工通过率。校验工具不能证明评审者身份或独立性，项目记录必须如实说明评审过程。
+评审者需要逐行核对回答与引用片段：`answered` 行必须填写答案与引用的 `pass` / `fail`，拒答为 `not_applicable`；`retrieval_guard_*` 行必须填写拒答的 `pass` / `fail`，答案和引用为 `not_applicable`；`provider_error` / `retrieval_error` 三项均为 `not_applicable`。填写 `approved`、`review_method`、评审别名和 UTC 时间后，用同一工具去掉 `--initialize` 校验审核表与该批次报告逐字段一致，并输出可复核的 SHA-256 与通过率。`review_method` 必须如实填写：真实逐题人工判断才可填 `human`；由 DeepSeek、ChatGPT 或其他模型判分只能填 `model_assisted`。后者可作为调试信号，但不能宣称人工评审、独立人工评审或简历质量指标。校验工具同样不能证明评审者身份或独立性，项目记录必须如实说明评审过程。
+
+旧版审核表没有 `review_method` 列时，不应手工改动模型回答、引用、模型名或耗时来“修正” CSV。可先保留原文件，再生成独立的模型辅助版；迁移器只取每行末尾的 verdict/备注，并从不可变批次报告恢复其他字段：
+
+```bash
+uv run python -m app.evaluation.answer_review \
+  --report ../../evals/results/formal-answer-batch.json \
+  --review ../../evals/independent/legacy-answer-review.csv \
+  --migrate-legacy-model-assisted \
+  --output ../../evals/independent/formal-answer-review-model-assisted.csv
+```
+
+输出会明确标为 `model_assisted`；它可以帮助发现检索或引用问题，但验证结果会返回 `is_human_review: false`，不得用于替代真实人工审核。
 
 ## 模型调用元数据
 

@@ -16,10 +16,24 @@ from pydantic import BaseModel, Field
 
 from app.evaluation.answer_batch import ANSWER_REVIEW_HEADERS
 
+LEGACY_ANSWER_REVIEW_HEADERS = tuple(
+    header for header in ANSWER_REVIEW_HEADERS if header != "review_method"
+)
+_REVIEW_TAIL_HEADERS = (
+    "review_status",
+    "answer_verdict",
+    "citation_verdict",
+    "refusal_verdict",
+    "reviewer_alias",
+    "reviewed_at_utc",
+    "notes",
+)
+
 
 class AnswerBatchReview(BaseModel):
     case_id: str = Field(min_length=1)
     review_status: Literal["approved"]
+    review_method: Literal["human", "model_assisted"]
     answer_verdict: Literal["pass", "fail", "not_applicable"]
     citation_verdict: Literal["pass", "fail", "not_applicable"]
     refusal_verdict: Literal["pass", "fail", "not_applicable"]
@@ -72,12 +86,75 @@ def write_pending_answer_review_sheet(report: dict[str, Any], output_path: Path)
                 {
                     **_expected_row(case),
                     "review_status": "pending",
+                    "review_method": "",
                     "answer_verdict": "pending",
                     "citation_verdict": "pending",
                     "refusal_verdict": "pending",
                     "reviewer_alias": "",
                     "reviewed_at_utc": "",
                     "notes": "",
+                }
+            )
+
+
+def migrate_legacy_model_assisted_review(
+    report_path: Path, legacy_review_path: Path, output_path: Path
+) -> None:
+    """Repair a pre-method worksheet without trusting editable batch columns.
+
+    Only trailing verdict fields are retained. Generated question, answer, citation,
+    model and timing fields are restored from the immutable batch report.
+    """
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        cases = report["cases"]
+    except (OSError, ValueError, KeyError) as error:
+        raise ValueError("Answer batch report is unavailable or invalid") from error
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("Answer batch report must contain at least one case")
+
+    try:
+        with legacy_review_path.open(encoding="utf-8-sig", newline="") as input_file:
+            reader = csv.reader(input_file)
+            header = tuple(next(reader))
+            if header != LEGACY_ANSWER_REVIEW_HEADERS:
+                raise ValueError("Legacy answer review sheet has an unexpected header")
+            raw_rows = list(reader)
+    except OSError as error:
+        raise ValueError("Legacy answer review sheet is unavailable") from error
+
+    verdicts_by_case_id: dict[str, dict[str, str]] = {}
+    for line_number, raw_row in enumerate(raw_rows, start=2):
+        if len(raw_row) < len(_REVIEW_TAIL_HEADERS) + 1:
+            raise ValueError(f"Legacy answer review row {line_number} is incomplete")
+        case_id = raw_row[0]
+        if not case_id or case_id in verdicts_by_case_id:
+            raise ValueError("Legacy answer review case IDs must be unique")
+        verdicts_by_case_id[case_id] = dict(zip(_REVIEW_TAIL_HEADERS, raw_row[-7:], strict=True))
+
+    report_case_ids = {str(case.get("case_id")) for case in cases if isinstance(case, dict)}
+    if set(verdicts_by_case_id) != report_case_ids:
+        raise ValueError("Legacy answer review sheet must cover exactly the batch case set")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8-sig", newline="") as output_file:
+        writer = csv.DictWriter(output_file, fieldnames=ANSWER_REVIEW_HEADERS)
+        writer.writeheader()
+        for case in cases:
+            if not isinstance(case, dict):
+                raise ValueError("Answer batch report contains an invalid case")
+            verdicts = verdicts_by_case_id[str(case["case_id"])]
+            note = verdicts["notes"].strip()
+            writer.writerow(
+                {
+                    **_expected_row(case),
+                    **verdicts,
+                    "review_method": "model_assisted",
+                    "reviewer_alias": "deepseek-assisted-review",
+                    "notes": (
+                        "Model-assisted verdict transcribed from a legacy worksheet. "
+                        f"{note}"
+                    ).strip(),
                 }
             )
 
@@ -167,6 +244,13 @@ def validate_answer_batch_reviews(
     return {
         "case_count": len(completed_reviews),
         "reviewer_count": len({review.reviewer_alias for review in completed_reviews}),
+        "review_method_counts": {
+            method: sum(review.review_method == method for review in completed_reviews)
+            for method in ("human", "model_assisted")
+        },
+        "is_human_review": all(
+            review.review_method == "human" for review in completed_reviews
+        ),
         "report_sha256": sha256(report_path.read_bytes()).hexdigest(),
         "review_sha256": sha256(review_path.read_bytes()).hexdigest(),
         "answer_pass_rate": _pass_rate(completed_reviews, "answer_verdict"),
@@ -179,12 +263,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Create or validate an answer review worksheet")
     parser.add_argument("--report", required=True, type=Path)
     parser.add_argument("--review", required=True, type=Path)
+    parser.add_argument("--output", type=Path)
     parser.add_argument(
         "--initialize",
         action="store_true",
         help="write a blank pending worksheet from the report without model calls",
     )
+    parser.add_argument(
+        "--migrate-legacy-model-assisted",
+        action="store_true",
+        help="repair a pre-review-method worksheet and label its verdicts model-assisted",
+    )
     args = parser.parse_args()
+
+    if args.migrate_legacy_model_assisted:
+        if args.output is None:
+            parser.error("--output is required with --migrate-legacy-model-assisted")
+        migrate_legacy_model_assisted_review(args.report, args.review, args.output)
+        print(f"Model-assisted review written to {args.output}")
+        return
 
     if args.initialize:
         try:
