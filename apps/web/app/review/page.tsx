@@ -34,7 +34,14 @@ type StoredReview = {
   drafts: Record<string, ReviewDraft>;
 };
 
-const storageKey = "evidence-rag:formal-answer-review:v1";
+type ReviewBatch = {
+  id: string;
+  label: string;
+  reportSha256: string;
+  downloadFilename: string;
+};
+
+const storageKey = "evidence-rag:formal-answer-review:02dbf511:v1";
 const requiredHeaders = [
   "case_id",
   "question",
@@ -114,6 +121,7 @@ export default function FormalReviewPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [batch, setBatch] = useState<ReviewBatch | null>(null);
 
   useEffect(() => {
     try {
@@ -130,9 +138,16 @@ export default function FormalReviewPage() {
     }
     void fetch("/api/formal-answer-review")
       .then(async (response) => {
-        const payload = (await response.json()) as { cases?: ReviewCase[]; detail?: string };
-        if (!response.ok || !payload.cases) throw new Error(payload.detail ?? "无法加载审核题集。");
+        const payload = (await response.json()) as {
+          cases?: ReviewCase[];
+          batch?: ReviewBatch;
+          detail?: string;
+        };
+        if (!response.ok || !payload.cases || !payload.batch) {
+          throw new Error(payload.detail ?? "无法加载审核题集。");
+        }
         setCases(payload.cases);
+        setBatch(payload.batch);
       })
       .catch((loadError: unknown) => {
         setError(loadError instanceof Error ? loadError.message : "无法加载审核题集。");
@@ -185,7 +200,7 @@ export default function FormalReviewPage() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "fastapi-official-formal-answer-review-human.csv";
+    anchor.download = batch?.downloadFilename ?? "formal-answer-review-human.csv";
     anchor.click();
     URL.revokeObjectURL(url);
     setError(null);
@@ -211,14 +226,19 @@ export default function FormalReviewPage() {
           <span className={styles.brandMark}>E</span>
           Evidence RAG Platform
         </Link>
-        <span className={styles.mode}>真人审核 · 本地草稿</span>
+        <span className={styles.mode}>{batch?.label ?? "真人审核"} · 本地草稿</span>
       </header>
 
       <section className={styles.shell}>
         <aside className={styles.sidebar}>
-          <p className={styles.eyebrow}>FORMAL REVIEW</p>
-          <h1>逐题审核</h1>
-          <p className={styles.muted}>只判断，不改写模型回答。浏览器会自动保存草稿。</p>
+          <p className={styles.eyebrow}>FORMAL REVIEW · SHORT KEYS</p>
+          <h1>短引用键批次逐题审核</h1>
+          <p className={styles.muted}>只判断，不改写模型回答。浏览器会按批次自动保存草稿。</p>
+          {batch && (
+            <p className={styles.rule}>
+              批次 {batch.id.slice(0, 8)} · 报告 {batch.reportSha256.slice(0, 8)}
+            </p>
+          )}
           <label className={styles.aliasLabel} htmlFor="reviewer-alias">评审别名</label>
           <input
             id="reviewer-alias"

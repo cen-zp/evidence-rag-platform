@@ -7,7 +7,7 @@ COPY apps/web/package.json apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml 
 RUN pnpm install --frozen-lockfile
 
 COPY apps/web ./
-COPY evals/results/fastapi-official-formal-answer-batch.json ./review-data/fastapi-official-formal-answer-batch.json
+COPY evals/results/fastapi-official-formal-answer-compact-s1-20260715.json ./review-data/fastapi-official-formal-answer-compact-s1-20260715.json
 COPY evals/independent/fastapi-official-cases.jsonl ./review-data/fastapi-official-cases.jsonl
 
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000

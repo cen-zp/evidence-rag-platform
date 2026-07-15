@@ -62,9 +62,18 @@ uv run python -m app.evaluation.answer_review \
 
 ### 72 条正式题集的点选审核页
 
-本地 Docker Web 启动后，打开 `http://localhost:3000/review`，或从工作台顶部进入“72 题真人审核”。页面只加载固定的公开 FastAPI 批次，自动跳过 2 条 provider error，并把 49 条回答与 21 条守卫拒答按不同规则展示：回答题分别点答案/引用通过或不通过；拒答题只点拒答合理或不当。进度和备注仅保存在当前浏览器的本地草稿中，不会把判断发送给模型或写进后端数据库。
+本地 Docker Web 启动后，打开 `http://localhost:3000/review`，或从工作台顶部进入“72 题真人审核”。页面只加载 batch ID `02dbf511…`、报告 SHA-256 `0050e4ed…55fef` 的短引用键固定批次；服务端会同时校验 batch ID、哈希与 72 题覆盖，任一不符即停止加载以避免串批。回答题分别点答案/引用通过或不通过，守卫拒答题只点拒答合理或不当；进度和备注仅保存在当前浏览器的批次专属本地草稿中，不会把判断发送给模型或写进后端数据库。
 
-完成 70 条可评审案例并填写评审别名后，点击“下载真人审核 CSV”。导出的文件已经包含 `review_method=human`、每行 verdict 与固定批次内容；把下载文件放回 `evals/independent/` 后，再运行本节的校验命令。页面不会替使用者决定 verdict；若由模型辅助判断，应改用 `model_assisted`，不能把导出的 `human` 标签当作事实。
+完成全部 72 条可评审案例并填写评审别名后，点击“下载真人审核 CSV”。导出的文件已经包含 `review_method=human`、每行 verdict 与固定批次内容；将下载文件保存为 `evals/independent/fastapi-official-formal-answer-compact-s1-02dbf511-review-human.csv` 后，运行：
+
+```bash
+cd apps/api
+uv run python -m app.evaluation.answer_review \
+  --report ../../evals/results/fastapi-official-formal-answer-compact-s1-20260715.json \
+  --review ../../evals/independent/fastapi-official-formal-answer-compact-s1-02dbf511-review-human.csv
+```
+
+该校验不调用模型。页面也不会替使用者决定 verdict；若由模型辅助判断，应改用 `model_assisted`，不能把导出的 `human` 标签当作事实。
 
 ## 模型调用元数据
 

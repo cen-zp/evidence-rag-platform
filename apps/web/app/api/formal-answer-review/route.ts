@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -22,8 +23,16 @@ type BatchCase = {
   retrieval_latency_ms: number;
 };
 
-const reportFilename = "fastapi-official-formal-answer-batch.json";
+const reportFilename = "fastapi-official-formal-answer-compact-s1-20260715.json";
 const casesFilename = "fastapi-official-cases.jsonl";
+const expectedBatchId = "02dbf511-6853-4dac-b420-779d74befa9c";
+const expectedReportSha256 = "0050e4ed89e394a278a955da240d6545a24419286fe777e96cd2f5542db55fef";
+const reviewBatch = {
+  id: expectedBatchId,
+  label: "短引用键批次 · 现存可审计报告",
+  reportSha256: expectedReportSha256,
+  downloadFilename: "fastapi-official-formal-answer-compact-s1-02dbf511-review-human.csv",
+};
 
 async function readReviewData(filename: string, sourcePath: string): Promise<string> {
   const candidates = [
@@ -47,7 +56,24 @@ export async function GET() {
       readReviewData(reportFilename, `../../evals/results/${reportFilename}`),
       readReviewData(casesFilename, `../../evals/independent/${casesFilename}`),
     ]);
-    const report = JSON.parse(rawReport) as { cases: BatchCase[]; run_metadata: object };
+    const report = JSON.parse(rawReport) as {
+      batch_id: string;
+      case_count: number;
+      cases: BatchCase[];
+      run_metadata: object;
+    };
+    const reportSha256 = createHash("sha256").update(rawReport).digest("hex");
+    if (
+      report.batch_id !== expectedBatchId ||
+      reportSha256 !== expectedReportSha256 ||
+      report.case_count !== 72 ||
+      report.cases.length !== report.case_count
+    ) {
+      return NextResponse.json(
+        { detail: "审核批次完整性校验失败，已停止加载以避免串批。" },
+        { status: 409 },
+      );
+    }
     const sources = new Map(
       rawCases
         .trim()
@@ -63,6 +89,7 @@ export async function GET() {
           expected_filenames: sources.get(item.case_id)?.expected_filenames ?? [],
         })),
         run_metadata: report.run_metadata,
+        batch: reviewBatch,
       },
       { headers: { "Cache-Control": "no-store" } },
     );

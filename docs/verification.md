@@ -189,6 +189,18 @@
 
 产物：[模型辅助审核表](../evals/independent/fastapi-official-formal-answer-review-model-assisted.csv)。
 
+## 2026-07-15：短引用键现存真实批次与成本快照
+
+- 可审计产物：[短引用键批次报告](../evals/results/fastapi-official-formal-answer-compact-s1-20260715.json)，batch ID `02dbf511-6853-4dac-b420-779d74befa9c`，报告 SHA-256 `0050e4ed89e394a278a955da240d6545a24419286fe777e96cd2f5542db55fef`。
+- 固定配置：同一 72 题公开 FastAPI 题集，`top_k=5`，CPU `BAAI/bge-small-zh-v1.5` + BM25 + RRF + `BAAI/bge-reranker-base`；Reranker 未关闭。
+- 系统 outcome：56 条 `answered`、16 条 `retrieval_guard_invalid_citation`、0 条上游失败。相比旧 UUID 批次的 49/21/2，这是短键改善信号；新一轮人工审核完成前，不能写成答案、引用或拒答通过率。
+- 模型与成本观测：72/72 次模型完成调用均有 usage 与成本快照，共 `83202` prompt、`22042` completion、`105244` total tokens；模型完成耗时均值 `3532.1 ms`、P95 `7274 ms`。
+- 成本边界：报告记录 2026-07-15 核对的 DeepSeek 缓存未命中单价，输入 `1 CNY/百万 tokens`、输出 `2 CNY/百万 tokens`；保守估算总成本 `0.127286 CNY`、平均每次模型完成 `0.00176786 CNY`。该估算不是账单，也不含本地 CPU、基础设施或人工成本。
+- 串批边界：数据库中还存在其他批次的调用元数据，但没有同时保留下来可逐题核验的不可变报告；本节只接受上述 batch ID 与报告哈希，不用其他批次摘要替代产物证据。
+- 交付验证：审核接口同时校验 batch ID、报告 SHA-256 与 72 题覆盖；后端隔离环境全量测试 59/59、Ruff、前端 ESLint/production build、Docker Web 重建和浏览器实际加载均通过。测试副本不含项目 `.env`，本轮未调用模型。
+
+结论：短引用键真实批次、Reranker 配置、token 覆盖和保守成本快照已有可复核产物；人工质量评审和浏览器端端到端延迟仍待完成。
+
 ## 2026-07-15：FastAPI 官方语料与 AI 协助题集草案基线
 
 - 语料：9 篇公开 FastAPI 官方教程，来源清单和 SHA-256 见 [fastapi-official-2026-07-14/source-manifest.json](../evals/corpora/fastapi-official-2026-07-14/source-manifest.json)。
