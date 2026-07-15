@@ -180,7 +180,7 @@ class AnswerReview(Base):
 
 
 class ModelCall(Base):
-    """Privacy-preserving metadata for successful knowledge-base model calls."""
+    """Privacy-preserving metadata for knowledge-base model completions."""
 
     __tablename__ = "model_calls"
     __table_args__ = (
@@ -193,6 +193,7 @@ class ModelCall(Base):
         ForeignKey("knowledge_bases.id", ondelete="CASCADE"),
         nullable=False,
     )
+    batch_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
     model: Mapped[str] = mapped_column(String(120), nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)
     prompt_tokens: Mapped[int | None] = mapped_column(Integer)

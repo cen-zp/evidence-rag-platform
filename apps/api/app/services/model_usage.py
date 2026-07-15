@@ -14,6 +14,7 @@ def record_model_call(
     session: Session,
     knowledge_base_id: UUID,
     *,
+    batch_id: UUID | None = None,
     model: str,
     latency_ms: int,
     usage: ChatUsage | None,
@@ -30,6 +31,7 @@ def record_model_call(
     session.add(
         ModelCall(
             knowledge_base_id=knowledge_base_id,
+            batch_id=batch_id,
             model=model,
             latency_ms=latency_ms,
             prompt_tokens=usage.prompt_tokens if usage is not None else None,

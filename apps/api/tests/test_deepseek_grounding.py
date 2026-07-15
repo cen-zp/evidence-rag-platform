@@ -28,6 +28,10 @@ def _service_with_response(content: str) -> tuple[DeepSeekService, dict]:
     return service, captured
 
 
+def test_deepseek_service_keeps_completion_helper_on_the_service_class() -> None:
+    assert "_create_completion" in DeepSeekService.__dict__
+
+
 def test_grounded_chat_uses_compact_source_keys_and_maps_them_to_chunk_ids() -> None:
     first_chunk_id, second_chunk_id = uuid4(), uuid4()
     service, captured = _service_with_response(

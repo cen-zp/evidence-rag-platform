@@ -10,23 +10,6 @@ from app.core.config import Settings
 from app.schemas.chat import ChatHistoryMessage, ChatResponse, ChatUsage
 
 
-class DeepSeekNotConfiguredError(RuntimeError):
-    """Raised when the local DeepSeek API key is unavailable."""
-
-
-class DeepSeekInvalidCitationError(RuntimeError):
-    """Raised when a model response is not grounded in the supplied evidence."""
-
-
-class DeepSeekProviderError(RuntimeError):
-    """A safe, user-facing representation of a DeepSeek provider failure."""
-
-    def __init__(self, status_code: int, detail: str) -> None:
-        super().__init__(detail)
-        self.status_code = status_code
-        self.detail = detail
-
-
 @dataclass(frozen=True)
 class EvidencePrompt:
     chunk_id: UUID
@@ -40,6 +23,36 @@ class GroundedModelResponse:
     model: str
     latency_ms: int
     usage: ChatUsage | None = None
+
+
+@dataclass(frozen=True)
+class ModelResponseMetadata:
+    """Usage metadata for a provider completion, including guarded completions."""
+
+    model: str
+    latency_ms: int
+    usage: ChatUsage | None = None
+
+
+class DeepSeekNotConfiguredError(RuntimeError):
+    """Raised when the local DeepSeek API key is unavailable."""
+
+
+class DeepSeekInvalidCitationError(RuntimeError):
+    """Raised when a model response is not grounded in the supplied evidence."""
+
+    def __init__(self, detail: str, *, response: ModelResponseMetadata | None = None) -> None:
+        super().__init__(detail)
+        self.response = response
+
+
+class DeepSeekProviderError(RuntimeError):
+    """A safe, user-facing representation of a DeepSeek provider failure."""
+
+    def __init__(self, status_code: int, detail: str) -> None:
+        super().__init__(detail)
+        self.status_code = status_code
+        self.detail = detail
 
 
 class DeepSeekService:
@@ -115,26 +128,53 @@ class DeepSeekService:
             ],
         )
         content = completion.choices[0].message.content
+        response_metadata = ModelResponseMetadata(
+            model=completion.model or self._model,
+            latency_ms=round((perf_counter() - started_at) * 1000),
+            usage=_completion_usage(completion),
+        )
         if not content:
-            raise DeepSeekInvalidCitationError("DeepSeek returned an empty grounded response")
+            raise DeepSeekInvalidCitationError(
+                "DeepSeek returned an empty grounded response", response=response_metadata
+            )
 
         try:
             payload = json.loads(content)
             answer = payload["answer"]
             citation_ids = _citation_ids_from_payload(payload, source_keys)
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
-            raise DeepSeekInvalidCitationError("DeepSeek returned invalid grounded JSON") from error
+            raise DeepSeekInvalidCitationError(
+                "DeepSeek returned invalid grounded JSON", response=response_metadata
+            ) from error
 
         if not isinstance(answer, str) or not answer.strip() or not citation_ids:
-            raise DeepSeekInvalidCitationError("DeepSeek returned invalid citations")
+            raise DeepSeekInvalidCitationError(
+                "DeepSeek returned invalid citations", response=response_metadata
+            )
 
         return GroundedModelResponse(
             answer=answer,
             citation_ids=list(dict.fromkeys(citation_ids)),
-            model=completion.model or self._model,
-            latency_ms=round((perf_counter() - started_at) * 1000),
-            usage=_completion_usage(completion),
+            model=response_metadata.model,
+            latency_ms=response_metadata.latency_ms,
+            usage=response_metadata.usage,
         )
+
+    async def _create_completion(self, **kwargs: Any) -> Any:
+        try:
+            return await self._client.chat.completions.create(**kwargs)
+        except APITimeoutError as error:
+            raise DeepSeekProviderError(
+                status_code=504,
+                detail="AI provider timed out. Please try again.",
+            ) from error
+        except APIConnectionError as error:
+            raise DeepSeekProviderError(
+                status_code=502,
+                detail="AI provider is unreachable. Please try again.",
+            ) from error
+        except APIStatusError as error:
+            raise _provider_status_error(error) from error
 
 
 def _citation_ids_from_payload(payload: dict[str, Any], source_keys: dict[str, UUID]) -> list[UUID]:
@@ -157,23 +197,6 @@ def _citation_ids_from_payload(payload: dict[str, Any], source_keys: dict[str, U
     if not set(citation_ids).issubset(allowed_ids):
         raise ValueError("Grounded response contains an unknown citation")
     return citation_ids
-
-    async def _create_completion(self, **kwargs: Any) -> Any:
-        try:
-            return await self._client.chat.completions.create(**kwargs)
-        except APITimeoutError as error:
-            raise DeepSeekProviderError(
-                status_code=504,
-                detail="AI provider timed out. Please try again.",
-            ) from error
-        except APIConnectionError as error:
-            raise DeepSeekProviderError(
-                status_code=502,
-                detail="AI provider is unreachable. Please try again.",
-            ) from error
-        except APIStatusError as error:
-            raise _provider_status_error(error) from error
-
 
 def _provider_status_error(error: APIStatusError) -> DeepSeekProviderError:
     if error.status_code in {401, 403}:

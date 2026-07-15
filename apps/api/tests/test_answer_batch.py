@@ -13,6 +13,7 @@ from app.schemas.chat import ChatUsage
 from app.services.deepseek import (
     DeepSeekInvalidCitationError,
     GroundedModelResponse,
+    ModelResponseMetadata,
 )
 
 
@@ -71,12 +72,20 @@ def test_answer_batch_captures_grounded_output_and_generates_pending_review_shee
             top_k=3,
         )
     )
-    report = build_answer_batch_report(results)
+    report = build_answer_batch_report(
+        results,
+        pricing_snapshot={
+            "input_cost_per_million_tokens": 1.0,
+            "output_cost_per_million_tokens": 2.0,
+        },
+    )
     review_path = tmp_path / "answer-review.csv"
     write_answer_review_sheet(results, review_path)
 
     assert report["answered_count"] == 1
     assert report["total_tokens"] == 15
+    assert report["estimated_total_cost"] == 0.00002
+    assert report["cases"][0]["estimated_cost"] == 0.00002
     assert results[0].citations[0].filename == "source.md"
     with review_path.open(encoding="utf-8-sig", newline="") as input_file:
         rows = list(csv.DictReader(input_file))
@@ -104,3 +113,34 @@ def test_answer_batch_records_guards_without_calling_a_model() -> None:
         "retrieval_guard_no_hits",
         "retrieval_guard_invalid_citation",
     ]
+
+
+def test_answer_batch_records_usage_for_a_completion_rejected_by_the_citation_guard() -> None:
+    case = RetrievalEvaluationCase(
+        id="case-1", question="Invalid citation?", expected_filenames=["source.md"]
+    )
+    response = ModelResponseMetadata(
+        model="test-model",
+        latency_ms=123,
+        usage=ChatUsage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
+    )
+    recorded: list[ModelResponseMetadata] = []
+
+    results = asyncio.run(
+        run_answer_batch(
+            uuid4(),
+            [case],
+            FakeRetriever({"Invalid citation?": [make_hit(uuid4())]}),
+            FakeService(DeepSeekInvalidCitationError("invalid", response=response)),
+            on_model_response=recorded.append,
+        )
+    )
+    report = build_answer_batch_report(results)
+
+    assert results[0].outcome == "retrieval_guard_invalid_citation"
+    assert results[0].model == "test-model"
+    assert results[0].usage == response.usage
+    assert recorded == [response]
+    assert report["model_completion_count"] == 1
+    assert report["usage_reported_count"] == 1
+    assert report["total_tokens"] == 15
