@@ -114,7 +114,7 @@ docker compose exec api uv run --no-sync python -m app.public_fastapi_seed
 
 2026-07-15 的首次草案基线结果保存于 [../evals/results/fastapi-official-draft-rrf-only.json](../evals/results/fastapi-official-draft-rrf-only.json) 与 [../evals/results/fastapi-official-draft-reranker.json](../evals/results/fastapi-official-draft-reranker.json)。它们不是正式结果：manifest 尚未通过独立人工复核，而且延迟包含首次模型加载；完整限制见 [verification.md](verification.md)。
 
-CLI 结果会记录 `reranker_enabled`，使两个报告的配置可追溯。
+CLI 结果会记录 `reranker_enabled`，以及不含密钥的 `run_metadata`（运行 UTC 时间、Embedding 模型/维度/设备、Qdrant collection 与启用时的 Reranker 配置），使两个报告的配置可追溯。
 
 ## 仅演示题集
 

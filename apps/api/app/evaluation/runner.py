@@ -1,9 +1,11 @@
 import argparse
 import json
 from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
+from app.core.config import Settings, get_settings
 from app.evaluation.formal import validate_formal_dataset
 from app.evaluation.retrieval import (
     RetrievalEvaluationCase,
@@ -42,6 +44,21 @@ def run(
     return evaluate_retrieval(cases, retrieve_filenames, top_k=top_k)
 
 
+def build_run_metadata(settings: Settings, reranker_enabled: bool) -> dict[str, object]:
+    """Capture retrieval settings that affect a report without exposing secrets."""
+    return {
+        "evaluated_at_utc": datetime.now(UTC).isoformat(),
+        "embedding_model": settings.embedding_model,
+        "embedding_dimension": settings.embedding_dimension,
+        "embedding_device": settings.embedding_device,
+        "qdrant_collection": settings.qdrant_collection,
+        "reranker_model": settings.reranker_model if reranker_enabled else None,
+        "reranker_candidate_count": settings.reranker_candidate_count
+        if reranker_enabled
+        else None,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate retrieval against a JSONL case set")
     parser.add_argument("--knowledge-base-id", required=True, type=UUID)
@@ -77,7 +94,10 @@ def main() -> None:
         args.top_k,
         reranker_enabled=reranker_enabled,
     )
-    report_data = report.to_dict() | {"reranker_enabled": reranker_enabled}
+    report_data = report.to_dict() | {
+        "reranker_enabled": reranker_enabled,
+        "run_metadata": build_run_metadata(get_settings(), reranker_enabled),
+    }
     if formal_dataset is not None:
         report_data["formal_dataset"] = formal_dataset
     serialized_report = json.dumps(report_data, ensure_ascii=False, indent=2)
