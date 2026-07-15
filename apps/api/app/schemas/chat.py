@@ -46,6 +46,6 @@ class ChatResponse(BaseModel):
     def serialize(self, handler):
         result = handler(self)
         for optional_field in ("usage", "retrieval_latency_ms", "total_latency_ms"):
-            if result[optional_field] is None:
-                del result[optional_field]
+            if result.get(optional_field) is None:
+                result.pop(optional_field, None)
         return result

@@ -293,6 +293,34 @@ def test_grounded_chat_stream_returns_progress_then_validated_result() -> None:
     assert '"citations": [{"chunk_id":' in response.text
 
 
+def test_grounded_chat_stream_serializes_low_confidence_guard_without_usage() -> None:
+    client, knowledge_base_id, _ = create_chat_client()
+    retriever = StaticRetriever([])
+    client.app.state.knowledge_base_retriever_factory = lambda: retriever
+
+    def unexpected_service():
+        raise AssertionError("The model must not run without confident evidence")
+
+    client.app.state.chat_service_factory = unexpected_service
+    response = client.post(
+        "/api/chat/stream",
+        json={
+            "message": "What is outside this knowledge base?",
+            "knowledge_base_id": str(knowledge_base_id),
+        },
+    )
+
+    assert response.status_code == 200
+    assert 'event: status\ndata: {"phase": "retrieving"}' in response.text
+    assert (
+        'event: result\ndata: {"answer": "我无法根据当前知识库中的资料回答这个问题。"'
+        in response.text
+    )
+    assert '"model": "retrieval-guard"' in response.text
+    assert '"usage"' not in response.text
+    assert 'event: error' not in response.text
+
+
 def test_grounded_chat_persists_conversation_messages_and_feedback() -> None:
     client, knowledge_base_id, chunk = create_chat_client()
     client.app.state.knowledge_base_retriever_factory = lambda: StaticRetriever(
