@@ -1,0 +1,1594 @@
+{
+  "case_count": 72,
+  "answered_count": 49,
+  "guarded_count": 21,
+  "failed_count": 2,
+  "mean_model_latency_ms": 4090.734693877551,
+  "p95_model_latency_ms": 7546,
+  "prompt_tokens": 61139,
+  "completion_tokens": 18342,
+  "total_tokens": 79481,
+  "usage_reported_count": 49,
+  "cases": [
+    {
+      "case_id": "path-01",
+      "question": "怎样让 /items/ 后面的某个 URL 段传入处理函数？",
+      "reference_answer": "在路径字符串中用花括号声明参数，并在函数参数中接收同名变量。",
+      "outcome": "answered",
+      "answer": "在 FastAPI 中，通过在路由中使用花括号占位符并声明函数参数来实现，例如 /items/{item_id}，然后在处理函数中定义参数 item_id。",
+      "citations": [
+        {
+          "chunk_id": "3cecfab5-4f67-4414-b81c-96a22b3cee9b",
+          "filename": "06-handling-errors.md",
+          "content": " }\nWhen a request contains invalid data, **FastAPI** internally raises a `RequestValidationError`.\nAnd it also includes a default exception handler for it.\nTo override it, import the `RequestValidationError` and use it with `@app.exception_handler(RequestValidationError)` to decorate the exception handler.\nThe exception handler will receive a `Request` and the exception.\n{* ../../docs_src/handling_errors/tutorial004_py310.py hl[2,14:19] *}\nNow, if you go to `/items/foo`, instead of getting the default JSON error with:\n```JSON\n{\n\"detail\": [\n{\n\"loc\": [\n\"path\",\n\"item_id\"\n],\n\"msg\": \"value is not a valid integer\",\n\"type\": \"type_error.integer\"\n}\n]\n}\n```\nyou will get a text version, with:\n```\nValidation errors:\nField: ('path', 'item_id'), Error: Input should be a valid integer, unable to parse st"
+        },
+        {
+          "chunk_id": "594230bd-84f9-42b0-8321-024bf8cc5889",
+          "filename": "06-handling-errors.md",
+          "content": "#the-resulting-response }\nIf the client requests `http://example.com/items/foo` (an `item_id` `\"foo\"`), that client will receive an HTTP status code of 200, and a JSON response of:\n```JSON\n{\n\"item\": \"The Foo Wrestlers\"\n}\n```\nBut if the client requests `http://example.com/items/bar` (a non-existent `item_id` `\"bar\"`), that client will receive an HTTP status code of 404 (the \"not found\" error), and a JSON response of:\n```JSON\n{\n\"detail\": \"Item not found\"\n}\n```\n/// tip\nWhen raising an `HTTPException`, you can pass any value that can be converted to JSON as the parameter `detail`, not only `str`.\nYou could pass a `dict`, a `list`, etc.\nThey are handled automatically by **FastAPI** and converted to JSON.\n///\n## Add custom headers { #add-custom-headers }\nThere are some situations where it's usef"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 5913,
+      "retrieval_latency_ms": 1396.042,
+      "usage": {
+        "prompt_tokens": 1305,
+        "completion_tokens": 357,
+        "total_tokens": 1662
+      }
+    },
+    {
+      "case_id": "path-02",
+      "question": "把商品编号标注为整数后，客户端传入非数字会发生什么？",
+      "reference_answer": "FastAPI 会解析和验证该路径参数，非法值会得到验证错误响应。",
+      "outcome": "answered",
+      "answer": "客户端传入非数字时，FastAPI 会触发数据验证失败，返回一个包含错误详情的 JSON 响应，其中会指出该字段的值不是有效的整数。",
+      "citations": [
+        {
+          "chunk_id": "dec8f75d-42d9-453b-878b-35ce2b221a5f",
+          "filename": "06-handling-errors.md",
+          "content": " invalid data.\nYou could use it while developing your app to log the body and debug it, return it to the user, etc.\n{* ../../docs_src/handling_errors/tutorial005_py310.py hl[14] *}\nNow try sending an invalid item like:\n```JSON\n{\n\"title\": \"towel\",\n\"size\": \"XL\"\n}\n```\nYou will receive a response telling you that the data is invalid containing the received body:\n```JSON hl_lines=\"12-15\"\n{\n\"detail\": [\n{\n\"loc\": [\n\"body\",\n\"size\"\n],\n\"msg\": \"value is not a valid integer\",\n\"type\": \"type_error.integer\"\n}\n],\n\"body\": {\n\"title\": \"towel\",\n\"size\": \"XL\"\n}\n}\n```\n#### FastAPI's `HTTPException` vs Starlette's `HTTPException` { #fastapis-httpexception-vs-starlettes-httpexception }\n**FastAPI** has its own `HTTPException`.\nAnd **FastAPI**'s `HTTPException` error class inherits from Starlette's `HTTPException` er"
+        },
+        {
+          "chunk_id": "4d135f4f-854e-4ad8-aa70-49be67baaff0",
+          "filename": "01-path-params.md",
+          "content": "y hl[7] *}\nIn this case, `item_id` is declared to be an `int`.\n/// tip\nThis will give you editor support inside of your function, with error checks, completion, etc.\n///\n## Data <dfn title=\"also known as: serialization, parsing, marshalling\">conversion</dfn> { #data-conversion }\nIf you run this example and open your browser at [http://127.0.0.1:8000/items/3](http://127.0.0.1:8000/items/3), you will see a response of:\n```JSON\n{\"item_id\":3}\n```\n/// tip\nNotice that the value your function received (and returned) is `3`, as a Python `int`, not a string `\"3\"`.\nSo, with that type declaration, **FastAPI** gives you automatic request <dfn title=\"converting the string that comes from an HTTP request into Python data\">\"parsing\"</dfn>.\n///\n## Data validation { #data-validation }\nBut if you go to the "
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3470,
+      "retrieval_latency_ms": 1265.639,
+      "usage": {
+        "prompt_tokens": 1298,
+        "completion_tokens": 269,
+        "total_tokens": 1567
+      }
+    },
+    {
+      "case_id": "path-03",
+      "question": "路径参数类型注解除了转换输入外，还会给开发者带来哪些开发体验？",
+      "reference_answer": "类型注解带来编辑器支持、数据验证和自动 API 文档。",
+      "outcome": "answered",
+      "answer": "数据验证、清晰的错误信息、自动交互式文档、编辑器支持、JSON Schema生成等。",
+      "citations": [
+        {
+          "chunk_id": "386a4fcb-5a8c-4682-9fb5-93e6f2885cd9",
+          "filename": "01-path-params.md",
+          "content": "n type declaration, **FastAPI** gives you data validation.\nNotice that the error also clearly states exactly the point where the validation didn't pass.\nThis is incredibly helpful while developing and debugging code that interacts with your API.\n///\n## Documentation { #documentation }\nAnd when you open your browser at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), you will see an automatic, interactive, API documentation like:\n<img src=\"/img/tutorial/path-params/image01.png\">\n/// tip\nAgain, just with that same Python type declaration, **FastAPI** gives you automatic, interactive documentation (integrating Swagger UI).\nNotice that the path parameter is declared to be an integer.\n///\n## Standards-based benefits, alternative documentation { #standards-based-benefits-alternative-doc"
+        },
+        {
+          "chunk_id": "d5826a14-ecdf-41be-9444-70b836c2a929",
+          "filename": "01-path-params.md",
+          "content": "# Path Parameters { #path-parameters }\nYou can declare path \"parameters\" or \"variables\" with the same syntax used by Python format strings:\n{* ../../docs_src/path_params/tutorial001_py310.py hl[6:7] *}\nThe value of the path parameter `item_id` will be passed to your function as the argument `item_id`.\nSo, if you run this example and go to [http://127.0.0.1:8000/items/foo](http://127.0.0.1:8000/items/foo), you will see a response of:\n```JSON\n{\"item_id\":\"foo\"}\n```\n## Path parameters with types { #path-parameters-with-types }\nYou can declare the type of a path parameter in the function, using standard Python type annotations:\n{* ../../docs_src/path_params/tutorial002_py310.py hl[7] *}\nIn this case, `item_id` is declared to be an `int`.\n/// tip\nThis will give you editor support inside of your "
+        },
+        {
+          "chunk_id": "58cc7cc9-27cb-4a47-b868-81ccaff8186d",
+          "filename": "03-request-body.md",
+          "content": "dd it to your *path operation*, declare it the same way you declared path and query parameters:\n{* ../../docs_src/body/tutorial001_py310.py hl[16] *}\n...and declare its type as the model you created, `Item`.\n## Results { #results }\nWith just that Python type declaration, **FastAPI** will:\n* Read the body of the request as JSON.\n* Convert the corresponding types (if needed).\n* Validate the data.\n* If the data is invalid, it will return a nice and clear error, indicating exactly where and what was the incorrect data.\n* Give you the received data in the parameter `item`.\n* As you declared it in the function to be of type `Item`, you will also have all the editor support (completion, etc) for all of the attributes and their types.\n* Generate [JSON Schema](https://json-schema.org) definitions f"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 6605,
+      "retrieval_latency_ms": 1271.545,
+      "usage": {
+        "prompt_tokens": 1235,
+        "completion_tokens": 652,
+        "total_tokens": 1887
+      }
+    },
+    {
+      "case_id": "path-04",
+      "question": "如果接口只接受几种预设的模型名称，如何在路径中表达这个限制？",
+      "reference_answer": "可定义 Python Enum，并把路径参数标注为该枚举类型。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1329.265,
+      "usage": null
+    },
+    {
+      "case_id": "path-05",
+      "question": "处理枚举路径参数时，怎样获取它实际对应的字符串值？",
+      "reference_answer": "通过枚举成员的 value 属性取得其底层值。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1198.982,
+      "usage": null
+    },
+    {
+      "case_id": "path-06",
+      "question": "为什么固定路径 /users/me 要放在 /users/{user_id} 之前声明？",
+      "reference_answer": "路由匹配按声明顺序处理，固定路径应先匹配以免被参数路径吞掉。",
+      "outcome": "answered",
+      "answer": "因为路径操作按顺序评估，如果 /users/{user_id} 先声明，它会匹配 /users/me，导致固定路径无法被正确匹配。",
+      "citations": [
+        {
+          "chunk_id": "1ea45a8b-7257-4a40-b925-5a224ed03c77",
+          "filename": "01-path-params.md",
+          "content": "on is performed under the hood by [Pydantic](https://docs.pydantic.dev/), so you get all the benefits from it. And you know you are in good hands.\nYou can use the same type declarations with `str`, `float`, `bool` and many other complex data types.\nSeveral of these are explored in the next chapters of the tutorial.\n## Order matters { #order-matters }\nWhen creating *path operations*, you can find situations where you have a fixed path.\nLike `/users/me`, let's say that it's to get data about the current user.\nAnd then you can also have a path `/users/{user_id}` to get data about a specific user by some user ID.\nBecause *path operations* are evaluated in order, you need to make sure that the path for `/users/me` is declared before the one for `/users/{user_id}`:\n{* ../../docs_src/path_params/"
+        },
+        {
+          "chunk_id": "7043c3c0-36ab-4875-8914-c03c2cc7f238",
+          "filename": "01-path-params.md",
+          "content": "ake sure that the path for `/users/me` is declared before the one for `/users/{user_id}`:\n{* ../../docs_src/path_params/tutorial003_py310.py hl[6,11] *}\nOtherwise, the path for `/users/{user_id}` would match also for `/users/me`, \"thinking\" that it's receiving a parameter `user_id` with a value of `\"me\"`.\nSimilarly, you cannot redefine a path operation:\n{* ../../docs_src/path_params/tutorial003b_py310.py hl[6,11] *}\nThe first one will always be used since the path matches first.\n## Predefined values { #predefined-values }\nIf you have a *path operation* that receives a *path parameter*, but you want the possible valid *path parameter* values to be predefined, you can use a standard Python <abbr title=\"Enumeration\">`Enum`</abbr>.\n### Create an `Enum` class { #create-an-enum-class }\nImport `E"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3638,
+      "retrieval_latency_ms": 1277.207,
+      "usage": {
+        "prompt_tokens": 1220,
+        "completion_tokens": 381,
+        "total_tokens": 1601
+      }
+    },
+    {
+      "case_id": "path-07",
+      "question": "文件路径参数本身包含斜杠时，FastAPI 路由应使用哪种转换器语法？",
+      "reference_answer": "使用 {file_path:path} 形式的路径转换器。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1300.818,
+      "usage": null
+    },
+    {
+      "case_id": "path-08",
+      "question": "为什么把完整文件系统路径放入路径参数在 OpenAPI 中有额外限制？",
+      "reference_answer": "OpenAPI 没有标准方式表示参数内部再包含路径，这类场景难以定义和测试。",
+      "outcome": "answered",
+      "answer": "因为 OpenAPI 不支持声明路径参数来包含路径，因为这可能导致难以测试和定义的场景。",
+      "citations": [
+        {
+          "chunk_id": "c762c04a-6f38-4e3e-8840-fc4a81af806b",
+          "filename": "01-path-params.md",
+          "content": " client:\n{* ../../docs_src/path_params/tutorial005_py310.py hl[18,21,23] *}\nIn your client you will get a JSON response like:\n```JSON\n{\n\"model_name\": \"alexnet\",\n\"message\": \"Deep Learning FTW!\"\n}\n```\n## Path parameters containing paths { #path-parameters-containing-paths }\nLet's say you have a *path operation* with a path `/files/{file_path}`.\nBut you need `file_path` itself to contain a *path*, like `home/johndoe/myfile.txt`.\nSo, the URL for that file would be something like: `/files/home/johndoe/myfile.txt`.\n### OpenAPI support { #openapi-support }\nOpenAPI doesn't support a way to declare a *path parameter* to contain a *path* inside, as that could lead to scenarios that are difficult to test and define.\nNevertheless, you can still do it in **FastAPI**, using one of the internal tools fro"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3264,
+      "retrieval_latency_ms": 1241.835,
+      "usage": {
+        "prompt_tokens": 1219,
+        "completion_tokens": 289,
+        "total_tokens": 1508
+      }
+    },
+    {
+      "case_id": "query-01",
+      "question": "列表接口没有传分页参数时，skip 和 limit 会取什么来源的值？",
+      "reference_answer": "会使用函数声明中的默认值。",
+      "outcome": "answered",
+      "answer": "默认情况下，skip 取 0，limit 取 10。",
+      "citations": [
+        {
+          "chunk_id": "3ab86f3e-f476-44b0-b2c5-b4ff4bc414f2",
+          "filename": "02-query-params.md",
+          "content": "ype and validated against it.\nAll the same processes that apply to path parameters also apply to query parameters:\n* Editor support (obviously)\n* Data <dfn title=\"converting the string that comes from an HTTP request into Python data\">\"parsing\"</dfn>\n* Data validation\n* Automatic documentation\n## Defaults { #defaults }\nAs query parameters are not a fixed part of a path, they can be optional and can have default values.\nIn the example above they have default values of `skip=0` and `limit=10`.\nSo, going to the URL:\n```\nhttp://127.0.0.1:8000/items/\n```\nwould be the same as going to:\n```\nhttp://127.0.0.1:8000/items/?skip=0&limit=10\n```\nBut if you go to, for example:\n```\nhttp://127.0.0.1:8000/items/?skip=20\n```\nThe parameter values in your function will be:\n* `skip=20`: because you set it in th"
+        },
+        {
+          "chunk_id": "1e6b886f-53f4-4cfe-bdf0-21fb526f89f2",
+          "filename": "02-query-params.md",
+          "content": "//127.0.0.1:8000/items/?skip=20\n```\nThe parameter values in your function will be:\n* `skip=20`: because you set it in the URL\n* `limit=10`: because that was the default value\n## Optional parameters { #optional-parameters }\nThe same way, you can declare optional query parameters, by setting their default to `None`:\n{* ../../docs_src/query_params/tutorial002_py310.py hl[7] *}\nIn this case, the function parameter `q` will be optional, and will be `None` by default.\n/// tip\nAlso notice that **FastAPI** is smart enough to notice that the path parameter `item_id` is a path parameter and `q` is not, so, it's a query parameter.\n///\n## Query parameter type conversion { #query-parameter-type-conversion }\nYou can also declare `bool` types, and they will be converted:\n{* ../../docs_src/query_params/tu"
+        },
+        {
+          "chunk_id": "dca9320e-c1da-4cac-8dea-52760c2d7def",
+          "filename": "02-query-params.md",
+          "content": "# Query Parameters { #query-parameters }\nWhen you declare other function parameters that are not part of the path parameters, they are automatically interpreted as \"query\" parameters.\n{* ../../docs_src/query_params/tutorial001_py310.py hl[9] *}\nThe query is the set of key-value pairs that go after the `?` in a URL, separated by `&` characters.\nFor example, in the URL:\n```\nhttp://127.0.0.1:8000/items/?skip=0&limit=10\n```\n...the query parameters are:\n* `skip`: with a value of `0`\n* `limit`: with a value of `10`\nAs they are part of the URL, they are \"naturally\" strings.\nBut when you declare them with Python types (in the example above, as `int`), they are converted to that type and validated against it.\nAll the same processes that apply to path parameters also apply to query parameters:\n* Edi"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 9951,
+      "retrieval_latency_ms": 1308.973,
+      "usage": {
+        "prompt_tokens": 1207,
+        "completion_tokens": 1013,
+        "total_tokens": 2220
+      }
+    },
+    {
+      "case_id": "query-02",
+      "question": "URL 问号后由 & 分隔的一组键值在 HTTP 中属于什么输入位置？",
+      "reference_answer": "属于查询参数。",
+      "outcome": "answered",
+      "answer": "query parameters（查询参数）",
+      "citations": [
+        {
+          "chunk_id": "dca9320e-c1da-4cac-8dea-52760c2d7def",
+          "filename": "02-query-params.md",
+          "content": "# Query Parameters { #query-parameters }\nWhen you declare other function parameters that are not part of the path parameters, they are automatically interpreted as \"query\" parameters.\n{* ../../docs_src/query_params/tutorial001_py310.py hl[9] *}\nThe query is the set of key-value pairs that go after the `?` in a URL, separated by `&` characters.\nFor example, in the URL:\n```\nhttp://127.0.0.1:8000/items/?skip=0&limit=10\n```\n...the query parameters are:\n* `skip`: with a value of `0`\n* `limit`: with a value of `10`\nAs they are part of the URL, they are \"naturally\" strings.\nBut when you declare them with Python types (in the example above, as `int`), they are converted to that type and validated against it.\nAll the same processes that apply to path parameters also apply to query parameters:\n* Edi"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3271,
+      "retrieval_latency_ms": 1360.285,
+      "usage": {
+        "prompt_tokens": 1362,
+        "completion_tokens": 316,
+        "total_tokens": 1678
+      }
+    },
+    {
+      "case_id": "query-03",
+      "question": "为何查询字符串里的数字需要在函数签名中声明类型？",
+      "reference_answer": "URL 中原始值是字符串，类型注解让 FastAPI 转换并验证。",
+      "outcome": "answered",
+      "answer": "为了启用FastAPI自动将查询字符串值转换为所需的类型（例如int、float、bool）并进行验证。",
+      "citations": [
+        {
+          "chunk_id": "7c09b2fc-e8ac-4bf4-a90c-f2c03b633d6d",
+          "filename": "02-query-params.md",
+          "content": "meter-type-conversion }\nYou can also declare `bool` types, and they will be converted:\n{* ../../docs_src/query_params/tutorial003_py310.py hl[7] *}\nIn this case, if you go to:\n```\nhttp://127.0.0.1:8000/items/foo?short=1\n```\nor\n```\nhttp://127.0.0.1:8000/items/foo?short=True\n```\nor\n```\nhttp://127.0.0.1:8000/items/foo?short=true\n```\nor\n```\nhttp://127.0.0.1:8000/items/foo?short=on\n```\nor\n```\nhttp://127.0.0.1:8000/items/foo?short=yes\n```\nor any other case variation (uppercase, first letter in uppercase, etc), your function will see the parameter `short` with a `bool` value of `True`. Otherwise as `False`.\n## Multiple path and query parameters { #multiple-path-and-query-parameters }\nYou can declare multiple path parameters and query parameters at the same time, **FastAPI** knows which is which.\n"
+        },
+        {
+          "chunk_id": "90e2c64a-67c5-458b-8479-0e0883e6dbd1",
+          "filename": "03-request-body.md",
+          "content": "\n{* ../../docs_src/body/tutorial004_py310.py hl[16] *}\nThe function parameters will be recognized as follows:\n* If the parameter is also declared in the **path**, it will be used as a path parameter.\n* If the parameter is of a **singular type** (like `int`, `float`, `str`, `bool`, etc) it will be interpreted as a **query** parameter.\n* If the parameter is declared to be of the type of a **Pydantic model**, it will be interpreted as a request **body**.\n/// note\nFastAPI will know that the value of `q` is not required because of the default value `= None`.\nThe `str | None` is not used by FastAPI to determine that the value is not required, it will know it's not required because it has a default value of `= None`.\nBut adding the type annotations will allow your editor to give you better suppor"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3950,
+      "retrieval_latency_ms": 1338.786,
+      "usage": {
+        "prompt_tokens": 1305,
+        "completion_tokens": 280,
+        "total_tokens": 1585
+      }
+    },
+    {
+      "case_id": "query-04",
+      "question": "怎样把一个可不传的搜索词设计成缺省时为 None？",
+      "reference_answer": "声明联合可空类型并给参数默认值 None。",
+      "outcome": "answered",
+      "answer": "设置参数的默认值为 None，并使用 `Optional[str]` 或 `str | None` 类型注解即可。",
+      "citations": [
+        {
+          "chunk_id": "90e2c64a-67c5-458b-8479-0e0883e6dbd1",
+          "filename": "03-request-body.md",
+          "content": "\n{* ../../docs_src/body/tutorial004_py310.py hl[16] *}\nThe function parameters will be recognized as follows:\n* If the parameter is also declared in the **path**, it will be used as a path parameter.\n* If the parameter is of a **singular type** (like `int`, `float`, `str`, `bool`, etc) it will be interpreted as a **query** parameter.\n* If the parameter is declared to be of the type of a **Pydantic model**, it will be interpreted as a request **body**.\n/// note\nFastAPI will know that the value of `q` is not required because of the default value `= None`.\nThe `str | None` is not used by FastAPI to determine that the value is not required, it will know it's not required because it has a default value of `= None`.\nBut adding the type annotations will allow your editor to give you better suppor"
+        },
+        {
+          "chunk_id": "2675cecc-9517-4f62-bde0-77d3f5d7855b",
+          "filename": "03-request-body.md",
+          "content": "use it has a default value of `= None`.\nBut adding the type annotations will allow your editor to give you better support and detect errors.\n///\n## Without Pydantic { #without-pydantic }\nIf you don't want to use Pydantic models, you can also use **Body** parameters. See the docs for [Body - Multiple Parameters: Singular values in body](body-multiple-params.md#singular-values-in-body)."
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3455,
+      "retrieval_latency_ms": 1196.192,
+      "usage": {
+        "prompt_tokens": 1164,
+        "completion_tokens": 355,
+        "total_tokens": 1519
+      }
+    },
+    {
+      "case_id": "query-05",
+      "question": "同一处理函数里，框架如何区分 item_id 是路径参数而 q 是查询参数？",
+      "reference_answer": "出现在路由路径模板中的同名参数是路径参数，其余普通参数会被解释为查询参数。",
+      "outcome": "answered",
+      "answer": "FastAPI distinguishes by checking if the parameter name matches a path parameter defined in the route. Parameters that are not part of the path are automatically interpreted as query parameters.",
+      "citations": [
+        {
+          "chunk_id": "1e6b886f-53f4-4cfe-bdf0-21fb526f89f2",
+          "filename": "02-query-params.md",
+          "content": "//127.0.0.1:8000/items/?skip=20\n```\nThe parameter values in your function will be:\n* `skip=20`: because you set it in the URL\n* `limit=10`: because that was the default value\n## Optional parameters { #optional-parameters }\nThe same way, you can declare optional query parameters, by setting their default to `None`:\n{* ../../docs_src/query_params/tutorial002_py310.py hl[7] *}\nIn this case, the function parameter `q` will be optional, and will be `None` by default.\n/// tip\nAlso notice that **FastAPI** is smart enough to notice that the path parameter `item_id` is a path parameter and `q` is not, so, it's a query parameter.\n///\n## Query parameter type conversion { #query-parameter-type-conversion }\nYou can also declare `bool` types, and they will be converted:\n{* ../../docs_src/query_params/tu"
+        },
+        {
+          "chunk_id": "dca9320e-c1da-4cac-8dea-52760c2d7def",
+          "filename": "02-query-params.md",
+          "content": "# Query Parameters { #query-parameters }\nWhen you declare other function parameters that are not part of the path parameters, they are automatically interpreted as \"query\" parameters.\n{* ../../docs_src/query_params/tutorial001_py310.py hl[9] *}\nThe query is the set of key-value pairs that go after the `?` in a URL, separated by `&` characters.\nFor example, in the URL:\n```\nhttp://127.0.0.1:8000/items/?skip=0&limit=10\n```\n...the query parameters are:\n* `skip`: with a value of `0`\n* `limit`: with a value of `10`\nAs they are part of the URL, they are \"naturally\" strings.\nBut when you declare them with Python types (in the example above, as `int`), they are converted to that type and validated against it.\nAll the same processes that apply to path parameters also apply to query parameters:\n* Edi"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 5847,
+      "retrieval_latency_ms": 1303.245,
+      "usage": {
+        "prompt_tokens": 1351,
+        "completion_tokens": 641,
+        "total_tokens": 1992
+      }
+    },
+    {
+      "case_id": "query-06",
+      "question": "布尔查询参数 short=on 会被解析成什么布尔结果？",
+      "reference_answer": "会被识别为 True。",
+      "outcome": "answered",
+      "answer": "True",
+      "citations": [
+        {
+          "chunk_id": "7c09b2fc-e8ac-4bf4-a90c-f2c03b633d6d",
+          "filename": "02-query-params.md",
+          "content": "meter-type-conversion }\nYou can also declare `bool` types, and they will be converted:\n{* ../../docs_src/query_params/tutorial003_py310.py hl[7] *}\nIn this case, if you go to:\n```\nhttp://127.0.0.1:8000/items/foo?short=1\n```\nor\n```\nhttp://127.0.0.1:8000/items/foo?short=True\n```\nor\n```\nhttp://127.0.0.1:8000/items/foo?short=true\n```\nor\n```\nhttp://127.0.0.1:8000/items/foo?short=on\n```\nor\n```\nhttp://127.0.0.1:8000/items/foo?short=yes\n```\nor any other case variation (uppercase, first letter in uppercase, etc), your function will see the parameter `short` with a `bool` value of `True`. Otherwise as `False`.\n## Multiple path and query parameters { #multiple-path-and-query-parameters }\nYou can declare multiple path parameters and query parameters at the same time, **FastAPI** knows which is which.\n"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 1983,
+      "retrieval_latency_ms": 1266.431,
+      "usage": {
+        "prompt_tokens": 1267,
+        "completion_tokens": 122,
+        "total_tokens": 1389
+      }
+    },
+    {
+      "case_id": "query-07",
+      "question": "一个字符串查询参数没有默认值时，客户端遗漏它会怎样？",
+      "reference_answer": "它会被视为必填参数，缺失时返回验证错误。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1334.962,
+      "usage": null
+    },
+    {
+      "case_id": "query-08",
+      "question": "为什么不能仅靠 str | None 判断查询参数是否可选？",
+      "reference_answer": "是否必填由默认值决定；没有默认值仍是必填。",
+      "outcome": "answered",
+      "answer": "FastAPI判断查询参数是否可选依赖于是否设置了默认值（如`= None`），而不是类型注解`str | None`。类型注解仅用于编辑器和类型检查，不影响参数是否必选。",
+      "citations": [
+        {
+          "chunk_id": "90e2c64a-67c5-458b-8479-0e0883e6dbd1",
+          "filename": "03-request-body.md",
+          "content": "\n{* ../../docs_src/body/tutorial004_py310.py hl[16] *}\nThe function parameters will be recognized as follows:\n* If the parameter is also declared in the **path**, it will be used as a path parameter.\n* If the parameter is of a **singular type** (like `int`, `float`, `str`, `bool`, etc) it will be interpreted as a **query** parameter.\n* If the parameter is declared to be of the type of a **Pydantic model**, it will be interpreted as a request **body**.\n/// note\nFastAPI will know that the value of `q` is not required because of the default value `= None`.\nThe `str | None` is not used by FastAPI to determine that the value is not required, it will know it's not required because it has a default value of `= None`.\nBut adding the type annotations will allow your editor to give you better suppor"
+        },
+        {
+          "chunk_id": "e94638fe-ce60-4339-b7c9-8e9fec8d25c9",
+          "filename": "02-query-params.md",
+          "content": "ers }\nYou can declare multiple path parameters and query parameters at the same time, **FastAPI** knows which is which.\nAnd you don't have to declare them in any specific order.\nThey will be detected by name:\n{* ../../docs_src/query_params/tutorial004_py310.py hl[6,8] *}\n## Required query parameters { #required-query-parameters }\nWhen you declare a default value for non-path parameters (for now, we have only seen query parameters), then it is not required.\nIf you don't want to add a specific value but just make it optional, set the default as `None`.\nBut when you want to make a query parameter required, you can just not declare any default value:\n{* ../../docs_src/query_params/tutorial005_py310.py hl[6:7] *}\nHere the query parameter `needy` is a required query parameter of type `str`.\nIf y"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 5181,
+      "retrieval_latency_ms": 1172.216,
+      "usage": {
+        "prompt_tokens": 1244,
+        "completion_tokens": 590,
+        "total_tokens": 1834
+      }
+    },
+    {
+      "case_id": "body-01",
+      "question": "提交商品信息时，推荐用什么 Pydantic 基类描述 JSON 结构？",
+      "reference_answer": "使用 Pydantic 的 BaseModel 定义请求体模型。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1303.742,
+      "usage": null
+    },
+    {
+      "case_id": "body-02",
+      "question": "请求体模型声明字段后，FastAPI 能自动提供哪些能力？",
+      "reference_answer": "可解析输入、验证数据、生成 OpenAPI/交互文档并提供编辑器支持。",
+      "outcome": "answered",
+      "answer": "当在请求体模型中声明字段后，FastAPI 能够自动将函数参数中声明为 Pydantic 模型的参数从请求体获取数据，并且能够同时处理路径参数和查询参数，自动识别每个参数的来源。",
+      "citations": [
+        {
+          "chunk_id": "83b489c6-6548-4f46-8b65-8f2a236d4bf0",
+          "filename": "03-request-body.md",
+          "content": ".py *}\n## Request body + path parameters { #request-body-path-parameters }\nYou can declare path parameters and request body at the same time.\n**FastAPI** will recognize that the function parameters that match path parameters should be **taken from the path**, and that function parameters that are declared to be Pydantic models should be **taken from the request body**.\n{* ../../docs_src/body/tutorial003_py310.py hl[15:16] *}\n## Request body + path + query parameters { #request-body-path-query-parameters }\nYou can also declare **body**, **path** and **query** parameters, all at the same time.\n**FastAPI** will recognize each of them and take the data from the correct place.\n{* ../../docs_src/body/tutorial004_py310.py hl[16] *}\nThe function parameters will be recognized as follows:\n* If the p"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 8343,
+      "retrieval_latency_ms": 1328.621,
+      "usage": {
+        "prompt_tokens": 1174,
+        "completion_tokens": 751,
+        "total_tokens": 1925
+      }
+    },
+    {
+      "case_id": "body-03",
+      "question": "在处理函数里想把 Pydantic 商品对象转成字典，示例使用什么方法？",
+      "reference_answer": "使用 model_dump()。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1282.1,
+      "usage": null
+    },
+    {
+      "case_id": "body-04",
+      "question": "更新 /items/{item_id} 时，路径编号和商品 JSON 能否在一个函数签名中同时声明？",
+      "reference_answer": "可以，路径参数和 Pydantic 请求体参数可同时使用。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1379.98,
+      "usage": null
+    },
+    {
+      "case_id": "body-05",
+      "question": "一个参数既不在路径模板中、又是简单的 str 或 int，FastAPI 默认从哪里取它？",
+      "reference_answer": "默认把它解释为查询参数。",
+      "outcome": "answered",
+      "answer": "query",
+      "citations": [
+        {
+          "chunk_id": "90e2c64a-67c5-458b-8479-0e0883e6dbd1",
+          "filename": "03-request-body.md",
+          "content": "\n{* ../../docs_src/body/tutorial004_py310.py hl[16] *}\nThe function parameters will be recognized as follows:\n* If the parameter is also declared in the **path**, it will be used as a path parameter.\n* If the parameter is of a **singular type** (like `int`, `float`, `str`, `bool`, etc) it will be interpreted as a **query** parameter.\n* If the parameter is declared to be of the type of a **Pydantic model**, it will be interpreted as a request **body**.\n/// note\nFastAPI will know that the value of `q` is not required because of the default value `= None`.\nThe `str | None` is not used by FastAPI to determine that the value is not required, it will know it's not required because it has a default value of `= None`.\nBut adding the type annotations will allow your editor to give you better suppor"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3356,
+      "retrieval_latency_ms": 1353.943,
+      "usage": {
+        "prompt_tokens": 1320,
+        "completion_tokens": 320,
+        "total_tokens": 1640
+      }
+    },
+    {
+      "case_id": "body-06",
+      "question": "同一个 PUT 接口同时有路径、查询和模型参数时，框架如何判定模型参数的来源？",
+      "reference_answer": "Pydantic 模型类型的参数会被解释为请求体。",
+      "outcome": "answered",
+      "answer": "FastAPI 将路径参数从路径中获取，查询参数从查询字符串中获取，而 Pydantic 模型参数则从请求体中获取。",
+      "citations": [
+        {
+          "chunk_id": "83b489c6-6548-4f46-8b65-8f2a236d4bf0",
+          "filename": "03-request-body.md",
+          "content": ".py *}\n## Request body + path parameters { #request-body-path-parameters }\nYou can declare path parameters and request body at the same time.\n**FastAPI** will recognize that the function parameters that match path parameters should be **taken from the path**, and that function parameters that are declared to be Pydantic models should be **taken from the request body**.\n{* ../../docs_src/body/tutorial003_py310.py hl[15:16] *}\n## Request body + path + query parameters { #request-body-path-query-parameters }\nYou can also declare **body**, **path** and **query** parameters, all at the same time.\n**FastAPI** will recognize each of them and take the data from the correct place.\n{* ../../docs_src/body/tutorial004_py310.py hl[16] *}\nThe function parameters will be recognized as follows:\n* If the p"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3501,
+      "retrieval_latency_ms": 1325.026,
+      "usage": {
+        "prompt_tokens": 1240,
+        "completion_tokens": 363,
+        "total_tokens": 1603
+      }
+    },
+    {
+      "case_id": "body-07",
+      "question": "请求体字段给了默认值后，调用方遗漏这个字段通常有什么效果？",
+      "reference_answer": "字段成为可选并使用声明的默认值。",
+      "outcome": "answered",
+      "answer": "If a request body field has a default value and the caller omits it, the field will be assigned its default value.",
+      "citations": [
+        {
+          "chunk_id": "90e2c64a-67c5-458b-8479-0e0883e6dbd1",
+          "filename": "03-request-body.md",
+          "content": "\n{* ../../docs_src/body/tutorial004_py310.py hl[16] *}\nThe function parameters will be recognized as follows:\n* If the parameter is also declared in the **path**, it will be used as a path parameter.\n* If the parameter is of a **singular type** (like `int`, `float`, `str`, `bool`, etc) it will be interpreted as a **query** parameter.\n* If the parameter is declared to be of the type of a **Pydantic model**, it will be interpreted as a request **body**.\n/// note\nFastAPI will know that the value of `q` is not required because of the default value `= None`.\nThe `str | None` is not used by FastAPI to determine that the value is not required, it will know it's not required because it has a default value of `= None`.\nBut adding the type annotations will allow your editor to give you better suppor"
+        },
+        {
+          "chunk_id": "2675cecc-9517-4f62-bde0-77d3f5d7855b",
+          "filename": "03-request-body.md",
+          "content": "use it has a default value of `= None`.\nBut adding the type annotations will allow your editor to give you better support and detect errors.\n///\n## Without Pydantic { #without-pydantic }\nIf you don't want to use Pydantic models, you can also use **Body** parameters. See the docs for [Body - Multiple Parameters: Singular values in body](body-multiple-params.md#singular-values-in-body)."
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 4525,
+      "retrieval_latency_ms": 1393.246,
+      "usage": {
+        "prompt_tokens": 1064,
+        "completion_tokens": 380,
+        "total_tokens": 1444
+      }
+    },
+    {
+      "case_id": "body-08",
+      "question": "不使用 Pydantic 时，FastAPI 是否仍可声明单个请求体字段？",
+      "reference_answer": "可以，但模型通常更适合定义复杂结构和获得完整支持。",
+      "outcome": "answered",
+      "answer": "No, FastAPI requires Pydantic's BaseModel to declare request body fields. Without Pydantic, singular type parameters are interpreted as query parameters.",
+      "citations": [
+        {
+          "chunk_id": "90e2c64a-67c5-458b-8479-0e0883e6dbd1",
+          "filename": "03-request-body.md",
+          "content": "\n{* ../../docs_src/body/tutorial004_py310.py hl[16] *}\nThe function parameters will be recognized as follows:\n* If the parameter is also declared in the **path**, it will be used as a path parameter.\n* If the parameter is of a **singular type** (like `int`, `float`, `str`, `bool`, etc) it will be interpreted as a **query** parameter.\n* If the parameter is declared to be of the type of a **Pydantic model**, it will be interpreted as a request **body**.\n/// note\nFastAPI will know that the value of `q` is not required because of the default value `= None`.\nThe `str | None` is not used by FastAPI to determine that the value is not required, it will know it's not required because it has a default value of `= None`.\nBut adding the type annotations will allow your editor to give you better suppor"
+        },
+        {
+          "chunk_id": "bff932fb-f3b6-440c-83c4-850068b9746e",
+          "filename": "03-request-body.md",
+          "content": "), `PUT`, `DELETE` or `PATCH`.\nSending a body with a `GET` request has an undefined behavior in the specifications, nevertheless, it is supported by FastAPI, only for very complex/extreme use cases.\nAs it is discouraged, the interactive docs with Swagger UI won't show the documentation for the body when using `GET`, and proxies in the middle might not support it.\n///\n## Import Pydantic's `BaseModel` { #import-pydantics-basemodel }\nFirst, you need to import `BaseModel` from `pydantic`:\n{* ../../docs_src/body/tutorial001_py310.py hl[2] *}\n## Create your data model { #create-your-data-model }\nThen you declare your data model as a class that inherits from `BaseModel`.\nUse standard Python types for all the attributes:\n{* ../../docs_src/body/tutorial001_py310.py hl[5:9] *}\nThe same as when decla"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 5307,
+      "retrieval_latency_ms": 1301.868,
+      "usage": {
+        "prompt_tokens": 1265,
+        "completion_tokens": 497,
+        "total_tokens": 1762
+      }
+    },
+    {
+      "case_id": "deps-01",
+      "question": "在多个接口都要解析相同公共查询条件时，FastAPI 建议用什么机制复用？",
+      "reference_answer": "把公共逻辑声明为依赖并通过 Depends 注入。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1342.871,
+      "usage": null
+    },
+    {
+      "case_id": "deps-02",
+      "question": "依赖函数可以接收查询参数吗，框架会如何处理它们？",
+      "reference_answer": "可以，FastAPI 会像处理路径操作参数一样解析和验证依赖的参数。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1236.436,
+      "usage": null
+    },
+    {
+      "case_id": "deps-03",
+      "question": "在路径操作函数签名中怎样标记一个参数由依赖提供？",
+      "reference_answer": "导入并使用 Depends。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1216.217,
+      "usage": null
+    },
+    {
+      "case_id": "deps-04",
+      "question": "为什么文档建议用 Annotated 形式给共享依赖起类型别名？",
+      "reference_answer": "它能减少重复声明，同时保留类型信息和依赖元数据。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1267.585,
+      "usage": null
+    },
+    {
+      "case_id": "deps-05",
+      "question": "依赖函数必须全部写成 async def 吗？",
+      "reference_answer": "不是，普通 def 和 async def 都可作为依赖。",
+      "outcome": "answered",
+      "answer": "不需要。依赖函数可以使用 async def 或普通 def，FastAPI 会自动处理。",
+      "citations": [
+        {
+          "chunk_id": "d4223451-00e6-45ae-b6e2-ce62956af486",
+          "filename": "04-dependencies.md",
+          "content": "* (the same as your *path operation functions*), the same rules apply while defining your functions.\nYou can use `async def` or normal `def`.\nAnd you can declare dependencies with `async def` inside of normal `def` *path operation functions*, or `def` dependencies inside of `async def` *path operation functions*, etc.\nIt doesn't matter. **FastAPI** will know what to do.\n/// note\nIf you don't know, check the [Async: *\"In a hurry?\"*](../../async.md#in-a-hurry) section about `async` and `await` in the docs.\n///\n## Integrated with OpenAPI { #integrated-with-openapi }\nAll the request declarations, validations and requirements of your dependencies (and sub-dependencies) will be integrated in the same OpenAPI schema.\nSo, the interactive docs will have all the information from these dependencies t"
+        },
+        {
+          "chunk_id": "8732815d-e96f-46d0-a15c-e78afa1846bb",
+          "filename": "04-dependencies.md",
+          "content": "stAPI**.\nBut because **FastAPI** is based on the Python standards, including `Annotated`, you can use this trick in your code. 😎\n///\nThe dependencies will keep working as expected, and the **best part** is that the **type information will be preserved**, which means that your editor will be able to keep providing you with **autocompletion**, **inline errors**, etc. The same for other tools like `mypy`.\nThis will be especially useful when you use it in a **large code base** where you use **the same dependencies** over and over again in **many *path operations***.\n## To `async` or not to `async` { #to-async-or-not-to-async }\nAs dependencies will also be called by **FastAPI** (the same as your *path operation functions*), the same rules apply while defining your functions.\nYou can use `async "
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2654,
+      "retrieval_latency_ms": 1135.308,
+      "usage": {
+        "prompt_tokens": 1161,
+        "completion_tokens": 256,
+        "total_tokens": 1417
+      }
+    },
+    {
+      "case_id": "deps-06",
+      "question": "依赖中声明的参数会不会出现在自动生成的 OpenAPI 文档中？",
+      "reference_answer": "会，依赖与 OpenAPI 集成。",
+      "outcome": "answered",
+      "answer": "是的，依赖中声明的参数会出现在自动生成的 OpenAPI 文档中。",
+      "citations": [
+        {
+          "chunk_id": "d4223451-00e6-45ae-b6e2-ce62956af486",
+          "filename": "04-dependencies.md",
+          "content": "* (the same as your *path operation functions*), the same rules apply while defining your functions.\nYou can use `async def` or normal `def`.\nAnd you can declare dependencies with `async def` inside of normal `def` *path operation functions*, or `def` dependencies inside of `async def` *path operation functions*, etc.\nIt doesn't matter. **FastAPI** will know what to do.\n/// note\nIf you don't know, check the [Async: *\"In a hurry?\"*](../../async.md#in-a-hurry) section about `async` and `await` in the docs.\n///\n## Integrated with OpenAPI { #integrated-with-openapi }\nAll the request declarations, validations and requirements of your dependencies (and sub-dependencies) will be integrated in the same OpenAPI schema.\nSo, the interactive docs will have all the information from these dependencies t"
+        },
+        {
+          "chunk_id": "1fc662c6-f83a-4626-9eb3-25a1cff8a494",
+          "filename": "04-dependencies.md",
+          "content": " integrated in the same OpenAPI schema.\nSo, the interactive docs will have all the information from these dependencies too:\n<img src=\"/img/tutorial/dependencies/image01.png\">\n## Simple usage { #simple-usage }\nIf you look at it, *path operation functions* are declared to be used whenever a *path* and *operation* matches, and then **FastAPI** takes care of calling the function with the correct parameters, extracting the data from the request.\nActually, all (or most) of the web frameworks work in this same way.\nYou never call those functions directly. They are called by your framework (in this case, **FastAPI**).\nWith the Dependency Injection system, you can also tell **FastAPI** that your *path operation function* also \"depends\" on something else that should be executed before your *path ope"
+        },
+        {
+          "chunk_id": "7a774e0b-d4bf-401c-bd50-c7a4ee49d5ff",
+          "filename": "04-dependencies.md",
+          "content": "r each of them just with dependencies and sub-dependencies:\n```mermaid\ngraph TB\ncurrent_user([\"current_user\"])\nactive_user([\"active_user\"])\nadmin_user([\"admin_user\"])\npaying_user([\"paying_user\"])\npublic[\"/items/public/\"]\nprivate[\"/items/private/\"]\nactivate_user[\"/users/{user_id}/activate\"]\npro_items[\"/items/pro/\"]\ncurrent_user --> active_user\nactive_user --> admin_user\nactive_user --> paying_user\ncurrent_user --> public\nactive_user --> private\nadmin_user --> activate_user\npaying_user --> pro_items\n```\n## Integrated with **OpenAPI** { #integrated-with-openapi_1 }\nAll these dependencies, while declaring their requirements, also add parameters, validations, etc. to your *path operations*.\n**FastAPI** will take care of adding it all to the OpenAPI schema, so that it is shown in the interactive"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3353,
+      "retrieval_latency_ms": 1251.807,
+      "usage": {
+        "prompt_tokens": 1201,
+        "completion_tokens": 373,
+        "total_tokens": 1574
+      }
+    },
+    {
+      "case_id": "deps-07",
+      "question": "依赖注入对插件或共享组件有什么实际价值？",
+      "reference_answer": "它让可复用组件可在多个路径操作中组合，而无需手工重复调用逻辑。",
+      "outcome": "answered",
+      "answer": "依赖注入使得无需专门创建插件即可实现无限集成和交互，简化了插件和共享组件的开发与使用。",
+      "citations": [
+        {
+          "chunk_id": "8bfd8135-b662-440f-b12b-4a2981459bf0",
+          "filename": "04-dependencies.md",
+          "content": "API** that your *path operation function* also \"depends\" on something else that should be executed before your *path operation function*, and **FastAPI** will take care of executing it and \"injecting\" the results.\nOther common terms for this same idea of \"dependency injection\" are:\n* resources\n* providers\n* services\n* injectables\n* components\n## **FastAPI** plug-ins { #fastapi-plug-ins }\nIntegrations and \"plug-ins\" can be built using the **Dependency Injection** system. But in fact, there is actually **no need to create \"plug-ins\"**, as by using dependencies it's possible to declare an infinite number of integrations and interactions that become available to your *path operation functions*.\nAnd dependencies can be created in a very simple and intuitive way that allows you to just import th"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3758,
+      "retrieval_latency_ms": 1184.228,
+      "usage": {
+        "prompt_tokens": 1159,
+        "completion_tokens": 320,
+        "total_tokens": 1479
+      }
+    },
+    {
+      "case_id": "deps-08",
+      "question": "把认证校验放进依赖而非每个接口函数的直接好处是什么？",
+      "reference_answer": "可复用并统一参数验证、文档和调用顺序。",
+      "outcome": "answered",
+      "answer": "让交互式API文档自动包含认证校验的信息，无需在每个接口函数中重复声明。",
+      "citations": [
+        {
+          "chunk_id": "1fc662c6-f83a-4626-9eb3-25a1cff8a494",
+          "filename": "04-dependencies.md",
+          "content": " integrated in the same OpenAPI schema.\nSo, the interactive docs will have all the information from these dependencies too:\n<img src=\"/img/tutorial/dependencies/image01.png\">\n## Simple usage { #simple-usage }\nIf you look at it, *path operation functions* are declared to be used whenever a *path* and *operation* matches, and then **FastAPI** takes care of calling the function with the correct parameters, extracting the data from the request.\nActually, all (or most) of the web frameworks work in this same way.\nYou never call those functions directly. They are called by your framework (in this case, **FastAPI**).\nWith the Dependency Injection system, you can also tell **FastAPI** that your *path operation function* also \"depends\" on something else that should be executed before your *path ope"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 7546,
+      "retrieval_latency_ms": 1289.086,
+      "usage": {
+        "prompt_tokens": 1124,
+        "completion_tokens": 645,
+        "total_tokens": 1769
+      }
+    },
+    {
+      "case_id": "response-01",
+      "question": "接口返回类型注解与 response_model 同时存在时，哪个配置决定实际响应模型？",
+      "reference_answer": "response_model 的优先级更高。",
+      "outcome": "answered",
+      "answer": "response_model 决定实际响应模型",
+      "citations": [
+        {
+          "chunk_id": "a5dedc4f-fae6-44d5-8d5b-a721f770f17d",
+          "filename": "05-response-model.md",
+          "content": "[24] *}\n...we declared the `response_model` to be our model `UserOut`, that doesn't include the password:\n{* ../../docs_src/response_model/tutorial003_py310.py hl[22] *}\nSo, **FastAPI** will take care of filtering out all the data that is not declared in the output model (using Pydantic).\n### `response_model` or Return Type { #response-model-or-return-type }\nIn this case, because the two models are different, if we annotated the function return type as `UserOut`, the editor and tools would complain that we are returning an invalid type, as those are different classes.\nThat's why in this example we have to declare it in the `response_model` parameter.\n...but continue reading below to see how to overcome that.\n## Return Type and Data Filtering { #return-type-and-data-filtering }\nLet's contin"
+        },
+        {
+          "chunk_id": "a35d0b70-44ed-41d9-a645-a4eebc71c146",
+          "filename": "05-response-model.md",
+          "content": "ter `response_model` instead of the return type.\nYou can use the `response_model` parameter in any of the *path operations*:\n* `@app.get()`\n* `@app.post()`\n* `@app.put()`\n* `@app.delete()`\n* etc.\n{* ../../docs_src/response_model/tutorial001_py310.py hl[17,22,24:27] *}\n/// note\nNotice that `response_model` is a parameter of the \"decorator\" method (`get`, `post`, etc). Not of your *path operation function*, like all the parameters and body.\n///\n`response_model` receives the same type you would declare for a Pydantic model field, so, it can be a Pydantic model, but it can also be, e.g. a `list` of Pydantic models, like `List[Item]`.\nFastAPI will use this `response_model` to do all the data documentation, validation, etc. and also to **convert and filter the output data** to its type declarati"
+        },
+        {
+          "chunk_id": "3eb0a710-3605-4ea5-b73f-4bb67148db3b",
+          "filename": "05-response-model.md",
+          "content": " you are returning a type different than the response model, to be used by the editor and tools like mypy. And still you can have FastAPI do the data validation, documentation, etc. using the `response_model`.\nYou can also use `response_model=None` to disable creating a response model for that *path operation*, you might need to do it if you are adding type annotations for things that are not valid Pydantic fields, you will see an example of that in one of the sections below.\n## Return the same input data { #return-the-same-input-data }\nHere we are declaring a `UserIn` model, it will contain a plaintext password:\n{* ../../docs_src/response_model/tutorial002_py310.py hl[7,9] *}\n/// note\nTo use `EmailStr`, first install [`email-validator`](https://github.com/JoshData/python-email-validator)."
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 5310,
+      "retrieval_latency_ms": 1276.226,
+      "usage": {
+        "prompt_tokens": 1215,
+        "completion_tokens": 655,
+        "total_tokens": 1870
+      }
+    },
+    {
+      "case_id": "response-02",
+      "question": "为什么创建用户接口常常要单独定义输出模型？",
+      "reference_answer": "输出模型可过滤掉密码等不应返回给客户端的字段。",
+      "outcome": "answered",
+      "answer": "为了在返回用户数据时不包含密码等敏感信息，确保数据安全。",
+      "citations": [
+        {
+          "chunk_id": "c59baa2c-ea56-4843-ae81-7dcb077a8faa",
+          "filename": "05-response-model.md",
+          "content": "user sending the password.\nBut if we use the same model for another *path operation*, we could be sending our user's passwords to every client.\n/// danger\nNever store the plain password of a user or send it in a response like this, unless you know all the caveats and you know what you are doing.\n///\n## Add an output model { #add-an-output-model }\nWe can instead create an input model with the plaintext password and an output model without it:\n{* ../../docs_src/response_model/tutorial003_py310.py hl[9,11,16] *}\nHere, even though our *path operation function* is returning the same input user that contains the password:\n{* ../../docs_src/response_model/tutorial003_py310.py hl[24] *}\n...we declared the `response_model` to be our model `UserOut`, that doesn't include the password:\n{* ../../docs_"
+        },
+        {
+          "chunk_id": "fbdd95ff-96bf-447c-bca6-4b9c530d1aea",
+          "filename": "05-response-model.md",
+          "content": "pe and make sure that what you return includes **only** the fields that are declared in the type.\nFastAPI does several things internally with Pydantic to make sure that those same rules of class inheritance are not used for the returned data filtering, otherwise you could end up returning much more data than what you expected.\nThis way, you can get the best of both worlds: type annotations with **tooling support** and **data filtering**.\n## See it in the docs { #see-it-in-the-docs }\nWhen you see the automatic docs, you can check that the input model and output model will both have their own JSON Schema:\n<img src=\"/img/tutorial/response-model/image01.png\">\nAnd both models will be used for the interactive API documentation:\n<img src=\"/img/tutorial/response-model/image02.png\">\n## Other Return"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2504,
+      "retrieval_latency_ms": 1088.277,
+      "usage": {
+        "prompt_tokens": 1191,
+        "completion_tokens": 193,
+        "total_tokens": 1384
+      }
+    },
+    {
+      "case_id": "response-03",
+      "question": "response_model 除了文档展示外，还会在返回数据上做什么？",
+      "reference_answer": "它会验证、转换并过滤输出数据。",
+      "outcome": "answered",
+      "answer": "将输出数据进行类型转换和过滤，仅保留响应模型中声明的字段。",
+      "citations": [
+        {
+          "chunk_id": "c39ed5df-80c9-4ff4-97ab-b484e9ce2e51",
+          "filename": "05-response-model.md",
+          "content": "do all the data documentation, validation, etc. and also to **convert and filter the output data** to its type declaration.\n/// tip\nIf you have strict type checks in your editor, mypy, etc, you can declare the function return type as `Any`.\nThat way you tell the editor that you are intentionally returning anything. But FastAPI will still do the data documentation, validation, filtering, etc. with the `response_model`.\n///\n### `response_model` Priority { #response-model-priority }\nIf you declare both a return type and a `response_model`, the `response_model` will take priority and be used by FastAPI.\nThis way you can add correct type annotations to your functions even when you are returning a type different than the response model, to be used by the editor and tools like mypy. And still you"
+        },
+        {
+          "chunk_id": "a35d0b70-44ed-41d9-a645-a4eebc71c146",
+          "filename": "05-response-model.md",
+          "content": "ter `response_model` instead of the return type.\nYou can use the `response_model` parameter in any of the *path operations*:\n* `@app.get()`\n* `@app.post()`\n* `@app.put()`\n* `@app.delete()`\n* etc.\n{* ../../docs_src/response_model/tutorial001_py310.py hl[17,22,24:27] *}\n/// note\nNotice that `response_model` is a parameter of the \"decorator\" method (`get`, `post`, etc). Not of your *path operation function*, like all the parameters and body.\n///\n`response_model` receives the same type you would declare for a Pydantic model field, so, it can be a Pydantic model, but it can also be, e.g. a `list` of Pydantic models, like `List[Item]`.\nFastAPI will use this `response_model` to do all the data documentation, validation, etc. and also to **convert and filter the output data** to its type declarati"
+        },
+        {
+          "chunk_id": "a5dedc4f-fae6-44d5-8d5b-a721f770f17d",
+          "filename": "05-response-model.md",
+          "content": "[24] *}\n...we declared the `response_model` to be our model `UserOut`, that doesn't include the password:\n{* ../../docs_src/response_model/tutorial003_py310.py hl[22] *}\nSo, **FastAPI** will take care of filtering out all the data that is not declared in the output model (using Pydantic).\n### `response_model` or Return Type { #response-model-or-return-type }\nIn this case, because the two models are different, if we annotated the function return type as `UserOut`, the editor and tools would complain that we are returning an invalid type, as those are different classes.\nThat's why in this example we have to declare it in the `response_model` parameter.\n...but continue reading below to see how to overcome that.\n## Return Type and Data Filtering { #return-type-and-data-filtering }\nLet's contin"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2484,
+      "retrieval_latency_ms": 1258.854,
+      "usage": {
+        "prompt_tokens": 1192,
+        "completion_tokens": 234,
+        "total_tokens": 1426
+      }
+    },
+    {
+      "case_id": "response-04",
+      "question": "直接返回一个 Response 对象时，FastAPI 还会按 response_model 校验它吗？",
+      "reference_answer": "直接返回 Response 时不会再执行 response_model 的数据校验和过滤。",
+      "outcome": "answered",
+      "answer": "不校验",
+      "citations": [
+        {
+          "chunk_id": "09aec250-a23d-4d2e-9f5e-832e74000b15",
+          "filename": "05-response-model.md",
+          "content": "will be used for the interactive API documentation:\n<img src=\"/img/tutorial/response-model/image02.png\">\n## Other Return Type Annotations { #other-return-type-annotations }\nThere might be cases where you return something that is not a valid Pydantic field and you annotate it in the function, only to get the support provided by tooling (the editor, mypy, etc).\n### Return a Response Directly { #return-a-response-directly }\nThe most common case would be [returning a Response directly as explained later in the advanced docs](../advanced/response-directly.md).\n{* ../../docs_src/response_model/tutorial003_02_py310.py hl[8,10:11] *}\nThis simple case is handled automatically by FastAPI because the return type annotation is the class (or a subclass of) `Response`.\nAnd tools will also be happy becau"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3457,
+      "retrieval_latency_ms": 1323.367,
+      "usage": {
+        "prompt_tokens": 1212,
+        "completion_tokens": 362,
+        "total_tokens": 1574
+      }
+    },
+    {
+      "case_id": "response-05",
+      "question": "函数返回类型复杂到无法表达时，怎样关闭自动响应模型生成？",
+      "reference_answer": "可以设置 response_model=None。",
+      "outcome": "answered",
+      "answer": "使用 `response_model=None` 来关闭自动响应模型生成。",
+      "citations": [
+        {
+          "chunk_id": "3eb0a710-3605-4ea5-b73f-4bb67148db3b",
+          "filename": "05-response-model.md",
+          "content": " you are returning a type different than the response model, to be used by the editor and tools like mypy. And still you can have FastAPI do the data validation, documentation, etc. using the `response_model`.\nYou can also use `response_model=None` to disable creating a response model for that *path operation*, you might need to do it if you are adding type annotations for things that are not valid Pydantic fields, you will see an example of that in one of the sections below.\n## Return the same input data { #return-the-same-input-data }\nHere we are declaring a `UserIn` model, it will contain a plaintext password:\n{* ../../docs_src/response_model/tutorial002_py310.py hl[7,9] *}\n/// note\nTo use `EmailStr`, first install [`email-validator`](https://github.com/JoshData/python-email-validator)."
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2404,
+      "retrieval_latency_ms": 1369.953,
+      "usage": {
+        "prompt_tokens": 1225,
+        "completion_tokens": 254,
+        "total_tokens": 1479
+      }
+    },
+    {
+      "case_id": "response-06",
+      "question": "只想返回客户端设置过的字段而不带默认值，响应模型应启用什么选项？",
+      "reference_answer": "使用 response_model_exclude_unset。",
+      "outcome": "provider_error",
+      "answer": "",
+      "citations": [],
+      "model": null,
+      "model_latency_ms": null,
+      "retrieval_latency_ms": 1327.258,
+      "usage": null
+    },
+    {
+      "case_id": "response-07",
+      "question": "response_model_include 和 response_model_exclude 的集合参数通常应优先用什么类型？",
+      "reference_answer": "文档建议使用 set；list 也可用但语义上集合更合适。",
+      "outcome": "provider_error",
+      "answer": "",
+      "citations": [],
+      "model": null,
+      "model_latency_ms": null,
+      "retrieval_latency_ms": 1373.815,
+      "usage": null
+    },
+    {
+      "case_id": "response-08",
+      "question": "为何要把数据库内部模型和对外返回模型分开？",
+      "reference_answer": "可限制暴露字段并让外部 API 契约独立于内部存储。",
+      "outcome": "answered",
+      "answer": "为了过滤返回数据，避免暴露内部字段，并提供清晰的API契约。",
+      "citations": [
+        {
+          "chunk_id": "fbdd95ff-96bf-447c-bca6-4b9c530d1aea",
+          "filename": "05-response-model.md",
+          "content": "pe and make sure that what you return includes **only** the fields that are declared in the type.\nFastAPI does several things internally with Pydantic to make sure that those same rules of class inheritance are not used for the returned data filtering, otherwise you could end up returning much more data than what you expected.\nThis way, you can get the best of both worlds: type annotations with **tooling support** and **data filtering**.\n## See it in the docs { #see-it-in-the-docs }\nWhen you see the automatic docs, you can check that the input model and output model will both have their own JSON Schema:\n<img src=\"/img/tutorial/response-model/image01.png\">\nAnd both models will be used for the interactive API documentation:\n<img src=\"/img/tutorial/response-model/image02.png\">\n## Other Return"
+        },
+        {
+          "chunk_id": "121d14ac-5d5a-4323-b98d-4c7ce00a877f",
+          "filename": "05-response-model.md",
+          "content": "ng below to see how to overcome that.\n## Return Type and Data Filtering { #return-type-and-data-filtering }\nLet's continue from the previous example. We wanted to **annotate the function with one type**, but we wanted to be able to return from the function something that actually includes **more data**.\nWe want FastAPI to keep **filtering** the data using the response model. So that even though the function returns more data, the response will only include the fields declared in the response model.\nIn the previous example, because the classes were different, we had to use the `response_model` parameter. But that also means that we don't get the support from the editor and tools checking the function return type.\nBut in most of the cases where we need to do something like this, we want the "
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 6677,
+      "retrieval_latency_ms": 1072.387,
+      "usage": {
+        "prompt_tokens": 1115,
+        "completion_tokens": 444,
+        "total_tokens": 1559
+      }
+    },
+    {
+      "case_id": "errors-01",
+      "question": "业务条件不满足时，FastAPI 推荐返回错误对象还是抛出 HTTPException？",
+      "reference_answer": "推荐抛出 HTTPException。",
+      "outcome": "answered",
+      "answer": "抛出 HTTPException",
+      "citations": [
+        {
+          "chunk_id": "56e5f525-42f3-46ee-9930-1d3b4ed0eac7",
+          "filename": "06-handling-errors.md",
+          "content": "starlette.responses import JSONResponse`.\n**FastAPI** provides the same `starlette.responses` as `fastapi.responses` just as a convenience for you, the developer. But most of the available responses come directly from Starlette. The same with `Request`.\n///\n## Override the default exception handlers { #override-the-default-exception-handlers }\n**FastAPI** has some default exception handlers.\nThese handlers are in charge of returning the default JSON responses when you `raise` an `HTTPException` and when the request has invalid data.\nYou can override these exception handlers with your own.\n### Override request validation exceptions { #override-request-validation-exceptions }\nWhen a request contains invalid data, **FastAPI** internally raises a `RequestValidationError`.\nAnd it also includes "
+        },
+        {
+          "chunk_id": "7e964461-e085-41e2-a4e4-5f4becf8d17b",
+          "filename": "06-handling-errors.md",
+          "content": "ion, with:\n```\nValidation errors:\nField: ('path', 'item_id'), Error: Input should be a valid integer, unable to parse string as an integer\n```\n### Override the `HTTPException` error handler { #override-the-httpexception-error-handler }\nThe same way, you can override the `HTTPException` handler.\nFor example, you could want to return a plain text response instead of JSON for these errors:\n{* ../../docs_src/handling_errors/tutorial004_py310.py hl[3:4,9:11,25] *}\n/// note | Technical Details\nYou could also use `from starlette.responses import PlainTextResponse`.\n**FastAPI** provides the same `starlette.responses` as `fastapi.responses` just as a convenience for you, the developer. But most of the available responses come directly from Starlette.\n///\n/// warning\nHave in mind that the `RequestVa"
+        },
+        {
+          "chunk_id": "764139df-801a-4cfd-bd1d-f9c199f515cd",
+          "filename": "06-handling-errors.md",
+          "content": " has its own `HTTPException`.\nAnd **FastAPI**'s `HTTPException` error class inherits from Starlette's `HTTPException` error class.\nThe only difference is that **FastAPI**'s `HTTPException` accepts any JSON-able data for the `detail` field, while Starlette's `HTTPException` only accepts strings for it.\nSo, you can keep raising **FastAPI**'s `HTTPException` as normally in your code.\nBut when you register an exception handler, you should register it for Starlette's `HTTPException`.\nThis way, if any part of Starlette's internal code, or a Starlette extension or plug-in, raises a Starlette `HTTPException`, your handler will be able to catch and handle it.\nIn this example, to be able to have both `HTTPException`s in the same code, Starlette's exceptions is renamed to `StarletteHTTPException`:\n``"
+        },
+        {
+          "chunk_id": "dec8f75d-42d9-453b-878b-35ce2b221a5f",
+          "filename": "06-handling-errors.md",
+          "content": " invalid data.\nYou could use it while developing your app to log the body and debug it, return it to the user, etc.\n{* ../../docs_src/handling_errors/tutorial005_py310.py hl[14] *}\nNow try sending an invalid item like:\n```JSON\n{\n\"title\": \"towel\",\n\"size\": \"XL\"\n}\n```\nYou will receive a response telling you that the data is invalid containing the received body:\n```JSON hl_lines=\"12-15\"\n{\n\"detail\": [\n{\n\"loc\": [\n\"body\",\n\"size\"\n],\n\"msg\": \"value is not a valid integer\",\n\"type\": \"type_error.integer\"\n}\n],\n\"body\": {\n\"title\": \"towel\",\n\"size\": \"XL\"\n}\n}\n```\n#### FastAPI's `HTTPException` vs Starlette's `HTTPException` { #fastapis-httpexception-vs-starlettes-httpexception }\n**FastAPI** has its own `HTTPException`.\nAnd **FastAPI**'s `HTTPException` error class inherits from Starlette's `HTTPException` er"
+        },
+        {
+          "chunk_id": "c51dffad-9200-490e-9cb7-0307f6da3034",
+          "filename": "06-handling-errors.md",
+          "content": "e able to have both `HTTPException`s in the same code, Starlette's exceptions is renamed to `StarletteHTTPException`:\n```Python\nfrom starlette.exceptions import HTTPException as StarletteHTTPException\n```\n### Reuse **FastAPI**'s exception handlers { #reuse-fastapis-exception-handlers }\nIf you want to use the exception along with the same default exception handlers from  **FastAPI**, you can import and reuse the default exception handlers from `fastapi.exception_handlers`:\n{* ../../docs_src/handling_errors/tutorial006_py310.py hl[2:5,15,21] *}\nIn this example you are just printing the error with a very expressive message, but you get the idea. You can use the exception and then just reuse the default exception handlers."
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3516,
+      "retrieval_latency_ms": 1288.804,
+      "usage": {
+        "prompt_tokens": 1203,
+        "completion_tokens": 327,
+        "total_tokens": 1530
+      }
+    },
+    {
+      "case_id": "errors-02",
+      "question": "HTTPException 的 detail 只能是一段字符串吗？",
+      "reference_answer": "不是，detail 可以是可 JSON 序列化的数据。",
+      "outcome": "answered",
+      "answer": "不是，FastAPI 的 HTTPException 的 detail 可以是任何 JSON 可序列化的数据，如 dict、list 等，而不仅仅是字符串。",
+      "citations": [
+        {
+          "chunk_id": "764139df-801a-4cfd-bd1d-f9c199f515cd",
+          "filename": "06-handling-errors.md",
+          "content": " has its own `HTTPException`.\nAnd **FastAPI**'s `HTTPException` error class inherits from Starlette's `HTTPException` error class.\nThe only difference is that **FastAPI**'s `HTTPException` accepts any JSON-able data for the `detail` field, while Starlette's `HTTPException` only accepts strings for it.\nSo, you can keep raising **FastAPI**'s `HTTPException` as normally in your code.\nBut when you register an exception handler, you should register it for Starlette's `HTTPException`.\nThis way, if any part of Starlette's internal code, or a Starlette extension or plug-in, raises a Starlette `HTTPException`, your handler will be able to catch and handle it.\nIn this example, to be able to have both `HTTPException`s in the same code, Starlette's exceptions is renamed to `StarletteHTTPException`:\n``"
+        },
+        {
+          "chunk_id": "594230bd-84f9-42b0-8321-024bf8cc5889",
+          "filename": "06-handling-errors.md",
+          "content": "#the-resulting-response }\nIf the client requests `http://example.com/items/foo` (an `item_id` `\"foo\"`), that client will receive an HTTP status code of 200, and a JSON response of:\n```JSON\n{\n\"item\": \"The Foo Wrestlers\"\n}\n```\nBut if the client requests `http://example.com/items/bar` (a non-existent `item_id` `\"bar\"`), that client will receive an HTTP status code of 404 (the \"not found\" error), and a JSON response of:\n```JSON\n{\n\"detail\": \"Item not found\"\n}\n```\n/// tip\nWhen raising an `HTTPException`, you can pass any value that can be converted to JSON as the parameter `detail`, not only `str`.\nYou could pass a `dict`, a `list`, etc.\nThey are handled automatically by **FastAPI** and converted to JSON.\n///\n## Add custom headers { #add-custom-headers }\nThere are some situations where it's usef"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3592,
+      "retrieval_latency_ms": 1329.505,
+      "usage": {
+        "prompt_tokens": 1271,
+        "completion_tokens": 321,
+        "total_tokens": 1592
+      }
+    },
+    {
+      "case_id": "errors-03",
+      "question": "需要在错误响应里附带自定义头时，应在哪个异常参数中指定？",
+      "reference_answer": "在 HTTPException 的 headers 参数中指定。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1266.19,
+      "usage": null
+    },
+    {
+      "case_id": "errors-04",
+      "question": "想把自定义业务异常转换为统一 HTTP 响应，应注册什么？",
+      "reference_answer": "注册自定义异常处理器。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1237.791,
+      "usage": null
+    },
+    {
+      "case_id": "errors-05",
+      "question": "覆盖请求参数校验失败的默认返回格式，需要处理哪种异常？",
+      "reference_answer": "处理 RequestValidationError。",
+      "outcome": "answered",
+      "answer": "RequestValidationError",
+      "citations": [
+        {
+          "chunk_id": "3cecfab5-4f67-4414-b81c-96a22b3cee9b",
+          "filename": "06-handling-errors.md",
+          "content": " }\nWhen a request contains invalid data, **FastAPI** internally raises a `RequestValidationError`.\nAnd it also includes a default exception handler for it.\nTo override it, import the `RequestValidationError` and use it with `@app.exception_handler(RequestValidationError)` to decorate the exception handler.\nThe exception handler will receive a `Request` and the exception.\n{* ../../docs_src/handling_errors/tutorial004_py310.py hl[2,14:19] *}\nNow, if you go to `/items/foo`, instead of getting the default JSON error with:\n```JSON\n{\n\"detail\": [\n{\n\"loc\": [\n\"path\",\n\"item_id\"\n],\n\"msg\": \"value is not a valid integer\",\n\"type\": \"type_error.integer\"\n}\n]\n}\n```\nyou will get a text version, with:\n```\nValidation errors:\nField: ('path', 'item_id'), Error: Input should be a valid integer, unable to parse st"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 1855,
+      "retrieval_latency_ms": 1268.49,
+      "usage": {
+        "prompt_tokens": 1255,
+        "completion_tokens": 165,
+        "total_tokens": 1420
+      }
+    },
+    {
+      "case_id": "errors-06",
+      "question": "服务端响应数据本身无效时，为什么不应把内部验证错误直接原样返回给客户端？",
+      "reference_answer": "这通常表示服务端 bug，直接暴露可能泄露内部细节。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1369.859,
+      "usage": null
+    },
+    {
+      "case_id": "errors-07",
+      "question": "FastAPI 的 HTTPException 和 Starlette 的 HTTPException 在异常处理器中该优先考虑哪一个？",
+      "reference_answer": "处理器通常应针对 Starlette 的 HTTPException，以覆盖 Starlette 产生的错误。",
+      "outcome": "answered",
+      "answer": "应该优先考虑 Starlette 的 HTTPException，因为它可以同时处理 FastAPI 和 Starlette 抛出的 HTTPException。",
+      "citations": [
+        {
+          "chunk_id": "764139df-801a-4cfd-bd1d-f9c199f515cd",
+          "filename": "06-handling-errors.md",
+          "content": " has its own `HTTPException`.\nAnd **FastAPI**'s `HTTPException` error class inherits from Starlette's `HTTPException` error class.\nThe only difference is that **FastAPI**'s `HTTPException` accepts any JSON-able data for the `detail` field, while Starlette's `HTTPException` only accepts strings for it.\nSo, you can keep raising **FastAPI**'s `HTTPException` as normally in your code.\nBut when you register an exception handler, you should register it for Starlette's `HTTPException`.\nThis way, if any part of Starlette's internal code, or a Starlette extension or plug-in, raises a Starlette `HTTPException`, your handler will be able to catch and handle it.\nIn this example, to be able to have both `HTTPException`s in the same code, Starlette's exceptions is renamed to `StarletteHTTPException`:\n``"
+        },
+        {
+          "chunk_id": "c51dffad-9200-490e-9cb7-0307f6da3034",
+          "filename": "06-handling-errors.md",
+          "content": "e able to have both `HTTPException`s in the same code, Starlette's exceptions is renamed to `StarletteHTTPException`:\n```Python\nfrom starlette.exceptions import HTTPException as StarletteHTTPException\n```\n### Reuse **FastAPI**'s exception handlers { #reuse-fastapis-exception-handlers }\nIf you want to use the exception along with the same default exception handlers from  **FastAPI**, you can import and reuse the default exception handlers from `fastapi.exception_handlers`:\n{* ../../docs_src/handling_errors/tutorial006_py310.py hl[2:5,15,21] *}\nIn this example you are just printing the error with a very expressive message, but you get the idea. You can use the exception and then just reuse the default exception handlers."
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3704,
+      "retrieval_latency_ms": 1338.595,
+      "usage": {
+        "prompt_tokens": 1250,
+        "completion_tokens": 369,
+        "total_tokens": 1619
+      }
+    },
+    {
+      "case_id": "errors-08",
+      "question": "想在保留 FastAPI 默认异常输出的前提下增加日志，应怎样复用默认逻辑？",
+      "reference_answer": "在自定义处理器中调用并复用 FastAPI 的异常处理函数。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1359.456,
+      "usage": null
+    },
+    {
+      "case_id": "testing-01",
+      "question": "测试 FastAPI 接口时，官方教程使用哪个客户端类模拟 HTTP 请求？",
+      "reference_answer": "使用 TestClient。",
+      "outcome": "answered",
+      "answer": "TestClient",
+      "citations": [
+        {
+          "chunk_id": "d8a903f9-a532-4c10-8025-e1286b346dd2",
+          "filename": "07-testing.md",
+          "content": "# Testing { #testing }\nThanks to [Starlette](https://www.starlette.dev/testclient/), testing **FastAPI** applications is easy and enjoyable.\nIt is based on [HTTPX](https://www.python-httpx.org), which in turn is designed based on Requests, so it's very familiar and intuitive.\nWith it, you can use [pytest](https://docs.pytest.org/) directly with **FastAPI**.\n## Using `TestClient` { #using-testclient }\n/// note\nTo use `TestClient`, first install [`httpx`](https://www.python-httpx.org).\nMake sure you create a [virtual environment](../virtual-environments.md), activate it, and then install it, for example:\n```console\n$ pip install httpx\n```\n///\nImport `TestClient`.\nCreate a `TestClient` by passing your **FastAPI** application to it.\nCreate functions with a name that starts with `test_` (this i"
+        },
+        {
+          "chunk_id": "2cf6f118-bb01-461c-833b-a83c488f506b",
+          "filename": "07-testing.md",
+          "content": "TestClient` by passing your **FastAPI** application to it.\nCreate functions with a name that starts with `test_` (this is a standard `pytest` convention).\nUse the `TestClient` object the same way as you do with `httpx`.\nWrite simple `assert` statements with the standard Python expressions that you need to check (again, standard `pytest`).\n{* ../../docs_src/app_testing/tutorial001_py310.py hl[2,12,15:18] *}\n/// tip\nNotice that the testing functions are normal `def`, not `async def`.\nAnd the calls to the client are also normal calls, not using `await`.\nThis allows you to use `pytest` directly without complications.\n///\n/// note | Technical Details\nYou could also use `from starlette.testclient import TestClient`.\n**FastAPI** provides the same `starlette.testclient` as `fastapi.testclient` jus"
+        },
+        {
+          "chunk_id": "4115ae9a-32e3-4c5b-a4b2-f23e6ef4b556",
+          "filename": "07-testing.md",
+          "content": "tarlette.testclient import TestClient`.\n**FastAPI** provides the same `starlette.testclient` as `fastapi.testclient` just as a convenience for you, the developer. But it comes directly from Starlette.\n///\n/// tip\nIf you want to call `async` functions in your tests apart from sending requests to your FastAPI application (e.g. asynchronous database functions), have a look at the [Async Tests](../advanced/async-tests.md) in the advanced tutorial.\n///\n## Separating tests { #separating-tests }\nIn a real application, you probably would have your tests in a different file.\nAnd your **FastAPI** application might also be composed of several files/modules, etc.\n### **FastAPI** app file { #fastapi-app-file }\nLet's say you have a file structure as described in [Bigger Applications](bigger-applications"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2968,
+      "retrieval_latency_ms": 1316.219,
+      "usage": {
+        "prompt_tokens": 1202,
+        "completion_tokens": 295,
+        "total_tokens": 1497
+      }
+    },
+    {
+      "case_id": "testing-02",
+      "question": "即使应用路由是 async def，使用 TestClient 的测试函数是否必须 async？",
+      "reference_answer": "不必须，测试函数可以是普通 def。",
+      "outcome": "answered",
+      "answer": "不需要，即使应用路由是 async def，使用 TestClient 的测试函数也可以是普通 def 而非 async def。",
+      "citations": [
+        {
+          "chunk_id": "2cf6f118-bb01-461c-833b-a83c488f506b",
+          "filename": "07-testing.md",
+          "content": "TestClient` by passing your **FastAPI** application to it.\nCreate functions with a name that starts with `test_` (this is a standard `pytest` convention).\nUse the `TestClient` object the same way as you do with `httpx`.\nWrite simple `assert` statements with the standard Python expressions that you need to check (again, standard `pytest`).\n{* ../../docs_src/app_testing/tutorial001_py310.py hl[2,12,15:18] *}\n/// tip\nNotice that the testing functions are normal `def`, not `async def`.\nAnd the calls to the client are also normal calls, not using `await`.\nThis allows you to use `pytest` directly without complications.\n///\n/// note | Technical Details\nYou could also use `from starlette.testclient import TestClient`.\n**FastAPI** provides the same `starlette.testclient` as `fastapi.testclient` jus"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2494,
+      "retrieval_latency_ms": 1295.822,
+      "usage": {
+        "prompt_tokens": 1201,
+        "completion_tokens": 191,
+        "total_tokens": 1392
+      }
+    },
+    {
+      "case_id": "testing-03",
+      "question": "TestClient 背后使用的 HTTP 客户端库是什么？",
+      "reference_answer": "HTTPX。",
+      "outcome": "answered",
+      "answer": "HTTPX",
+      "citations": [
+        {
+          "chunk_id": "d8a903f9-a532-4c10-8025-e1286b346dd2",
+          "filename": "07-testing.md",
+          "content": "# Testing { #testing }\nThanks to [Starlette](https://www.starlette.dev/testclient/), testing **FastAPI** applications is easy and enjoyable.\nIt is based on [HTTPX](https://www.python-httpx.org), which in turn is designed based on Requests, so it's very familiar and intuitive.\nWith it, you can use [pytest](https://docs.pytest.org/) directly with **FastAPI**.\n## Using `TestClient` { #using-testclient }\n/// note\nTo use `TestClient`, first install [`httpx`](https://www.python-httpx.org).\nMake sure you create a [virtual environment](../virtual-environments.md), activate it, and then install it, for example:\n```console\n$ pip install httpx\n```\n///\nImport `TestClient`.\nCreate a `TestClient` by passing your **FastAPI** application to it.\nCreate functions with a name that starts with `test_` (this i"
+        },
+        {
+          "chunk_id": "2cf6f118-bb01-461c-833b-a83c488f506b",
+          "filename": "07-testing.md",
+          "content": "TestClient` by passing your **FastAPI** application to it.\nCreate functions with a name that starts with `test_` (this is a standard `pytest` convention).\nUse the `TestClient` object the same way as you do with `httpx`.\nWrite simple `assert` statements with the standard Python expressions that you need to check (again, standard `pytest`).\n{* ../../docs_src/app_testing/tutorial001_py310.py hl[2,12,15:18] *}\n/// tip\nNotice that the testing functions are normal `def`, not `async def`.\nAnd the calls to the client are also normal calls, not using `await`.\nThis allows you to use `pytest` directly without complications.\n///\n/// note | Technical Details\nYou could also use `from starlette.testclient import TestClient`.\n**FastAPI** provides the same `starlette.testclient` as `fastapi.testclient` jus"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2394,
+      "retrieval_latency_ms": 1219.514,
+      "usage": {
+        "prompt_tokens": 1258,
+        "completion_tokens": 222,
+        "total_tokens": 1480
+      }
+    },
+    {
+      "case_id": "testing-04",
+      "question": "官方最小测试示例如何验证根路径返回成功？",
+      "reference_answer": "发送 client.get 请求并断言状态码和 JSON 内容。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1282.802,
+      "usage": null
+    },
+    {
+      "case_id": "testing-05",
+      "question": "项目规模变大后，文档建议怎样组织 app 文件和测试文件？",
+      "reference_answer": "把应用和测试分别放在独立文件或包中。",
+      "outcome": "answered",
+      "answer": "将 app 文件放在 app 包中，测试文件放在同一包内，例如 app/main.py 和 app/test_main.py。",
+      "citations": [
+        {
+          "chunk_id": "e085c07a-935b-48af-93a2-13c48f5058b8",
+          "filename": "07-testing.md",
+          "content": "file { #fastapi-app-file }\nLet's say you have a file structure as described in [Bigger Applications](bigger-applications.md):\n```\n.\n├── app\n│   ├── __init__.py\n│   └── main.py\n```\nIn the file `main.py` you have your **FastAPI** app:\n{* ../../docs_src/app_testing/app_a_py310/main.py *}\n### Testing file { #testing-file }\nThen you could have a file `test_main.py` with your tests. It could live on the same Python package (the same directory with a `__init__.py` file):\n``` hl_lines=\"5\"\n.\n├── app\n│   ├── __init__.py\n│   ├── main.py\n│   └── test_main.py\n```\nBecause this file is in the same package, you can use relative imports to import the object `app` from the `main` module (`main.py`):\n{* ../../docs_src/app_testing/app_a_py310/test_main.py hl[3] *}\n...and have the code for the tests just like "
+        },
+        {
+          "chunk_id": "b2647851-1b10-4c21-aa8b-c3c00f1e5562",
+          "filename": "07-testing.md",
+          "content": "main.py`):\n{* ../../docs_src/app_testing/app_a_py310/test_main.py hl[3] *}\n...and have the code for the tests just like before.\n## Testing: extended example { #testing-extended-example }\nNow let's extend this example and add more details to see how to test different parts.\n### Extended **FastAPI** app file { #extended-fastapi-app-file }\nLet's continue with the same file structure as before:\n```\n.\n├── app\n│   ├── __init__.py\n│   ├── main.py\n│   └── test_main.py\n```\nLet's say that now the file `main.py` with your **FastAPI** app has some other **path operations**.\nIt has a `GET` operation that could return an error.\nIt has a `POST` operation that could return several errors.\nBoth *path operations* require an `X-Token` header.\n{* ../../docs_src/app_testing/app_b_an_py310/main.py *}\n### Extend"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3937,
+      "retrieval_latency_ms": 1335.535,
+      "usage": {
+        "prompt_tokens": 1348,
+        "completion_tokens": 328,
+        "total_tokens": 1676
+      }
+    },
+    {
+      "case_id": "testing-06",
+      "question": "运行 FastAPI 的 pytest 测试前，官方示例要求先安装哪个测试框架？",
+      "reference_answer": "安装 pytest。",
+      "outcome": "answered",
+      "answer": "httpx",
+      "citations": [
+        {
+          "chunk_id": "d8a903f9-a532-4c10-8025-e1286b346dd2",
+          "filename": "07-testing.md",
+          "content": "# Testing { #testing }\nThanks to [Starlette](https://www.starlette.dev/testclient/), testing **FastAPI** applications is easy and enjoyable.\nIt is based on [HTTPX](https://www.python-httpx.org), which in turn is designed based on Requests, so it's very familiar and intuitive.\nWith it, you can use [pytest](https://docs.pytest.org/) directly with **FastAPI**.\n## Using `TestClient` { #using-testclient }\n/// note\nTo use `TestClient`, first install [`httpx`](https://www.python-httpx.org).\nMake sure you create a [virtual environment](../virtual-environments.md), activate it, and then install it, for example:\n```console\n$ pip install httpx\n```\n///\nImport `TestClient`.\nCreate a `TestClient` by passing your **FastAPI** application to it.\nCreate functions with a name that starts with `test_` (this i"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3700,
+      "retrieval_latency_ms": 1321.131,
+      "usage": {
+        "prompt_tokens": 1304,
+        "completion_tokens": 337,
+        "total_tokens": 1641
+      }
+    },
+    {
+      "case_id": "testing-07",
+      "question": "用 TestClient 发请求时，为什么不需要先启动独立的 Uvicorn 服务？",
+      "reference_answer": "TestClient 可直接在测试进程中调用 ASGI 应用。",
+      "outcome": "answered",
+      "answer": "因为 TestClient 直接在进程中模拟 HTTP 请求，无需启动独立的 Uvicorn 服务器。",
+      "citations": [
+        {
+          "chunk_id": "d8a903f9-a532-4c10-8025-e1286b346dd2",
+          "filename": "07-testing.md",
+          "content": "# Testing { #testing }\nThanks to [Starlette](https://www.starlette.dev/testclient/), testing **FastAPI** applications is easy and enjoyable.\nIt is based on [HTTPX](https://www.python-httpx.org), which in turn is designed based on Requests, so it's very familiar and intuitive.\nWith it, you can use [pytest](https://docs.pytest.org/) directly with **FastAPI**.\n## Using `TestClient` { #using-testclient }\n/// note\nTo use `TestClient`, first install [`httpx`](https://www.python-httpx.org).\nMake sure you create a [virtual environment](../virtual-environments.md), activate it, and then install it, for example:\n```console\n$ pip install httpx\n```\n///\nImport `TestClient`.\nCreate a `TestClient` by passing your **FastAPI** application to it.\nCreate functions with a name that starts with `test_` (this i"
+        },
+        {
+          "chunk_id": "2cf6f118-bb01-461c-833b-a83c488f506b",
+          "filename": "07-testing.md",
+          "content": "TestClient` by passing your **FastAPI** application to it.\nCreate functions with a name that starts with `test_` (this is a standard `pytest` convention).\nUse the `TestClient` object the same way as you do with `httpx`.\nWrite simple `assert` statements with the standard Python expressions that you need to check (again, standard `pytest`).\n{* ../../docs_src/app_testing/tutorial001_py310.py hl[2,12,15:18] *}\n/// tip\nNotice that the testing functions are normal `def`, not `async def`.\nAnd the calls to the client are also normal calls, not using `await`.\nThis allows you to use `pytest` directly without complications.\n///\n/// note | Technical Details\nYou could also use `from starlette.testclient import TestClient`.\n**FastAPI** provides the same `starlette.testclient` as `fastapi.testclient` jus"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 5520,
+      "retrieval_latency_ms": 1357.097,
+      "usage": {
+        "prompt_tokens": 1329,
+        "completion_tokens": 480,
+        "total_tokens": 1809
+      }
+    },
+    {
+      "case_id": "testing-08",
+      "question": "测试扩展示例中，怎样确认特定路径返回预期 JSON？",
+      "reference_answer": "对 client 请求的 response.json() 做断言。",
+      "outcome": "answered",
+      "answer": "在测试文件中，使用httpx客户端发送请求，并通过断言响应状态码和JSON内容来确认特定路径返回预期的JSON。",
+      "citations": [
+        {
+          "chunk_id": "41c6ee50-1fba-4a68-9c22-860c2cef5638",
+          "filename": "07-testing.md",
+          "content": ".\nBoth *path operations* require an `X-Token` header.\n{* ../../docs_src/app_testing/app_b_an_py310/main.py *}\n### Extended testing file { #extended-testing-file }\nYou could then update `test_main.py` with the extended tests:\n{* ../../docs_src/app_testing/app_b_an_py310/test_main.py *}\nWhenever you need the client to pass information in the request and you don't know how to, you can search (Google) how to do it in `httpx`, or even how to do it with `requests`, as HTTPX's design is based on Requests' design.\nThen you just do the same in your tests.\nE.g.:\n* To pass a *path* or *query* parameter, add it to the URL itself.\n* To pass a JSON body, pass a Python object (e.g. a `dict`) to the parameter `json`.\n* If you need to send *Form Data* instead of JSON, use the `data` parameter instead.\n* To"
+        },
+        {
+          "chunk_id": "ea58ee44-e68c-403f-b05b-edfd1f47c97c",
+          "filename": "05-response-model.md",
+          "content": "eturning incorrect data. This way you and your clients can be certain that they will receive the data and the data shape expected.\n* Add a **JSON Schema** for the response, in the OpenAPI *path operation*.\n* This will be used by the **automatic docs**.\n* It will also be used by automatic client code generation tools.\n* **Serialize** the returned data to JSON using Pydantic, which is written in **Rust**, so it will be **much faster**.\nBut most importantly:\n* It will **limit and filter** the output data to what is defined in the return type.\n* This is particularly important for **security**, we'll see more of that below.\n## `response_model` Parameter { #response-model-parameter }\nThere are some cases where you need or want to return some data that is not exactly what the type declares.\nFor e"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 5059,
+      "retrieval_latency_ms": 1259.949,
+      "usage": {
+        "prompt_tokens": 1310,
+        "completion_tokens": 397,
+        "total_tokens": 1707
+      }
+    },
+    {
+      "case_id": "sql-01",
+      "question": "FastAPI 是否强制开发者选用关系型数据库？",
+      "reference_answer": "不强制，可使用任意合适的数据库或库。",
+      "outcome": "answered",
+      "answer": "不，FastAPI 不强制使用关系型数据库。",
+      "citations": [
+        {
+          "chunk_id": "84af8622-8783-42b7-be49-441cb0bdacdb",
+          "filename": "08-sql-databases.md",
+          "content": "# SQL (Relational) Databases { #sql-relational-databases }\n**FastAPI** doesn't require you to use a SQL (relational) database. But you can use **any database** that you want.\nHere we'll see an example using [SQLModel](https://sqlmodel.tiangolo.com/).\n**SQLModel** is built on top of [SQLAlchemy](https://www.sqlalchemy.org/) and Pydantic. It was made by the same author of **FastAPI** to be the perfect match for FastAPI applications that need to use **SQL databases**.\n/// tip\nYou could use any other SQL or NoSQL database library you want (in some cases called <abbr title=\"Object Relational Mapper: a fancy term for a library where some classes represent SQL tables and instances represent rows in those tables\">\"ORMs\"</abbr>), FastAPI doesn't force you to use anything. 😎\n///\nAs SQLModel is based"
+        },
+        {
+          "chunk_id": "48fb4e84-7371-4380-9fbe-f2c726c62717",
+          "filename": "08-sql-databases.md",
+          "content": "es represent rows in those tables\">\"ORMs\"</abbr>), FastAPI doesn't force you to use anything. 😎\n///\nAs SQLModel is based on SQLAlchemy, you can easily use **any database supported** by SQLAlchemy (which makes them also supported by SQLModel), like:\n* PostgreSQL\n* MySQL\n* SQLite\n* Oracle\n* Microsoft SQL Server, etc.\nIn this example, we'll use **SQLite**, because it uses a single file and Python has integrated support. So, you can copy this example and run it as is.\nLater, for your production application, you might want to use a database server like **PostgreSQL**.\n/// tip\nThere is an official project generator with **FastAPI** and **PostgreSQL** including a frontend and more tools: [https://github.com/fastapi/full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-templat"
+        },
+        {
+          "chunk_id": "1d730825-40f6-4dff-b14d-83f4d10aeff4",
+          "filename": "04-dependencies.md",
+          "content": "eration functions*.\nAnd dependencies can be created in a very simple and intuitive way that allows you to just import the Python packages you need, and integrate them with your API functions in a couple of lines of code, *literally*.\nYou will see examples of this in the next chapters, about relational and NoSQL databases, security, etc.\n## **FastAPI** compatibility { #fastapi-compatibility }\nThe simplicity of the dependency injection system makes **FastAPI** compatible with:\n* all the relational databases\n* NoSQL databases\n* external packages\n* external APIs\n* authentication and authorization systems\n* API usage monitoring systems\n* response data injection systems\n* etc.\n## Simple and Powerful { #simple-and-powerful }\nAlthough the hierarchical dependency injection system is very simple to "
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3030,
+      "retrieval_latency_ms": 1299.335,
+      "usage": {
+        "prompt_tokens": 1186,
+        "completion_tokens": 311,
+        "total_tokens": 1497
+      }
+    },
+    {
+      "case_id": "sql-02",
+      "question": "官方关系型数据库教程为何选择 SQLModel 展示示例？",
+      "reference_answer": "SQLModel 建立在 SQLAlchemy 和 Pydantic 之上，适合教程中的组合。",
+      "outcome": "answered",
+      "answer": "因为SQLModel是由FastAPI的同一作者开发的，它基于SQLAlchemy和Pydantic，能很好地与FastAPI配合，简化使用SQL数据库的代码。",
+      "citations": [
+        {
+          "chunk_id": "84af8622-8783-42b7-be49-441cb0bdacdb",
+          "filename": "08-sql-databases.md",
+          "content": "# SQL (Relational) Databases { #sql-relational-databases }\n**FastAPI** doesn't require you to use a SQL (relational) database. But you can use **any database** that you want.\nHere we'll see an example using [SQLModel](https://sqlmodel.tiangolo.com/).\n**SQLModel** is built on top of [SQLAlchemy](https://www.sqlalchemy.org/) and Pydantic. It was made by the same author of **FastAPI** to be the perfect match for FastAPI applications that need to use **SQL databases**.\n/// tip\nYou could use any other SQL or NoSQL database library you want (in some cases called <abbr title=\"Object Relational Mapper: a fancy term for a library where some classes represent SQL tables and instances represent rows in those tables\">\"ORMs\"</abbr>), FastAPI doesn't force you to use anything. 😎\n///\nAs SQLModel is based"
+        },
+        {
+          "chunk_id": "d3a42b37-245d-4b4a-8c32-e7ac95a87e33",
+          "filename": "08-sql-databases.md",
+          "content": " is now updated, and it won't expect to receive the `id` from the client when creating a hero, etc.\n<div class=\"screenshot\">\n<img src=\"/img/tutorial/sql-databases/image02.png\">\n</div>\n## Recap { #recap }\nYou can use [**SQLModel**](https://sqlmodel.tiangolo.com/) to interact with a SQL database and simplify the code with *data models*  and *table models*.\nYou can learn a lot more at the **SQLModel** docs, there's a longer mini [tutorial on using SQLModel with **FastAPI**](https://sqlmodel.tiangolo.com/tutorial/fastapi/). 🚀"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 4286,
+      "retrieval_latency_ms": 1230.911,
+      "usage": {
+        "prompt_tokens": 1202,
+        "completion_tokens": 486,
+        "total_tokens": 1688
+      }
+    },
+    {
+      "case_id": "sql-03",
+      "question": "教程中的最小可运行数据库示例为什么选 SQLite？",
+      "reference_answer": "SQLite 是单文件数据库且 Python 内置支持，便于直接运行示例。",
+      "outcome": "answered",
+      "answer": "Because SQLite uses a single file and Python has integrated support, allowing the example to be copied and run as is.",
+      "citations": [
+        {
+          "chunk_id": "48fb4e84-7371-4380-9fbe-f2c726c62717",
+          "filename": "08-sql-databases.md",
+          "content": "es represent rows in those tables\">\"ORMs\"</abbr>), FastAPI doesn't force you to use anything. 😎\n///\nAs SQLModel is based on SQLAlchemy, you can easily use **any database supported** by SQLAlchemy (which makes them also supported by SQLModel), like:\n* PostgreSQL\n* MySQL\n* SQLite\n* Oracle\n* Microsoft SQL Server, etc.\nIn this example, we'll use **SQLite**, because it uses a single file and Python has integrated support. So, you can copy this example and run it as is.\nLater, for your production application, you might want to use a database server like **PostgreSQL**.\n/// tip\nThere is an official project generator with **FastAPI** and **PostgreSQL** including a frontend and more tools: [https://github.com/fastapi/full-stack-fastapi-template](https://github.com/fastapi/full-stack-fastapi-templat"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2608,
+      "retrieval_latency_ms": 1229.666,
+      "usage": {
+        "prompt_tokens": 1201,
+        "completion_tokens": 218,
+        "total_tokens": 1419
+      }
+    },
+    {
+      "case_id": "sql-04",
+      "question": "在 SQLite 示例创建 engine 时，check_same_thread=False 是为解决什么使用场景？",
+      "reference_answer": "允许测试和请求处理中跨线程使用 SQLite 连接。",
+      "outcome": "answered",
+      "answer": "解决同一个SQLite数据库在多个线程中被访问的问题，因为FastAPI的一个请求可能使用多个线程。",
+      "citations": [
+        {
+          "chunk_id": "3081c970-c3b7-4b47-8722-fadc1546a0cc",
+          "filename": "08-sql-databases.md",
+          "content": "r lookups in the database when reading data filtered by this column.\nSQLModel will know that something declared as `str` will be a SQL column of type `TEXT` (or `VARCHAR`, depending on the database).\n### Create an Engine { #create-an-engine }\nA SQLModel `engine` (underneath it's actually a SQLAlchemy `engine`) is what **holds the connections** to the database.\nYou would have **one single `engine` object** for all your code to connect to the same database.\n{* ../../docs_src/sql_databases/tutorial001_an_py310.py ln[14:18] hl[14:15,17:18] *}\nUsing `check_same_thread=False` allows FastAPI to use the same SQLite database in different threads. This is necessary as **one single request** could use **more than one thread** (for example in dependencies).\nDon't worry, with the way the code is struct"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 4651,
+      "retrieval_latency_ms": 1311.418,
+      "usage": {
+        "prompt_tokens": 1320,
+        "completion_tokens": 473,
+        "total_tokens": 1793
+      }
+    },
+    {
+      "case_id": "sql-05",
+      "question": "怎样把数据库 session 作为每个请求可用、请求结束后关闭的资源？",
+      "reference_answer": "定义 yield 出 session 的依赖，并通过 Depends 注入。",
+      "outcome": "answered",
+      "answer": "使用 FastAPI 的依赖项（dependency）配合 yield 来创建每个请求的数据库 session，并在请求结束后自动关闭。",
+      "citations": [
+        {
+          "chunk_id": "05ae04a6-3e72-488f-bd4b-143eca9a7934",
+          "filename": "08-sql-databases.md",
+          "content": "the data, then it **uses the `engine`** to communicate with the database.\nWe will create a FastAPI **dependency** with `yield` that will provide a new `Session` for each request. This is what ensures that we use a single session per request. 🤓\nThen we create an `Annotated` dependency `SessionDep` to simplify the rest of the code that will use this dependency.\n{* ../../docs_src/sql_databases/tutorial001_an_py310.py ln[25:30]  hl[25:27,30] *}\n### Create Database Tables on Startup { #create-database-tables-on-startup }\nWe will create the database tables when the application starts.\n{* ../../docs_src/sql_databases/tutorial001_an_py310.py ln[32:37] hl[35:37] *}\nHere we create the tables on an application startup event.\nFor production you would probably use a migration script that runs before yo"
+        },
+        {
+          "chunk_id": "869b0a5a-4f8a-41ec-8e8a-09f12013d649",
+          "filename": "08-sql-databases.md",
+          "content": "request** could use **more than one thread** (for example in dependencies).\nDon't worry, with the way the code is structured, we'll make sure we use **a single SQLModel *session* per request** later, this is actually what the `check_same_thread` is trying to achieve.\n### Create the Tables { #create-the-tables }\nWe then add a function that uses `SQLModel.metadata.create_all(engine)` to **create the tables** for all the *table models*.\n{* ../../docs_src/sql_databases/tutorial001_an_py310.py ln[21:22] hl[21:22] *}\n### Create a Session Dependency { #create-a-session-dependency }\nA **`Session`** is what stores the **objects in memory** and keeps track of any changes needed in the data, then it **uses the `engine`** to communicate with the database.\nWe will create a FastAPI **dependency** with `"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2819,
+      "retrieval_latency_ms": 1477.6,
+      "usage": {
+        "prompt_tokens": 1320,
+        "completion_tokens": 245,
+        "total_tokens": 1565
+      }
+    },
+    {
+      "case_id": "sql-06",
+      "question": "示例在哪个生命周期阶段创建数据库表？",
+      "reference_answer": "在应用启动事件中创建表。",
+      "outcome": "answered",
+      "answer": "应用程序启动阶段",
+      "citations": [
+        {
+          "chunk_id": "bea421ae-08be-40d5-a71e-29f61e2c5ae5",
+          "filename": "08-sql-databases.md",
+          "content": "the tables on an application startup event.\nFor production you would probably use a migration script that runs before you start your app. 🤓\n/// tip\nSQLModel will have migration utilities wrapping Alembic, but for now, you can use [Alembic](https://alembic.sqlalchemy.org/en/latest/) directly.\n///\n### Create a Hero { #create-a-hero }\nBecause each SQLModel model is also a Pydantic model, you can use it in the same **type annotations** that you could use Pydantic models.\nFor example, if you declare a parameter of type `Hero`, it will be read from the **JSON body**.\nThe same way, you can declare it as the function's **return type**, and then the shape of the data will show up in the automatic API docs UI.\n{* ../../docs_src/sql_databases/tutorial001_an_py310.py ln[40:45] hl[40:45] *}\nHere we use"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 2212,
+      "retrieval_latency_ms": 1295.842,
+      "usage": {
+        "prompt_tokens": 1285,
+        "completion_tokens": 151,
+        "total_tokens": 1436
+      }
+    },
+    {
+      "case_id": "sql-07",
+      "question": "为什么 Hero、HeroCreate 和 HeroPublic 需要拆成不同模型？",
+      "reference_answer": "分别表达表结构、创建输入和公开输出，避免不该暴露或可写的字段混用。",
+      "outcome": "answered",
+      "answer": "为了分离输入、输出和数据库模型，实现数据安全与类型安全。HeroCreate用于接收客户端数据（含secret_name），HeroPublic用于返回给客户端（不含secret_name，保护隐私），Hero是完整的数据库模型（含所有字段）。",
+      "citations": [
+        {
+          "chunk_id": "373742b4-dc4f-4a57-9208-44aad114af54",
+          "filename": "08-sql-databases.md",
+          "content": "-heropublic }\nNow that we have **multiple models**, we can update the parts of the app that use them.\nWe receive in the request a `HeroCreate` *data model*, and from it, we create a `Hero` *table model*.\nThis new *table model* `Hero` will have the fields sent by the client, and will also have an `id` generated by the database.\nThen we return the same *table model* `Hero` as is from the function. But as we declare the `response_model` with the `HeroPublic` *data model*, **FastAPI** will use `HeroPublic` to validate and serialize the data.\n{* ../../docs_src/sql_databases/tutorial002_an_py310.py ln[56:62] hl[56:58] *}\n/// tip\nNow we use `response_model=HeroPublic` instead of the **return type annotation** `-> HeroPublic` because the value that we are returning is actually *not* a `HeroPublic`"
+        },
+        {
+          "chunk_id": "d9c6053e-b7dd-4846-9bd9-fc02bd94beb4",
+          "filename": "08-sql-databases.md",
+          "content": "el }\nThen let's create `Hero`, the actual *table model*, with the **extra fields** that are not always in the other models:\n* `id`\n* `secret_name`\nBecause `Hero` inherits from `HeroBase`, it **also** has the **fields** declared in `HeroBase`, so all the fields for `Hero` are:\n* `id`\n* `name`\n* `age`\n* `secret_name`\n{* ../../docs_src/sql_databases/tutorial002_an_py310.py ln[7:14] hl[12:14] *}\n#### `HeroPublic` - the public *data model* { #heropublic-the-public-data-model }\nNext, we create a `HeroPublic` model, this is the one that will be **returned** to the clients of the API.\nIt has the same fields as `HeroBase`, so it won't include `secret_name`.\nFinally, the identity of our heroes is protected! 🥷\nIt also re-declares `id: int`. By doing this, we are making a **contract** with the API cli"
+        },
+        {
+          "chunk_id": "bc2d0379-d6fd-4ccb-9bb7-d6988a091786",
+          "filename": "08-sql-databases.md",
+          "content": "s `int` (not `None`):\n* `id`\n* `name`\n* `age`\n{* ../../docs_src/sql_databases/tutorial002_an_py310.py ln[7:18] hl[17:18] *}\n#### `HeroCreate` - the *data model* to create a hero { #herocreate-the-data-model-to-create-a-hero }\nNow we create a `HeroCreate` model, this is the one that will **validate** the data from the clients.\nIt has the same fields as `HeroBase`, and it also has `secret_name`.\nNow, when the clients **create a new hero**, they will send the `secret_name`, it will be stored in the database, but those secret names won't be returned in the API to the clients.\n/// tip\nThis is how you would handle **passwords**. Receive them, but don't return them in the API.\nYou would also **hash** the values of the passwords before storing them, **never store them in plain text**.\n///\nThe fiel"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 4837,
+      "retrieval_latency_ms": 1504.062,
+      "usage": {
+        "prompt_tokens": 1342,
+        "completion_tokens": 388,
+        "total_tokens": 1730
+      }
+    },
+    {
+      "case_id": "sql-08",
+      "question": "更新英雄记录时，怎样避免未提交字段覆盖数据库已有值？",
+      "reference_answer": "从更新模型导出时排除未设置字段，再应用更新。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1557.915,
+      "usage": null
+    },
+    {
+      "case_id": "jwt-01",
+      "question": "JWT 中保存的内容默认是加密的吗？",
+      "reference_answer": "不是，JWT 可被读取，签名用于验证完整性而非隐藏内容。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1413.294,
+      "usage": null
+    },
+    {
+      "case_id": "jwt-02",
+      "question": "为什么用户密码不能直接保存原文，即使数据库只在内部使用？",
+      "reference_answer": "泄露后原文密码会直接暴露；应保存可验证的密码哈希。",
+      "outcome": "answered",
+      "answer": "为了防止数据库被盗后用户密码泄露，因为许多用户在不同系统使用相同密码，明文存储会带来跨系统风险。",
+      "citations": [
+        {
+          "chunk_id": "5b5770d4-ce65-42ac-b2a1-c6febbe2e32e",
+          "filename": "09-oauth2-jwt.md",
+          "content": " read more about it in the [PyJWT Installation docs](https://pyjwt.readthedocs.io/en/latest/installation.html).\n///\n## Password hashing { #password-hashing }\n\"Hashing\" means converting some content (a password in this case) into a sequence of bytes (just a string) that looks like gibberish.\nWhenever you pass exactly the same content (exactly the same password) you get exactly the same gibberish.\nBut you cannot convert from the gibberish back to the password.\n### Why use password hashing { #why-use-password-hashing }\nIf your database is stolen, the thief won't have your users' plaintext passwords, only the hashes.\nSo, the thief won't be able to try to use that password in another system (as many users use the same password everywhere, this would be dangerous).\n## Install `pwdlib` { #install"
+        },
+        {
+          "chunk_id": "c59baa2c-ea56-4843-ae81-7dcb077a8faa",
+          "filename": "05-response-model.md",
+          "content": "user sending the password.\nBut if we use the same model for another *path operation*, we could be sending our user's passwords to every client.\n/// danger\nNever store the plain password of a user or send it in a response like this, unless you know all the caveats and you know what you are doing.\n///\n## Add an output model { #add-an-output-model }\nWe can instead create an input model with the plaintext password and an output model without it:\n{* ../../docs_src/response_model/tutorial003_py310.py hl[9,11,16] *}\nHere, even though our *path operation function* is returning the same input user that contains the password:\n{* ../../docs_src/response_model/tutorial003_py310.py hl[24] *}\n...we declared the `response_model` to be our model `UserOut`, that doesn't include the password:\n{* ../../docs_"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3674,
+      "retrieval_latency_ms": 1335.225,
+      "usage": {
+        "prompt_tokens": 1288,
+        "completion_tokens": 289,
+        "total_tokens": 1577
+      }
+    },
+    {
+      "case_id": "jwt-03",
+      "question": "官方教程推荐用什么库和算法方案处理密码哈希？",
+      "reference_answer": "使用 pwdlib，并采用推荐的 Argon2 哈希方案。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1260.752,
+      "usage": null
+    },
+    {
+      "case_id": "jwt-04",
+      "question": "认证时验证密码的正确顺序是什么？",
+      "reference_answer": "先根据用户名查找用户，再用密码哈希验证函数比对输入密码。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1339.445,
+      "usage": null
+    },
+    {
+      "case_id": "jwt-05",
+      "question": "OAuth2 密码流程的 /token 端点接收用户名和密码时，使用 JSON 还是表单编码？",
+      "reference_answer": "使用表单数据。",
+      "outcome": "retrieval_guard_invalid_citation",
+      "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
+      "citations": [],
+      "model": "retrieval-guard",
+      "model_latency_ms": 0,
+      "retrieval_latency_ms": 1440.244,
+      "usage": null
+    },
+    {
+      "case_id": "jwt-06",
+      "question": "JWT 的 sub 声明在示例中存放什么信息，并要求什么类型？",
+      "reference_answer": "存放主体标识如用户名，并应是字符串。",
+      "outcome": "answered",
+      "answer": "sub 声明存放用户的身份标识信息，并要求是字符串类型。",
+      "citations": [
+        {
+          "chunk_id": "53fe2f55-4fbc-46c0-9a42-27b72095c940",
+          "filename": "09-oauth2-jwt.md",
+          "content": "have the same ID, let's say `foo` (a user `foo`, a car `foo`, and a blog post `foo`).\nSo, to avoid ID collisions, when creating the JWT token for the user, you could prefix the value of the `sub` key, e.g. with `username:`. So, in this example, the value of `sub` could have been: `username:johndoe`.\nThe important thing to keep in mind is that the `sub` key should have a unique identifier across the entire application, and it should be a string.\n## Check it { #check-it }\nRun the server and go to the docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).\nYou'll see the user interface like:\n<img src=\"/img/tutorial/security/image07.png\">\nAuthorize the application the same way as before.\nUsing the credentials:\nUsername: `johndoe`\nPassword: `secret`\n/// tip\nNotice that nowhere in the co"
+        },
+        {
+          "chunk_id": "ea055cc3-cd8d-487d-9f1b-c2b4f22a0f25",
+          "filename": "09-oauth2-jwt.md",
+          "content": "oken, verify it, and return the current user.\nIf the token is invalid, return an HTTP error right away.\n{* ../../docs_src/security/tutorial004_an_py310.py hl[93:110] *}\n## Update the `/token` *path operation* { #update-the-token-path-operation }\nCreate a `timedelta` with the expiration time of the token.\nCreate a real JWT access token and return it.\n{* ../../docs_src/security/tutorial004_an_py310.py hl[121:136] *}\n### Technical details about the JWT \"subject\" `sub` { #technical-details-about-the-jwt-subject-sub }\nThe JWT specification says that there's a key `sub`, with the subject of the token.\nIt's optional to use it, but that's where you would put the user's identification, so we are using it here.\nJWT might be used for other things apart from identifying a user and allowing them to per"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3950,
+      "retrieval_latency_ms": 1375.165,
+      "usage": {
+        "prompt_tokens": 1408,
+        "completion_tokens": 360,
+        "total_tokens": 1768
+      }
+    },
+    {
+      "case_id": "jwt-07",
+      "question": "访问受保护接口却没有有效 token 时，示例如何让客户端知道需要认证？",
+      "reference_answer": "抛出 401 HTTPException，并设置 WWW-Authenticate: Bearer 响应头。",
+      "outcome": "answered",
+      "answer": "示例通过返回HTTP错误（如401 Unauthorized）来让客户端知道需要认证。",
+      "citations": [
+        {
+          "chunk_id": "824c320a-30b7-45c9-ab92-69d90ae9f0b4",
+          "filename": "09-oauth2-jwt.md",
+          "content": "b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7\n```\n</div>\nAnd copy the output to the variable `SECRET_KEY` (don't use the one in the example).\nCreate a variable `ALGORITHM` with the algorithm used to sign the JWT token and set it to `\"HS256\"`.\nCreate a variable for the expiration of the token.\nDefine a Pydantic Model that will be used in the token endpoint for the response.\nCreate a utility function to generate a new access token.\n{* ../../docs_src/security/tutorial004_an_py310.py hl[4,7,13:15,29:31,82:90] *}\n## Update the dependencies { #update-the-dependencies }\nUpdate `get_current_user` to receive the same token as before, but this time, using JWT tokens.\nDecode the received token, verify it, and return the current user.\nIf the token is invalid, return an HTTP error right away.\n{* ../../docs_sr"
+        },
+        {
+          "chunk_id": "df423e9b-211c-4eb0-994a-d50debe2b4d1",
+          "filename": "09-oauth2-jwt.md",
+          "content": "9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\n```\nIt is not encrypted, so, anyone could recover the information from the contents.\nBut it's signed. So, when you receive a token that you issued, you can verify that it was you who issued it.\nThat way, you can create a token with an expiration of, let's say, 1 week. And then when the user comes back the next day with the token, you know that user is still logged in to your system.\nAfter a week, the token will be expired and the user will not be authorized and will have to sign in again to get a new token. And if the user (or a third party) tried to modify the token to change the expiration, you would be able to discover it, because the signatures would not match.\nIf yo"
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 3136,
+      "retrieval_latency_ms": 1301.358,
+      "usage": {
+        "prompt_tokens": 1334,
+        "completion_tokens": 282,
+        "total_tokens": 1616
+      }
+    },
+    {
+      "case_id": "jwt-08",
+      "question": "需要基于权限范围限制不同操作时，OAuth2 JWT 教程把哪项能力作为高级用法？",
+      "reference_answer": "使用 OAuth2 scopes。",
+      "outcome": "answered",
+      "answer": "作用域(Scopes)",
+      "citations": [
+        {
+          "chunk_id": "8f7fc7b8-e3d9-4d34-9467-0461d2aec927",
+          "filename": "09-oauth2-jwt.md",
+          "content": "g src=\"/img/tutorial/security/image10.png\">\n/// note\nNotice the header `Authorization`, with a value that starts with `Bearer `.\n///\n## Advanced usage with `scopes` { #advanced-usage-with-scopes }\nOAuth2 has the notion of \"scopes\".\nYou can use them to add a specific set of permissions to a JWT token.\nThen you can give this token to a user directly or a third party, to interact with your API with a set of restrictions.\nYou can learn how to use them and how they are integrated into **FastAPI** later in the **Advanced User Guide**.\n## Recap { #recap }\nWith what you have seen up to now, you can set up a secure **FastAPI** application using standards like OAuth2 and JWT.\nIn almost any framework handling the security becomes a rather complex subject quite quickly.\nMany packages that simplify it "
+        }
+      ],
+      "model": "deepseek-v4-flash",
+      "model_latency_ms": 4797,
+      "retrieval_latency_ms": 1406.171,
+      "usage": {
+        "prompt_tokens": 1287,
+        "completion_tokens": 395,
+        "total_tokens": 1682
+      }
+    }
+  ],
+  "run_metadata": {
+    "evaluated_at_utc": "2026-07-15T05:27:37.543772+00:00",
+    "embedding_model": "BAAI/bge-small-zh-v1.5",
+    "embedding_dimension": 512,
+    "embedding_device": "cpu",
+    "qdrant_collection": "document_chunks_bge_small_zh_v1_5",
+    "reranker_model": "BAAI/bge-reranker-base",
+    "reranker_candidate_count": 10,
+    "warmup_queries_excluded": 0,
+    "top_k": 5
+  }
+}
