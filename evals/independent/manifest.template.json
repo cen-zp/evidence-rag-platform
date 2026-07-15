@@ -4,5 +4,6 @@
   "corpus_description": "说明语料来自哪里、包含什么，以及为什么不使用本仓库验收文档。",
   "question_authoring": "说明问题如何独立编写，避免直接复述原文或由模型从同一语料生成。",
   "source_labeling": "说明预期来源文件如何在运行检索前由人工标注。",
-  "human_review_status": "approved"
+  "human_review_status": "approved",
+  "review_file": "case-review.csv"
 }

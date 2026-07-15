@@ -87,9 +87,20 @@ uv run python -m app.evaluation.runner \
   --output ../../evals/results/formal-reranker.json
 ```
 
-正式模式会拒绝少于 60 或多于 100 条的题集、重复案例 ID、重复问题，以及缺少 `dataset_origin: "independent"`、来源说明和 `human_review_status: "approved"` 的 manifest。输出会附加题集与 manifest 的 SHA-256，便于在答辩或简历复核时证明报告使用了哪一版数据；它不能自动证明题目真的独立，题目来源和人工标注方法仍必须如实填写。
+正式模式会拒绝少于 60 或多于 100 条的题集、重复案例 ID、重复问题，以及缺少 `dataset_origin: "independent"`、来源说明、`human_review_status: "approved"` 和完整审核表的 manifest。输出会附加题集、manifest 与审核表的 SHA-256，便于在答辩或简历复核时证明报告使用了哪一版数据；它不能自动证明题目真的独立，题目来源和人工标注方法仍必须如实填写。
 
-`fastapi-official-cases.jsonl` 是基于公开 FastAPI 官方文档建立的 72 条中文 AI 协助草案，当前 manifest 故意标为 `needs_human_review`，因此不能进入正式模式，也不能作为简历指标。它可用于检查导入、检索与评审流程；由与生成者独立的人工评审者逐条核查题目、参考答案和预期文件后，才可把审核状态改为 `approved`。
+先从 JSONL 生成 CSV 审核表：
+
+```bash
+cd apps/api
+uv run python -m app.evaluation.review_sheet \
+  --cases ../../evals/independent/cases.jsonl \
+  --output ../../evals/independent/case-review.csv
+```
+
+由与题集生成者独立的人工评审者逐行核对问题、参考答案和预期来源，并填写 `approved` / `pass`、评审别名和 UTC 时间。审核表是声明式审计证据，不会、也不能自动证明评审者的真实身份；使用者必须如实保留评审过程。每个题目恰好一行且所有 verdict 通过后，才可将 manifest 的 `human_review_status` 改为 `approved`。正式报告会记录审核表 SHA-256、覆盖案例数和评审别名数量。
+
+`fastapi-official-cases.jsonl` 是基于公开 FastAPI 官方文档建立的 72 条中文 AI 协助草案，当前 manifest 故意标为 `needs_human_review`，因此不能进入正式模式，也不能作为简历指标。对应的 `fastapi-official-review.csv` 仅是待填写的审核表；在独立人工评审者逐条核查前，不能改为 `approved`。
 
 ## 公开 FastAPI 语料导入
 
