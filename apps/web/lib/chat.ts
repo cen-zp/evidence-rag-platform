@@ -11,6 +11,8 @@ export type ChatResponse = {
   answer: string;
   model: string;
   latency_ms: number;
+  retrieval_latency_ms?: number;
+  total_latency_ms?: number;
   citations: Citation[];
   usage?: {
     prompt_tokens: number;

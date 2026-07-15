@@ -103,6 +103,7 @@ def test_retriever_enforces_knowledge_base_and_ready_document_filters() -> None:
         embedding_provider=FakeEmbeddingProvider(),
         reranker=FakeReranker(),
         reranker_candidate_count=10,
+        minimum_score=0.5,
     )
 
     hits = retriever.search(target_knowledge_base_id, "target question", top_k=3)
@@ -111,6 +112,16 @@ def test_retriever_enforces_knowledge_base_and_ready_document_filters() -> None:
     assert hits[0].chunk.document.filename == "target.md"
     assert hits[0].score > 0
     assert vector_store.calls == [(target_knowledge_base_id, [1.0, 0.0], 20)]
+
+    guarded = KnowledgeBaseRetriever(
+        session_factory=session_factory,
+        vector_store=FakeVectorStore([VectorSearchHit(chunk_id=target_chunk_id, score=0.9)]),
+        embedding_provider=FakeEmbeddingProvider(),
+        reranker=FakeReranker(score=0.1),
+        reranker_candidate_count=10,
+        minimum_score=0.5,
+    )
+    assert guarded.search(target_knowledge_base_id, "target question", top_k=3) == []
 
     baseline = KnowledgeBaseRetriever(
         session_factory=session_factory,
@@ -137,10 +148,13 @@ class FakeEmbeddingProvider:
 
 
 class FakeReranker:
+    def __init__(self, score: float = 0.8) -> None:
+        self.score = score
+
     def rerank(self, query: str, candidates: list[tuple[UUID, str]]) -> list[RerankResult]:
         assert query == "target question"
         assert [content for _, content in candidates] == ["target evidence"]
-        return [RerankResult(chunk_id=chunk_id, score=0.8) for chunk_id, _ in candidates]
+        return [RerankResult(chunk_id=chunk_id, score=self.score) for chunk_id, _ in candidates]
 
 
 def test_bm25_ranks_matching_chunk_above_unrelated_chunk() -> None:

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     reranker_enabled: bool = True
     reranker_candidate_count: int = 10
     reranker_device: str = "cpu"
+    retrieval_min_score: float = Field(default=0.02, ge=0, le=1)
     deepseek_api_key: SecretStr | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_chat_model: str = "deepseek-v4-flash"

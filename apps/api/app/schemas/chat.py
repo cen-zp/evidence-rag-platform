@@ -35,6 +35,8 @@ class ChatResponse(BaseModel):
     answer: str
     model: str
     latency_ms: int
+    retrieval_latency_ms: int | None = None
+    total_latency_ms: int | None = None
     citations: list[ChatCitation] = Field(default_factory=list)
     usage: ChatUsage | None = None
     conversation_id: UUID | None = None
@@ -43,6 +45,7 @@ class ChatResponse(BaseModel):
     @model_serializer(mode="wrap")
     def serialize(self, handler):
         result = handler(self)
-        if result["usage"] is None:
-            del result["usage"]
+        for optional_field in ("usage", "retrieval_latency_ms", "total_latency_ms"):
+            if result[optional_field] is None:
+                del result[optional_field]
         return result

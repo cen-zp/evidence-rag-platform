@@ -47,6 +47,9 @@ type Message = {
   content: string;
   model?: string;
   latencyMs?: number;
+  retrievalLatencyMs?: number;
+  serviceLatencyMs?: number;
+  endToEndLatencyMs?: number;
   usage?: ChatResponse["usage"];
   citations?: Citation[];
   evaluationCaseId?: string;
@@ -257,6 +260,7 @@ export default function ChatPage() {
     setError(null);
     setIsSending(true);
     setStreamPhase("retrieving");
+    const requestStartedAt = performance.now();
 
     try {
       const history: ChatHistoryMessage[] = messages.slice(-6).map((item) => ({
@@ -270,6 +274,7 @@ export default function ChatPage() {
         conversationId ?? undefined,
         setStreamPhase,
       );
+      const endToEndLatencyMs = Math.round(performance.now() - requestStartedAt);
       setConversationId(result.conversation_id ?? null);
       setMessages((current) => [
         ...current,
@@ -279,6 +284,9 @@ export default function ChatPage() {
           content: result.answer,
           model: result.model,
           latencyMs: result.latency_ms,
+          retrievalLatencyMs: result.retrieval_latency_ms,
+          serviceLatencyMs: result.total_latency_ms,
+          endToEndLatencyMs,
           citations: result.citations,
           usage: result.usage,
           evaluationCaseId,
@@ -770,7 +778,16 @@ export default function ChatPage() {
                     <>
                       <div className="message-meta">
                         <span>{message.model ?? "retrieval-guard"}</span>
-                        <span>{message.latencyMs ?? 0} ms</span>
+                        <span>模型 {message.latencyMs ?? 0} ms</span>
+                        {message.retrievalLatencyMs !== undefined && (
+                          <span>检索 {message.retrievalLatencyMs} ms</span>
+                        )}
+                        {message.serviceLatencyMs !== undefined && (
+                          <span>服务端全链路 {message.serviceLatencyMs} ms</span>
+                        )}
+                        {message.endToEndLatencyMs !== undefined && (
+                          <span>浏览器端到端 {message.endToEndLatencyMs} ms</span>
+                        )}
                         {message.usage && <span>{message.usage.total_tokens} tokens</span>}
                         {message.citations && <span>{message.citations.length} 条已校验证据</span>}
                       </div>

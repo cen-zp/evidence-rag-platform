@@ -1,0 +1,24 @@
+{"id":"unsupported-01","question":"今天上海的天气和空气质量怎么样？","reason":"FastAPI 教程语料不包含实时天气或空气质量信息。"}
+{"id":"unsupported-02","question":"如何制作一份低糖巧克力蛋糕？","reason":"FastAPI 教程语料不包含烘焙配方或营养指导。"}
+{"id":"unsupported-03","question":"解释量子纠缠实验中的贝尔不等式。","reason":"FastAPI 教程语料不包含量子物理或贝尔不等式。"}
+{"id":"unsupported-04","question":"推荐三只适合长期持有的中国股票。","reason":"FastAPI 教程语料不包含证券行情或投资建议。"}
+{"id":"unsupported-05","question":"怎样更换汽车发动机的正时皮带？","reason":"FastAPI 教程语料不包含汽车维修操作。"}
+{"id":"unsupported-06","question":"明朝万历皇帝在位期间有哪些重大事件？","reason":"FastAPI 教程语料不包含中国历史资料。"}
+{"id":"unsupported-07","question":"用 Blender 制作玻璃材质应该调哪些参数？","reason":"FastAPI 教程语料不包含三维建模或材质制作。"}
+{"id":"unsupported-08","question":"如何为 Kubernetes 集群配置 Istio 服务网格？","reason":"FastAPI 教程语料不包含 Kubernetes 或 Istio 配置。"}
+{"id":"unsupported-09","question":"这份资料有没有介绍 React Server Components？","reason":"FastAPI 教程语料不包含 React Server Components。"}
+{"id":"unsupported-10","question":"怎样在 Photoshop 中修复老照片划痕？","reason":"FastAPI 教程语料不包含图像修复操作。"}
+{"id":"unsupported-11","question":"成年人每天应该摄入多少维生素 D？","reason":"FastAPI 教程语料不包含医学或营养建议。"}
+{"id":"unsupported-12","question":"请比较三种常见的房贷提前还款方案。","reason":"FastAPI 教程语料不包含房贷或个人财务方案。"}
+{"id":"unsupported-13","question":"如何训练一只小狗在固定地点排便？","reason":"FastAPI 教程语料不包含宠物训练知识。"}
+{"id":"unsupported-14","question":"巴赫的十二平均律为什么重要？","reason":"FastAPI 教程语料不包含音乐史或作品分析。"}
+{"id":"unsupported-15","question":"如何在 Unreal Engine 里制作地形材质？","reason":"FastAPI 教程语料不包含游戏引擎或地形材质。"}
+{"id":"unsupported-16","question":"部署 Kafka 集群时怎样规划分区数量？","reason":"FastAPI 教程语料不包含 Kafka 集群规划。"}
+{"id":"unsupported-17","question":"请说明 Rust 所有权和借用检查器的关系。","reason":"FastAPI 教程语料不包含 Rust 语言机制。"}
+{"id":"unsupported-18","question":"如何设置 Nginx 的 HTTP/3 和 QUIC？","reason":"FastAPI 教程语料不包含 Nginx HTTP/3 配置。"}
+{"id":"unsupported-19","question":"这套资料中是否给出了 Django ORM 的迁移命令？","reason":"FastAPI 教程语料不包含 Django ORM 命令。"}
+{"id":"unsupported-20","question":"如何使用 Terraform 创建 AWS VPC？","reason":"FastAPI 教程语料不包含 Terraform 或 AWS VPC。"}
+{"id":"unsupported-21","question":"请给出法语虚拟式现在时的变位规则。","reason":"FastAPI 教程语料不包含法语语法。"}
+{"id":"unsupported-22","question":"如何判断一块翡翠是否经过人工染色？","reason":"FastAPI 教程语料不包含珠宝鉴定知识。"}
+{"id":"unsupported-23","question":"比较 PostgreSQL 和 ClickHouse 的列式分析性能。","reason":"FastAPI 教程语料不包含数据库性能基准比较。"}
+{"id":"unsupported-24","question":"如何计算一颗系外行星的宜居带范围？","reason":"FastAPI 教程语料不包含天体物理计算。"}

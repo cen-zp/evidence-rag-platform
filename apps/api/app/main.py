@@ -1,6 +1,7 @@
 import json
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from time import perf_counter
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,6 +65,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         session: Session = Depends(get_session),
         current_user: User = Depends(get_current_user),
     ) -> ChatResponse:
+        request_started_at = perf_counter()
         if request.knowledge_base_id is not None:
             knowledge_bases.get_knowledge_base_or_404(
                 session,
@@ -78,7 +80,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
             try:
                 retriever: KnowledgeBaseRetriever = app.state.knowledge_base_retriever_factory()
+                retrieval_started_at = perf_counter()
                 hits = retriever.search(request.knowledge_base_id, request.message, top_k=5)
+                retrieval_latency_ms = _elapsed_ms(retrieval_started_at)
             except Exception as error:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -90,12 +94,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     answer="我无法根据当前知识库中的资料回答这个问题。",
                     model="retrieval-guard",
                     latency_ms=0,
+                    retrieval_latency_ms=retrieval_latency_ms,
                     conversation_id=conversation.id,
                 )
                 response.assistant_message_id = _persist_conversation_turn(
                     session, conversation, request.message, response
                 ).id
                 session.commit()
+                response.total_latency_ms = _elapsed_ms(request_started_at)
                 return response
 
             try:
@@ -122,12 +128,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     answer="我无法根据当前检索到的资料生成带有效引用的回答。",
                     model="retrieval-guard",
                     latency_ms=0,
+                    retrieval_latency_ms=retrieval_latency_ms,
                     conversation_id=conversation.id,
                 )
                 response.assistant_message_id = _persist_conversation_turn(
                     session, conversation, request.message, response
                 ).id
                 session.commit()
+                response.total_latency_ms = _elapsed_ms(request_started_at)
                 return response
 
             hits_by_id = {hit.chunk.id: hit for hit in hits}
@@ -135,6 +143,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 answer=grounded.answer,
                 model=grounded.model,
                 latency_ms=grounded.latency_ms,
+                retrieval_latency_ms=retrieval_latency_ms,
                 citations=[
                     ChatCitation(
                         chunk_id=hit.chunk.id,
@@ -163,6 +172,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 output_cost_per_million_tokens=active_settings.deepseek_output_cost_per_million_tokens,
                 cost_currency=active_settings.deepseek_cost_currency,
             )
+            response.total_latency_ms = _elapsed_ms(request_started_at)
             return response
 
         try:
@@ -175,7 +185,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 ),
             ) from error
         try:
-            return await service.chat(request.message, request.history)
+            response = await service.chat(request.message, request.history)
+            response.total_latency_ms = _elapsed_ms(request_started_at)
+            return response
         except DeepSeekProviderError as error:
             raise HTTPException(status_code=error.status_code, detail=error.detail) from error
 
@@ -214,6 +226,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 def _sse_event(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def _elapsed_ms(started_at: float) -> int:
+    return round((perf_counter() - started_at) * 1000)
 
 
 def _get_or_create_conversation(

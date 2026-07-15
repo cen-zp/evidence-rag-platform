@@ -28,12 +28,14 @@ class KnowledgeBaseRetriever:
         embedding_provider: EmbeddingProvider,
         reranker: Reranker | None,
         reranker_candidate_count: int,
+        minimum_score: float | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._vector_store = vector_store
         self._embedding_provider = embedding_provider
         self._reranker = reranker
         self._reranker_candidate_count = reranker_candidate_count
+        self._minimum_score = minimum_score
 
     def search(self, knowledge_base_id: UUID, query: str, top_k: int) -> list[RetrievalHit]:
         vector_hits = self._vector_store.search(
@@ -82,8 +84,9 @@ class KnowledgeBaseRetriever:
         reranked = self._reranker.rerank(query, rerank_candidates)
         return [
             RetrievalHit(chunk=chunks_by_id[result.chunk_id], score=result.score)
-            for result in reranked[:top_k]
-        ]
+            for result in reranked
+            if self._minimum_score is None or result.score >= self._minimum_score
+        ][:top_k]
 
 
 def _reciprocal_rank_fusion(
@@ -109,6 +112,7 @@ def create_knowledge_base_retriever(
         embedding_provider=get_embedding_provider(),
         reranker=get_reranker() if use_reranker else None,
         reranker_candidate_count=settings.reranker_candidate_count,
+        minimum_score=settings.retrieval_min_score if use_reranker else None,
     )
 
 

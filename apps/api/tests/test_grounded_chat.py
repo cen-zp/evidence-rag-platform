@@ -124,6 +124,8 @@ def test_grounded_chat_returns_only_validated_retrieval_citations() -> None:
     payload = response.json()
     assert UUID(payload.pop("conversation_id"))
     assert UUID(payload.pop("assistant_message_id"))
+    assert payload.pop("retrieval_latency_ms") >= 0
+    assert payload.pop("total_latency_ms") >= 0
     assert payload == {
         "answer": "Use the documented release process.",
         "model": "test-model",
@@ -180,12 +182,42 @@ def test_grounded_chat_refuses_when_model_citations_are_invalid() -> None:
     payload = response.json()
     assert UUID(payload.pop("conversation_id"))
     assert UUID(payload.pop("assistant_message_id"))
+    assert payload.pop("retrieval_latency_ms") >= 0
+    assert payload.pop("total_latency_ms") >= 0
     assert payload == {
         "answer": "我无法根据当前检索到的资料生成带有效引用的回答。",
         "model": "retrieval-guard",
         "latency_ms": 0,
         "citations": [],
     }
+
+
+def test_grounded_chat_low_confidence_guard_skips_the_model() -> None:
+    client, knowledge_base_id, _ = create_chat_client()
+    retriever = StaticRetriever([])
+    client.app.state.knowledge_base_retriever_factory = lambda: retriever
+
+    def unexpected_service():
+        raise AssertionError("The model must not run without confident evidence")
+
+    client.app.state.chat_service_factory = unexpected_service
+    response = client.post(
+        "/api/chat",
+        json={
+            "message": "What is outside this knowledge base?",
+            "knowledge_base_id": str(knowledge_base_id),
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["model"] == "retrieval-guard"
+    assert payload["citations"] == []
+    assert payload["retrieval_latency_ms"] >= 0
+    assert payload["total_latency_ms"] >= payload["retrieval_latency_ms"]
+    assert retriever.calls == [
+        (knowledge_base_id, "What is outside this knowledge base?", 5)
+    ]
 
 
 def test_grounded_chat_records_the_cost_price_snapshot() -> None:

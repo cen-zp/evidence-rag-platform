@@ -64,6 +64,7 @@ def build_run_metadata(
         "reranker_candidate_count": settings.reranker_candidate_count
         if reranker_enabled
         else None,
+        "retrieval_min_score": settings.retrieval_min_score if reranker_enabled else None,
         "warmup_queries_excluded": warmup_queries,
     }
 

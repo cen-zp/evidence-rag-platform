@@ -1,0 +1,1282 @@
+{
+  "calibrated_at_utc": "2026-07-15T11:11:13.049467+00:00",
+  "method": "offline_labeled_top_reranker_score",
+  "selected_threshold": 0.02,
+  "selection_constraints": {
+    "minimum_supported_acceptance": 0.9,
+    "threshold_step": 0.01
+  },
+  "metrics": {
+    "threshold": 0.02,
+    "supported_acceptance": 0.9027777777777778,
+    "unsupported_rejection": 0.9166666666666666,
+    "balanced_accuracy": 0.9097222222222222,
+    "supported_false_refusal_count": 7,
+    "unsupported_false_acceptance_count": 2,
+    "expected_retrieval_recall_at_k": 0.8888888888888888,
+    "expected_retrieval_recall_after_threshold": 0.8194444444444444
+  },
+  "sample_count": 96,
+  "supported_count": 72,
+  "unsupported_count": 24,
+  "chunk_count": 129,
+  "top_k": 5,
+  "embedding_model": "BAAI/bge-small-zh-v1.5",
+  "reranker_model": "BAAI/bge-reranker-base",
+  "reranker_candidate_count": 10,
+  "device": "cpu",
+  "corpus_sha256": "234fcfa885453915d3176e9f40a8257ca9019f8ef322e8fe33f3e23d7f4e07f7",
+  "supported_cases_sha256": "5d75df7b7ddbe07a46d27ec8226971682fd6a81565405b0576cdd0efdd261ac1",
+  "unsupported_cases_sha256": "c9cd446a248b2ca6c0ce13e4b39a2c1cecbf0c22c8e46549178664129139d343",
+  "evidence_boundary": "The supported cases retain their existing single-reviewer provenance. The unsupported cases are developer-curated obvious out-of-corpus topics, not an independent third-party review.",
+  "samples": [
+    {
+      "case_id": "path-01",
+      "label": "supported",
+      "top_score": 0.08930264,
+      "expected_hit": false,
+      "top_filenames": [
+        "02-query-params.md",
+        "02-query-params.md",
+        "02-query-params.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "path-02",
+      "label": "supported",
+      "top_score": 0.01436026,
+      "expected_hit": true,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "01-path-params.md",
+        "05-response-model.md",
+        "09-oauth2-jwt.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "path-03",
+      "label": "supported",
+      "top_score": 0.20556356,
+      "expected_hit": true,
+      "top_filenames": [
+        "01-path-params.md",
+        "05-response-model.md",
+        "01-path-params.md",
+        "03-request-body.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "path-04",
+      "label": "supported",
+      "top_score": 0.01612398,
+      "expected_hit": false,
+      "top_filenames": [
+        "04-dependencies.md",
+        "03-request-body.md",
+        "03-request-body.md",
+        "05-response-model.md",
+        "02-query-params.md"
+      ]
+    },
+    {
+      "case_id": "path-05",
+      "label": "supported",
+      "top_score": 0.11015171,
+      "expected_hit": true,
+      "top_filenames": [
+        "02-query-params.md",
+        "01-path-params.md",
+        "02-query-params.md",
+        "02-query-params.md",
+        "03-request-body.md"
+      ]
+    },
+    {
+      "case_id": "path-06",
+      "label": "supported",
+      "top_score": 0.99003875,
+      "expected_hit": true,
+      "top_filenames": [
+        "01-path-params.md",
+        "01-path-params.md",
+        "09-oauth2-jwt.md",
+        "04-dependencies.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "path-07",
+      "label": "supported",
+      "top_score": 0.94091517,
+      "expected_hit": true,
+      "top_filenames": [
+        "01-path-params.md",
+        "03-request-body.md",
+        "04-dependencies.md",
+        "03-request-body.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "path-08",
+      "label": "supported",
+      "top_score": 0.78150344,
+      "expected_hit": true,
+      "top_filenames": [
+        "01-path-params.md",
+        "01-path-params.md",
+        "04-dependencies.md",
+        "03-request-body.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "query-01",
+      "label": "supported",
+      "top_score": 0.57081127,
+      "expected_hit": true,
+      "top_filenames": [
+        "02-query-params.md",
+        "02-query-params.md",
+        "02-query-params.md",
+        "02-query-params.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "query-02",
+      "label": "supported",
+      "top_score": 0.68541354,
+      "expected_hit": true,
+      "top_filenames": [
+        "02-query-params.md",
+        "02-query-params.md",
+        "02-query-params.md",
+        "09-oauth2-jwt.md",
+        "07-testing.md"
+      ]
+    },
+    {
+      "case_id": "query-03",
+      "label": "supported",
+      "top_score": 0.05264131,
+      "expected_hit": true,
+      "top_filenames": [
+        "02-query-params.md",
+        "02-query-params.md",
+        "03-request-body.md",
+        "03-request-body.md",
+        "03-request-body.md"
+      ]
+    },
+    {
+      "case_id": "query-04",
+      "label": "supported",
+      "top_score": 0.07586604,
+      "expected_hit": false,
+      "top_filenames": [
+        "03-request-body.md",
+        "03-request-body.md",
+        "08-sql-databases.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "query-05",
+      "label": "supported",
+      "top_score": 0.99115163,
+      "expected_hit": true,
+      "top_filenames": [
+        "02-query-params.md",
+        "01-path-params.md",
+        "01-path-params.md",
+        "04-dependencies.md",
+        "02-query-params.md"
+      ]
+    },
+    {
+      "case_id": "query-06",
+      "label": "supported",
+      "top_score": 0.84502554,
+      "expected_hit": true,
+      "top_filenames": [
+        "02-query-params.md",
+        "01-path-params.md",
+        "08-sql-databases.md",
+        "01-path-params.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "query-07",
+      "label": "supported",
+      "top_score": 0.06291405,
+      "expected_hit": false,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "01-path-params.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "query-08",
+      "label": "supported",
+      "top_score": 0.81327271,
+      "expected_hit": true,
+      "top_filenames": [
+        "03-request-body.md",
+        "02-query-params.md",
+        "05-response-model.md",
+        "08-sql-databases.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "body-01",
+      "label": "supported",
+      "top_score": 0.04580639,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "07-testing.md",
+        "05-response-model.md",
+        "03-request-body.md"
+      ]
+    },
+    {
+      "case_id": "body-02",
+      "label": "supported",
+      "top_score": 0.5636695,
+      "expected_hit": true,
+      "top_filenames": [
+        "03-request-body.md",
+        "06-handling-errors.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "body-03",
+      "label": "supported",
+      "top_score": 0.8026768,
+      "expected_hit": false,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "08-sql-databases.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "body-04",
+      "label": "supported",
+      "top_score": 0.58592832,
+      "expected_hit": false,
+      "top_filenames": [
+        "01-path-params.md",
+        "02-query-params.md",
+        "01-path-params.md",
+        "01-path-params.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "body-05",
+      "label": "supported",
+      "top_score": 0.86429048,
+      "expected_hit": true,
+      "top_filenames": [
+        "03-request-body.md",
+        "03-request-body.md",
+        "04-dependencies.md",
+        "01-path-params.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "body-06",
+      "label": "supported",
+      "top_score": 0.15659112,
+      "expected_hit": true,
+      "top_filenames": [
+        "03-request-body.md",
+        "03-request-body.md",
+        "01-path-params.md",
+        "05-response-model.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "body-07",
+      "label": "supported",
+      "top_score": 0.02731344,
+      "expected_hit": true,
+      "top_filenames": [
+        "03-request-body.md",
+        "03-request-body.md",
+        "02-query-params.md",
+        "05-response-model.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "body-08",
+      "label": "supported",
+      "top_score": 0.99270976,
+      "expected_hit": true,
+      "top_filenames": [
+        "03-request-body.md",
+        "05-response-model.md",
+        "03-request-body.md",
+        "03-request-body.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "deps-01",
+      "label": "supported",
+      "top_score": 0.09642316,
+      "expected_hit": true,
+      "top_filenames": [
+        "04-dependencies.md",
+        "04-dependencies.md",
+        "05-response-model.md",
+        "04-dependencies.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "deps-02",
+      "label": "supported",
+      "top_score": 0.00207388,
+      "expected_hit": false,
+      "top_filenames": [
+        "05-response-model.md",
+        "03-request-body.md",
+        "08-sql-databases.md",
+        "01-path-params.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "deps-03",
+      "label": "supported",
+      "top_score": 0.27623302,
+      "expected_hit": true,
+      "top_filenames": [
+        "04-dependencies.md",
+        "05-response-model.md",
+        "03-request-body.md",
+        "01-path-params.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "deps-04",
+      "label": "supported",
+      "top_score": 0.80349529,
+      "expected_hit": true,
+      "top_filenames": [
+        "04-dependencies.md",
+        "04-dependencies.md",
+        "08-sql-databases.md",
+        "05-response-model.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "deps-05",
+      "label": "supported",
+      "top_score": 0.9045347,
+      "expected_hit": true,
+      "top_filenames": [
+        "04-dependencies.md",
+        "04-dependencies.md",
+        "07-testing.md",
+        "04-dependencies.md",
+        "07-testing.md"
+      ]
+    },
+    {
+      "case_id": "deps-06",
+      "label": "supported",
+      "top_score": 0.31849673,
+      "expected_hit": true,
+      "top_filenames": [
+        "01-path-params.md",
+        "04-dependencies.md",
+        "04-dependencies.md",
+        "04-dependencies.md",
+        "03-request-body.md"
+      ]
+    },
+    {
+      "case_id": "deps-07",
+      "label": "supported",
+      "top_score": 0.19647777,
+      "expected_hit": true,
+      "top_filenames": [
+        "04-dependencies.md",
+        "09-oauth2-jwt.md",
+        "04-dependencies.md",
+        "09-oauth2-jwt.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "deps-08",
+      "label": "supported",
+      "top_score": 0.01107999,
+      "expected_hit": true,
+      "top_filenames": [
+        "04-dependencies.md",
+        "04-dependencies.md",
+        "01-path-params.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "response-01",
+      "label": "supported",
+      "top_score": 0.89231294,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "response-02",
+      "label": "supported",
+      "top_score": 0.0475217,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "response-03",
+      "label": "supported",
+      "top_score": 0.81400585,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "response-04",
+      "label": "supported",
+      "top_score": 0.99859899,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "response-05",
+      "label": "supported",
+      "top_score": 0.91339982,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "response-06",
+      "label": "supported",
+      "top_score": 0.70172358,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "response-07",
+      "label": "supported",
+      "top_score": 0.91758883,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "response-08",
+      "label": "supported",
+      "top_score": 0.12100323,
+      "expected_hit": true,
+      "top_filenames": [
+        "05-response-model.md",
+        "05-response-model.md",
+        "05-response-model.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "errors-01",
+      "label": "supported",
+      "top_score": 0.94279361,
+      "expected_hit": true,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "errors-02",
+      "label": "supported",
+      "top_score": 0.97257316,
+      "expected_hit": true,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "errors-03",
+      "label": "supported",
+      "top_score": 0.0230228,
+      "expected_hit": true,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "05-response-model.md",
+        "02-query-params.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "errors-04",
+      "label": "supported",
+      "top_score": 0.02933742,
+      "expected_hit": true,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "09-oauth2-jwt.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "errors-05",
+      "label": "supported",
+      "top_score": 0.82962281,
+      "expected_hit": true,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "04-dependencies.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "errors-06",
+      "label": "supported",
+      "top_score": 0.29585126,
+      "expected_hit": true,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "09-oauth2-jwt.md"
+      ]
+    },
+    {
+      "case_id": "errors-07",
+      "label": "supported",
+      "top_score": 0.9992938,
+      "expected_hit": true,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "errors-08",
+      "label": "supported",
+      "top_score": 0.25152302,
+      "expected_hit": true,
+      "top_filenames": [
+        "04-dependencies.md",
+        "05-response-model.md",
+        "04-dependencies.md",
+        "06-handling-errors.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "testing-01",
+      "label": "supported",
+      "top_score": 0.89260995,
+      "expected_hit": true,
+      "top_filenames": [
+        "07-testing.md",
+        "07-testing.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md",
+        "07-testing.md"
+      ]
+    },
+    {
+      "case_id": "testing-02",
+      "label": "supported",
+      "top_score": 0.99210244,
+      "expected_hit": true,
+      "top_filenames": [
+        "07-testing.md",
+        "07-testing.md",
+        "04-dependencies.md",
+        "07-testing.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "testing-03",
+      "label": "supported",
+      "top_score": 0.26324296,
+      "expected_hit": true,
+      "top_filenames": [
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md"
+      ]
+    },
+    {
+      "case_id": "testing-04",
+      "label": "supported",
+      "top_score": 0.07810226,
+      "expected_hit": false,
+      "top_filenames": [
+        "02-query-params.md",
+        "05-response-model.md",
+        "03-request-body.md",
+        "01-path-params.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "testing-05",
+      "label": "supported",
+      "top_score": 0.39696458,
+      "expected_hit": true,
+      "top_filenames": [
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md"
+      ]
+    },
+    {
+      "case_id": "testing-06",
+      "label": "supported",
+      "top_score": 0.94894075,
+      "expected_hit": true,
+      "top_filenames": [
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "testing-07",
+      "label": "supported",
+      "top_score": 0.02698745,
+      "expected_hit": true,
+      "top_filenames": [
+        "07-testing.md",
+        "08-sql-databases.md",
+        "07-testing.md",
+        "07-testing.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "testing-08",
+      "label": "supported",
+      "top_score": 0.32378459,
+      "expected_hit": true,
+      "top_filenames": [
+        "01-path-params.md",
+        "05-response-model.md",
+        "03-request-body.md",
+        "07-testing.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "sql-01",
+      "label": "supported",
+      "top_score": 0.98506123,
+      "expected_hit": true,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "04-dependencies.md",
+        "06-handling-errors.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "sql-02",
+      "label": "supported",
+      "top_score": 0.82226825,
+      "expected_hit": true,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "sql-03",
+      "label": "supported",
+      "top_score": 0.49440441,
+      "expected_hit": true,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "sql-04",
+      "label": "supported",
+      "top_score": 0.99016678,
+      "expected_hit": true,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "02-query-params.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "sql-05",
+      "label": "supported",
+      "top_score": 0.7782498,
+      "expected_hit": true,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "07-testing.md"
+      ]
+    },
+    {
+      "case_id": "sql-06",
+      "label": "supported",
+      "top_score": 0.00322586,
+      "expected_hit": true,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "sql-07",
+      "label": "supported",
+      "top_score": 0.96528739,
+      "expected_hit": true,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "sql-08",
+      "label": "supported",
+      "top_score": 0.51343602,
+      "expected_hit": true,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "jwt-01",
+      "label": "supported",
+      "top_score": 0.3577666,
+      "expected_hit": true,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md"
+      ]
+    },
+    {
+      "case_id": "jwt-02",
+      "label": "supported",
+      "top_score": 0.11719864,
+      "expected_hit": true,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "05-response-model.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md"
+      ]
+    },
+    {
+      "case_id": "jwt-03",
+      "label": "supported",
+      "top_score": 0.00617059,
+      "expected_hit": true,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "05-response-model.md",
+        "08-sql-databases.md",
+        "05-response-model.md",
+        "08-sql-databases.md"
+      ]
+    },
+    {
+      "case_id": "jwt-04",
+      "label": "supported",
+      "top_score": 0.00180725,
+      "expected_hit": true,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "jwt-05",
+      "label": "supported",
+      "top_score": 0.79152465,
+      "expected_hit": true,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "06-handling-errors.md",
+        "09-oauth2-jwt.md",
+        "07-testing.md"
+      ]
+    },
+    {
+      "case_id": "jwt-06",
+      "label": "supported",
+      "top_score": 0.75484234,
+      "expected_hit": true,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md"
+      ]
+    },
+    {
+      "case_id": "jwt-07",
+      "label": "supported",
+      "top_score": 0.57480717,
+      "expected_hit": true,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md"
+      ]
+    },
+    {
+      "case_id": "jwt-08",
+      "label": "supported",
+      "top_score": 0.89073235,
+      "expected_hit": true,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-01",
+      "label": "unsupported",
+      "top_score": 0.00023448,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "04-dependencies.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-02",
+      "label": "unsupported",
+      "top_score": 5.217e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-03",
+      "label": "unsupported",
+      "top_score": 5.183e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "02-query-params.md",
+        "02-query-params.md",
+        "06-handling-errors.md",
+        "09-oauth2-jwt.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-04",
+      "label": "unsupported",
+      "top_score": 4.228e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-05",
+      "label": "unsupported",
+      "top_score": 0.00158321,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "08-sql-databases.md",
+        "09-oauth2-jwt.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-06",
+      "label": "unsupported",
+      "top_score": 3.743e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "01-path-params.md",
+        "02-query-params.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-07",
+      "label": "unsupported",
+      "top_score": 0.00218516,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "05-response-model.md",
+        "04-dependencies.md",
+        "04-dependencies.md",
+        "02-query-params.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-08",
+      "label": "unsupported",
+      "top_score": 9.116e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "01-path-params.md",
+        "06-handling-errors.md",
+        "09-oauth2-jwt.md",
+        "01-path-params.md",
+        "07-testing.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-09",
+      "label": "unsupported",
+      "top_score": 3.737e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "06-handling-errors.md",
+        "04-dependencies.md",
+        "08-sql-databases.md",
+        "05-response-model.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-10",
+      "label": "unsupported",
+      "top_score": 0.00119681,
+      "expected_hit": false,
+      "top_filenames": [
+        "03-request-body.md",
+        "08-sql-databases.md",
+        "03-request-body.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-11",
+      "label": "unsupported",
+      "top_score": 3.745e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "04-dependencies.md",
+        "05-response-model.md",
+        "03-request-body.md",
+        "05-response-model.md",
+        "02-query-params.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-12",
+      "label": "unsupported",
+      "top_score": 6.79e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "08-sql-databases.md",
+        "04-dependencies.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-13",
+      "label": "unsupported",
+      "top_score": 3.744e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "05-response-model.md",
+        "08-sql-databases.md",
+        "09-oauth2-jwt.md",
+        "01-path-params.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-14",
+      "label": "unsupported",
+      "top_score": 3.743e-05,
+      "expected_hit": false,
+      "top_filenames": [
+        "05-response-model.md",
+        "02-query-params.md",
+        "01-path-params.md",
+        "05-response-model.md",
+        "04-dependencies.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-15",
+      "label": "unsupported",
+      "top_score": 0.00032282,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "01-path-params.md",
+        "03-request-body.md",
+        "08-sql-databases.md",
+        "03-request-body.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-16",
+      "label": "unsupported",
+      "top_score": 0.00025149,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "02-query-params.md",
+        "05-response-model.md",
+        "09-oauth2-jwt.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-17",
+      "label": "unsupported",
+      "top_score": 0.00065756,
+      "expected_hit": false,
+      "top_filenames": [
+        "04-dependencies.md",
+        "05-response-model.md",
+        "04-dependencies.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-18",
+      "label": "unsupported",
+      "top_score": 0.03009396,
+      "expected_hit": false,
+      "top_filenames": [
+        "01-path-params.md",
+        "06-handling-errors.md",
+        "09-oauth2-jwt.md",
+        "06-handling-errors.md",
+        "06-handling-errors.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-19",
+      "label": "unsupported",
+      "top_score": 0.00053668,
+      "expected_hit": false,
+      "top_filenames": [
+        "09-oauth2-jwt.md",
+        "09-oauth2-jwt.md",
+        "01-path-params.md",
+        "09-oauth2-jwt.md",
+        "02-query-params.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-20",
+      "label": "unsupported",
+      "top_score": 0.00018218,
+      "expected_hit": false,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "07-testing.md",
+        "07-testing.md",
+        "07-testing.md",
+        "05-response-model.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-21",
+      "label": "unsupported",
+      "top_score": 0.00025394,
+      "expected_hit": false,
+      "top_filenames": [
+        "02-query-params.md",
+        "03-request-body.md",
+        "02-query-params.md",
+        "04-dependencies.md",
+        "09-oauth2-jwt.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-22",
+      "label": "unsupported",
+      "top_score": 0.0016495,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "04-dependencies.md",
+        "04-dependencies.md",
+        "03-request-body.md",
+        "02-query-params.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-23",
+      "label": "unsupported",
+      "top_score": 0.01701767,
+      "expected_hit": false,
+      "top_filenames": [
+        "08-sql-databases.md",
+        "02-query-params.md",
+        "01-path-params.md",
+        "05-response-model.md",
+        "01-path-params.md"
+      ]
+    },
+    {
+      "case_id": "unsupported-24",
+      "label": "unsupported",
+      "top_score": 0.04123994,
+      "expected_hit": false,
+      "top_filenames": [
+        "07-testing.md",
+        "02-query-params.md",
+        "03-request-body.md",
+        "05-response-model.md",
+        "05-response-model.md"
+      ]
+    }
+  ]
+}
