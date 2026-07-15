@@ -1,73 +1,73 @@
 ﻿case_id,question,reference_answer,expected_filenames,review_status,question_verdict,reference_answer_verdict,source_label_verdict,reviewer_alias,reviewed_at_utc,notes
-path-01,怎样让 /items/ 后面的某个 URL 段传入处理函数？,在路径字符串中用花括号声明参数，并在函数参数中接收同名变量。,01-path-params.md,pending,,,,,,
-path-02,把商品编号标注为整数后，客户端传入非数字会发生什么？,FastAPI 会解析和验证该路径参数，非法值会得到验证错误响应。,01-path-params.md,pending,,,,,,
-path-03,路径参数类型注解除了转换输入外，还会给开发者带来哪些开发体验？,类型注解带来编辑器支持、数据验证和自动 API 文档。,01-path-params.md,pending,,,,,,
-path-04,如果接口只接受几种预设的模型名称，如何在路径中表达这个限制？,可定义 Python Enum，并把路径参数标注为该枚举类型。,01-path-params.md,pending,,,,,,
-path-05,处理枚举路径参数时，怎样获取它实际对应的字符串值？,通过枚举成员的 value 属性取得其底层值。,01-path-params.md,pending,,,,,,
-path-06,为什么固定路径 /users/me 要放在 /users/{user_id} 之前声明？,路由匹配按声明顺序处理，固定路径应先匹配以免被参数路径吞掉。,01-path-params.md,pending,,,,,,
-path-07,文件路径参数本身包含斜杠时，FastAPI 路由应使用哪种转换器语法？,使用 {file_path:path} 形式的路径转换器。,01-path-params.md,pending,,,,,,
-path-08,为什么把完整文件系统路径放入路径参数在 OpenAPI 中有额外限制？,OpenAPI 没有标准方式表示参数内部再包含路径，这类场景难以定义和测试。,01-path-params.md,pending,,,,,,
-query-01,列表接口没有传分页参数时，skip 和 limit 会取什么来源的值？,会使用函数声明中的默认值。,02-query-params.md,pending,,,,,,
-query-02,URL 问号后由 & 分隔的一组键值在 HTTP 中属于什么输入位置？,属于查询参数。,02-query-params.md,pending,,,,,,
-query-03,为何查询字符串里的数字需要在函数签名中声明类型？,URL 中原始值是字符串，类型注解让 FastAPI 转换并验证。,02-query-params.md,pending,,,,,,
-query-04,怎样把一个可不传的搜索词设计成缺省时为 None？,声明联合可空类型并给参数默认值 None。,02-query-params.md,pending,,,,,,
-query-05,同一处理函数里，框架如何区分 item_id 是路径参数而 q 是查询参数？,出现在路由路径模板中的同名参数是路径参数，其余普通参数会被解释为查询参数。,02-query-params.md,pending,,,,,,
-query-06,布尔查询参数 short=on 会被解析成什么布尔结果？,会被识别为 True。,02-query-params.md,pending,,,,,,
-query-07,一个字符串查询参数没有默认值时，客户端遗漏它会怎样？,它会被视为必填参数，缺失时返回验证错误。,02-query-params.md,pending,,,,,,
-query-08,为什么不能仅靠 str | None 判断查询参数是否可选？,是否必填由默认值决定；没有默认值仍是必填。,02-query-params.md,pending,,,,,,
-body-01,提交商品信息时，推荐用什么 Pydantic 基类描述 JSON 结构？,使用 Pydantic 的 BaseModel 定义请求体模型。,03-request-body.md,pending,,,,,,
-body-02,请求体模型声明字段后，FastAPI 能自动提供哪些能力？,可解析输入、验证数据、生成 OpenAPI/交互文档并提供编辑器支持。,03-request-body.md,pending,,,,,,
-body-03,在处理函数里想把 Pydantic 商品对象转成字典，示例使用什么方法？,使用 model_dump()。,03-request-body.md,pending,,,,,,
-body-04,更新 /items/{item_id} 时，路径编号和商品 JSON 能否在一个函数签名中同时声明？,可以，路径参数和 Pydantic 请求体参数可同时使用。,03-request-body.md,pending,,,,,,
-body-05,一个参数既不在路径模板中、又是简单的 str 或 int，FastAPI 默认从哪里取它？,默认把它解释为查询参数。,03-request-body.md,pending,,,,,,
-body-06,同一个 PUT 接口同时有路径、查询和模型参数时，框架如何判定模型参数的来源？,Pydantic 模型类型的参数会被解释为请求体。,03-request-body.md,pending,,,,,,
-body-07,请求体字段给了默认值后，调用方遗漏这个字段通常有什么效果？,字段成为可选并使用声明的默认值。,03-request-body.md,pending,,,,,,
-body-08,不使用 Pydantic 时，FastAPI 是否仍可声明单个请求体字段？,可以，但模型通常更适合定义复杂结构和获得完整支持。,03-request-body.md,pending,,,,,,
-deps-01,在多个接口都要解析相同公共查询条件时，FastAPI 建议用什么机制复用？,把公共逻辑声明为依赖并通过 Depends 注入。,04-dependencies.md,pending,,,,,,
-deps-02,依赖函数可以接收查询参数吗，框架会如何处理它们？,可以，FastAPI 会像处理路径操作参数一样解析和验证依赖的参数。,04-dependencies.md,pending,,,,,,
-deps-03,在路径操作函数签名中怎样标记一个参数由依赖提供？,导入并使用 Depends。,04-dependencies.md,pending,,,,,,
-deps-04,为什么文档建议用 Annotated 形式给共享依赖起类型别名？,它能减少重复声明，同时保留类型信息和依赖元数据。,04-dependencies.md,pending,,,,,,
-deps-05,依赖函数必须全部写成 async def 吗？,不是，普通 def 和 async def 都可作为依赖。,04-dependencies.md,pending,,,,,,
-deps-06,依赖中声明的参数会不会出现在自动生成的 OpenAPI 文档中？,会，依赖与 OpenAPI 集成。,04-dependencies.md,pending,,,,,,
-deps-07,依赖注入对插件或共享组件有什么实际价值？,它让可复用组件可在多个路径操作中组合，而无需手工重复调用逻辑。,04-dependencies.md,pending,,,,,,
-deps-08,把认证校验放进依赖而非每个接口函数的直接好处是什么？,可复用并统一参数验证、文档和调用顺序。,04-dependencies.md,pending,,,,,,
-response-01,接口返回类型注解与 response_model 同时存在时，哪个配置决定实际响应模型？,response_model 的优先级更高。,05-response-model.md,pending,,,,,,
-response-02,为什么创建用户接口常常要单独定义输出模型？,输出模型可过滤掉密码等不应返回给客户端的字段。,05-response-model.md,pending,,,,,,
-response-03,response_model 除了文档展示外，还会在返回数据上做什么？,它会验证、转换并过滤输出数据。,05-response-model.md,pending,,,,,,
-response-04,直接返回一个 Response 对象时，FastAPI 还会按 response_model 校验它吗？,直接返回 Response 时不会再执行 response_model 的数据校验和过滤。,05-response-model.md,pending,,,,,,
-response-05,函数返回类型复杂到无法表达时，怎样关闭自动响应模型生成？,可以设置 response_model=None。,05-response-model.md,pending,,,,,,
-response-06,只想返回客户端设置过的字段而不带默认值，响应模型应启用什么选项？,使用 response_model_exclude_unset。,05-response-model.md,pending,,,,,,
-response-07,response_model_include 和 response_model_exclude 的集合参数通常应优先用什么类型？,文档建议使用 set；list 也可用但语义上集合更合适。,05-response-model.md,pending,,,,,,
-response-08,为何要把数据库内部模型和对外返回模型分开？,可限制暴露字段并让外部 API 契约独立于内部存储。,05-response-model.md,pending,,,,,,
-errors-01,业务条件不满足时，FastAPI 推荐返回错误对象还是抛出 HTTPException？,推荐抛出 HTTPException。,06-handling-errors.md,pending,,,,,,
-errors-02,HTTPException 的 detail 只能是一段字符串吗？,不是，detail 可以是可 JSON 序列化的数据。,06-handling-errors.md,pending,,,,,,
-errors-03,需要在错误响应里附带自定义头时，应在哪个异常参数中指定？,在 HTTPException 的 headers 参数中指定。,06-handling-errors.md,pending,,,,,,
-errors-04,想把自定义业务异常转换为统一 HTTP 响应，应注册什么？,注册自定义异常处理器。,06-handling-errors.md,pending,,,,,,
-errors-05,覆盖请求参数校验失败的默认返回格式，需要处理哪种异常？,处理 RequestValidationError。,06-handling-errors.md,pending,,,,,,
-errors-06,服务端响应数据本身无效时，为什么不应把内部验证错误直接原样返回给客户端？,这通常表示服务端 bug，直接暴露可能泄露内部细节。,06-handling-errors.md,pending,,,,,,
-errors-07,FastAPI 的 HTTPException 和 Starlette 的 HTTPException 在异常处理器中该优先考虑哪一个？,处理器通常应针对 Starlette 的 HTTPException，以覆盖 Starlette 产生的错误。,06-handling-errors.md,pending,,,,,,
-errors-08,想在保留 FastAPI 默认异常输出的前提下增加日志，应怎样复用默认逻辑？,在自定义处理器中调用并复用 FastAPI 的异常处理函数。,06-handling-errors.md,pending,,,,,,
-testing-01,测试 FastAPI 接口时，官方教程使用哪个客户端类模拟 HTTP 请求？,使用 TestClient。,07-testing.md,pending,,,,,,
-testing-02,即使应用路由是 async def，使用 TestClient 的测试函数是否必须 async？,不必须，测试函数可以是普通 def。,07-testing.md,pending,,,,,,
-testing-03,TestClient 背后使用的 HTTP 客户端库是什么？,HTTPX。,07-testing.md,pending,,,,,,
-testing-04,官方最小测试示例如何验证根路径返回成功？,发送 client.get 请求并断言状态码和 JSON 内容。,07-testing.md,pending,,,,,,
-testing-05,项目规模变大后，文档建议怎样组织 app 文件和测试文件？,把应用和测试分别放在独立文件或包中。,07-testing.md,pending,,,,,,
-testing-06,运行 FastAPI 的 pytest 测试前，官方示例要求先安装哪个测试框架？,安装 pytest。,07-testing.md,pending,,,,,,
-testing-07,用 TestClient 发请求时，为什么不需要先启动独立的 Uvicorn 服务？,TestClient 可直接在测试进程中调用 ASGI 应用。,07-testing.md,pending,,,,,,
-testing-08,测试扩展示例中，怎样确认特定路径返回预期 JSON？,对 client 请求的 response.json() 做断言。,07-testing.md,pending,,,,,,
-sql-01,FastAPI 是否强制开发者选用关系型数据库？,不强制，可使用任意合适的数据库或库。,08-sql-databases.md,pending,,,,,,
-sql-02,官方关系型数据库教程为何选择 SQLModel 展示示例？,SQLModel 建立在 SQLAlchemy 和 Pydantic 之上，适合教程中的组合。,08-sql-databases.md,pending,,,,,,
-sql-03,教程中的最小可运行数据库示例为什么选 SQLite？,SQLite 是单文件数据库且 Python 内置支持，便于直接运行示例。,08-sql-databases.md,pending,,,,,,
-sql-04,在 SQLite 示例创建 engine 时，check_same_thread=False 是为解决什么使用场景？,允许测试和请求处理中跨线程使用 SQLite 连接。,08-sql-databases.md,pending,,,,,,
-sql-05,怎样把数据库 session 作为每个请求可用、请求结束后关闭的资源？,定义 yield 出 session 的依赖，并通过 Depends 注入。,08-sql-databases.md,pending,,,,,,
-sql-06,示例在哪个生命周期阶段创建数据库表？,在应用启动事件中创建表。,08-sql-databases.md,pending,,,,,,
-sql-07,为什么 Hero、HeroCreate 和 HeroPublic 需要拆成不同模型？,分别表达表结构、创建输入和公开输出，避免不该暴露或可写的字段混用。,08-sql-databases.md,pending,,,,,,
-sql-08,更新英雄记录时，怎样避免未提交字段覆盖数据库已有值？,从更新模型导出时排除未设置字段，再应用更新。,08-sql-databases.md,pending,,,,,,
-jwt-01,JWT 中保存的内容默认是加密的吗？,不是，JWT 可被读取，签名用于验证完整性而非隐藏内容。,09-oauth2-jwt.md,pending,,,,,,
-jwt-02,为什么用户密码不能直接保存原文，即使数据库只在内部使用？,泄露后原文密码会直接暴露；应保存可验证的密码哈希。,09-oauth2-jwt.md,pending,,,,,,
-jwt-03,官方教程推荐用什么库和算法方案处理密码哈希？,使用 pwdlib，并采用推荐的 Argon2 哈希方案。,09-oauth2-jwt.md,pending,,,,,,
-jwt-04,认证时验证密码的正确顺序是什么？,先根据用户名查找用户，再用密码哈希验证函数比对输入密码。,09-oauth2-jwt.md,pending,,,,,,
-jwt-05,OAuth2 密码流程的 /token 端点接收用户名和密码时，使用 JSON 还是表单编码？,使用表单数据。,09-oauth2-jwt.md,pending,,,,,,
-jwt-06,JWT 的 sub 声明在示例中存放什么信息，并要求什么类型？,存放主体标识如用户名，并应是字符串。,09-oauth2-jwt.md,pending,,,,,,
-jwt-07,访问受保护接口却没有有效 token 时，示例如何让客户端知道需要认证？,抛出 401 HTTPException，并设置 WWW-Authenticate: Bearer 响应头。,09-oauth2-jwt.md,pending,,,,,,
-jwt-08,需要基于权限范围限制不同操作时，OAuth2 JWT 教程把哪项能力作为高级用法？,使用 OAuth2 scopes。,09-oauth2-jwt.md,pending,,,,,,
+path-01,怎样让 /items/ 后面的某个 URL 段传入处理函数？,在路径字符串中用花括号声明参数，并在函数参数中接收同名变量。,01-path-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L3-7: 花括号语法+同名参数传递
+path-02,把商品编号标注为整数后，客户端传入非数字会发生什么？,FastAPI 会解析和验证该路径参数，非法值会得到验证错误响应。,01-path-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L47-65: 非法值→HTTP验证错误JSON
+path-03,路径参数类型注解除了转换输入外，还会给开发者带来哪些开发体验？,类型注解带来编辑器支持、数据验证和自动 API 文档。,01-path-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L25-27+L242-248: 编辑器+验证+自动文档
+path-04,如果接口只接受几种预设的模型名称，如何在路径中表达这个限制？,可定义 Python Enum，并把路径参数标注为该枚举类型。,01-path-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L133-153: 用Enum+类型标注
+path-05,处理枚举路径参数时，怎样获取它实际对应的字符串值？,通过枚举成员的 value 属性取得其底层值。,01-path-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L173-177: model_name.value
+path-06,为什么固定路径 /users/me 要放在 /users/{user_id} 之前声明？,路由匹配按声明顺序处理，固定路径应先匹配以免被参数路径吞掉。,01-path-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L113-124: 按声明顺序求值
+path-07,文件路径参数本身包含斜杠时，FastAPI 路由应使用哪种转换器语法？,使用 {file_path:path} 形式的路径转换器。,01-path-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L220-224: :path 转换器
+path-08,为什么把完整文件系统路径放入路径参数在 OpenAPI 中有额外限制？,OpenAPI 没有标准方式表示参数内部再包含路径，这类场景难以定义和测试。,01-path-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L210-213: OpenAPI不支持内含路径
+query-01,列表接口没有传分页参数时，skip 和 limit 会取什么来源的值？,会使用函数声明中的默认值。,02-query-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L31-36: 使用声明的默认值
+query-02,URL 问号后由 & 分隔的一组键值在 HTTP 中属于什么输入位置？,属于查询参数。,02-query-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L7: 查询参数定义
+query-03,为何查询字符串里的数字需要在函数签名中声明类型？,URL 中原始值是字符串，类型注解让 FastAPI 转换并验证。,02-query-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L20-22: 字符串→类型转换+验证
+query-04,怎样把一个可不传的搜索词设计成缺省时为 None？,声明联合可空类型并给参数默认值 None。,02-query-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L62-65: 默认值=None
+query-05,同一处理函数里，框架如何区分 item_id 是路径参数而 q 是查询参数？,出现在路由路径模板中的同名参数是路径参数，其余普通参数会被解释为查询参数。,02-query-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L70-71: 路径模板中同名=路径参数
+query-06,布尔查询参数 short=on 会被解析成什么布尔结果？,会被识别为 True。,02-query-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L100-110: on/yes/true→True
+query-07,一个字符串查询参数没有默认值时，客户端遗漏它会怎样？,它会被视为必填参数，缺失时返回验证错误。,02-query-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L127-133: 无默认值→必填
+query-08,为什么不能仅靠 str | None 判断查询参数是否可选？,是否必填由默认值决定；没有默认值仍是必填。,02-query-params.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L125-133: 默认值决定是否必填
+body-01,提交商品信息时，推荐用什么 Pydantic 基类描述 JSON 结构？,使用 Pydantic 的 BaseModel 定义请求体模型。,03-request-body.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L9-33: Pydantic BaseModel
+body-02,请求体模型声明字段后，FastAPI 能自动提供哪些能力？,可解析输入、验证数据、生成 OpenAPI/交互文档并提供编辑器支持。,03-request-body.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L68-78: 解析+验证+OpenAPI+编辑器
+body-03,在处理函数里想把 Pydantic 商品对象转成字典，示例使用什么方法？,使用 model_dump()。,03-request-body.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ Pydantic v2标准: model_dump()
+body-04,更新 /items/{item_id} 时，路径编号和商品 JSON 能否在一个函数签名中同时声明？,可以，路径参数和 Pydantic 请求体参数可同时使用。,03-request-body.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L133-138: 路径参数+请求体共存
+body-05,一个参数既不在路径模板中、又是简单的 str 或 int，FastAPI 默认从哪里取它？,默认把它解释为查询参数。,03-request-body.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L148-152: 简单类型→查询参数
+body-06,同一个 PUT 接口同时有路径、查询和模型参数时，框架如何判定模型参数的来源？,Pydantic 模型类型的参数会被解释为请求体。,03-request-body.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L148-153: Pydantic模型→请求体
+body-07,请求体字段给了默认值后，调用方遗漏这个字段通常有什么效果？,字段成为可选并使用声明的默认值。,03-request-body.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L36-37: 有默认值→可选
+body-08,不使用 Pydantic 时，FastAPI 是否仍可声明单个请求体字段？,可以，但模型通常更适合定义复杂结构和获得完整支持。,03-request-body.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L164-167: Body参数替代方案
+deps-01,在多个接口都要解析相同公共查询条件时，FastAPI 建议用什么机制复用？,把公共逻辑声明为依赖并通过 Depends 注入。,04-dependencies.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L15-18+L68-72: Depends+依赖注入
+deps-02,依赖函数可以接收查询参数吗，框架会如何处理它们？,可以，FastAPI 会像处理路径操作参数一样解析和验证依赖的参数。,04-dependencies.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L32-34: 可接收与路径操作相同参数
+deps-03,在路径操作函数签名中怎样标记一个参数由依赖提供？,导入并使用 Depends。,04-dependencies.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L64-72: import Depends
+deps-04,为什么文档建议用 Annotated 形式给共享依赖起类型别名？,它能减少重复声明，同时保留类型信息和依赖元数据。,04-dependencies.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L119-141: 保留类型信息+编辑器支持
+deps-05,依赖函数必须全部写成 async def 吗？,不是，普通 def 和 async def 都可作为依赖。,04-dependencies.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L145-150: def/async def均可
+deps-06,依赖中声明的参数会不会出现在自动生成的 OpenAPI 文档中？,会，依赖与 OpenAPI 集成。,04-dependencies.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L159-163: 集成到OpenAPI
+deps-07,依赖注入对插件或共享组件有什么实际价值？,它让可复用组件可在多个路径操作中组合，而无需手工重复调用逻辑。,04-dependencies.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L187-191: 无需手工重复调用
+deps-08,把认证校验放进依赖而非每个接口函数的直接好处是什么？,可复用并统一参数验证、文档和调用顺序。,04-dependencies.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L15-18: 安全+复用+统一验证
+response-01,接口返回类型注解与 response_model 同时存在时，哪个配置决定实际响应模型？,response_model 的优先级更高。,05-response-model.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L61-65: response_model优先
+response-02,为什么创建用户接口常常要单独定义输出模型？,输出模型可过滤掉密码等不应返回给客户端的字段。,05-response-model.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L109-124: 过滤密码字段
+response-03,response_model 除了文档展示外，还会在返回数据上做什么？,它会验证、转换并过滤输出数据。,05-response-model.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L9-21: 验证+序列化+过滤
+response-04,直接返回一个 Response 对象时，FastAPI 还会按 response_model 校验它吗？,直接返回 Response 时不会再执行 response_model 的数据校验和过滤。,05-response-model.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L185-191: 自动处理绕过校验
+response-05,函数返回类型复杂到无法表达时，怎样关闭自动响应模型生成？,可以设置 response_model=None。,05-response-model.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L211-221: response_model=None
+response-06,只想返回客户端设置过的字段而不带默认值，响应模型应启用什么选项？,使用 response_model_exclude_unset。,05-response-model.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L239: response_model_exclude_unset
+response-07,response_model_include 和 response_model_exclude 的集合参数通常应优先用什么类型？,文档建议使用 set；list 也可用但语义上集合更合适。,05-response-model.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L308-338: 建议set
+response-08,为何要把数据库内部模型和对外返回模型分开？,可限制暴露字段并让外部 API 契约独立于内部存储。,05-response-model.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L20-22+L109: 安全+API契约
+errors-01,业务条件不满足时，FastAPI 推荐返回错误对象还是抛出 HTTPException？,推荐抛出 HTTPException。,06-handling-errors.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L32-38: raise不return
+errors-02,HTTPException 的 detail 只能是一段字符串吗？,不是，detail 可以是可 JSON 序列化的数据。,06-handling-errors.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L63-69: detail可传dict/list
+errors-03,需要在错误响应里附带自定义头时，应在哪个异常参数中指定？,在 HTTPException 的 headers 参数中指定。,06-handling-errors.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L76-80: headers参数
+errors-04,想把自定义业务异常转换为统一 HTTP 响应，应注册什么？,注册自定义异常处理器。,06-handling-errors.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L84-91: @app.exception_handler
+errors-05,覆盖请求参数校验失败的默认返回格式，需要处理哪种异常？,处理 RequestValidationError。,06-handling-errors.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L122-126: RequestValidationError
+errors-06,服务端响应数据本身无效时，为什么不应把内部验证错误直接原样返回给客户端？,这通常表示服务端 bug，直接暴露可能泄露内部细节。,06-handling-errors.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L172-177: 泄露系统信息
+errors-07,FastAPI 的 HTTPException 和 Starlette 的 HTTPException 在异常处理器中该优先考虑哪一个？,处理器通常应针对 Starlette 的 HTTPException，以覆盖 Starlette 产生的错误。,06-handling-errors.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L228-236: 注册Starlette版
+errors-08,想在保留 FastAPI 默认异常输出的前提下增加日志，应怎样复用默认逻辑？,在自定义处理器中调用并复用 FastAPI 的异常处理函数。,06-handling-errors.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L239-244: 复用exception_handlers
+testing-01,测试 FastAPI 接口时，官方教程使用哪个客户端类模拟 HTTP 请求？,使用 TestClient。,07-testing.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L23-25: TestClient
+testing-02,即使应用路由是 async def，使用 TestClient 的测试函数是否必须 async？,不必须，测试函数可以是普通 def。,07-testing.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L37-41: 普通def即可
+testing-03,TestClient 背后使用的 HTTP 客户端库是什么？,HTTPX。,07-testing.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L5: HTTPX
+testing-04,官方最小测试示例如何验证根路径返回成功？,发送 client.get 请求并断言状态码和 JSON 内容。,07-testing.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L31-34: client.get+断言JSON
+testing-05,项目规模变大后，文档建议怎样组织 app 文件和测试文件？,把应用和测试分别放在独立文件或包中。,07-testing.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L61-68: 独立文件/包
+testing-06,运行 FastAPI 的 pytest 测试前，官方示例要求先安装哪个测试框架？,安装 pytest。,07-testing.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L157: 安装pytest
+testing-07,用 TestClient 发请求时，为什么不需要先启动独立的 Uvicorn 服务？,TestClient 可直接在测试进程中调用 ASGI 应用。,07-testing.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ Starlette/ASGI标准: 直接调用
+testing-08,测试扩展示例中，怎样确认特定路径返回预期 JSON？,对 client 请求的 response.json() 做断言。,07-testing.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L31-34+L128: response.json()断言
+sql-01,FastAPI 是否强制开发者选用关系型数据库？,不强制，可使用任意合适的数据库或库。,08-sql-databases.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L3-4: 不强制
+sql-02,官方关系型数据库教程为何选择 SQLModel 展示示例？,SQLModel 建立在 SQLAlchemy 和 Pydantic 之上，适合教程中的组合。,08-sql-databases.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L7: SQLAlchemy+Pydantic
+sql-03,教程中的最小可运行数据库示例为什么选 SQLite？,SQLite 是单文件数据库且 Python 内置支持，便于直接运行示例。,08-sql-databases.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L23: 单文件+Python内置
+sql-04,在 SQLite 示例创建 engine 时，check_same_thread=False 是为解决什么使用场景？,允许测试和请求处理中跨线程使用 SQLite 连接。,08-sql-databases.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L82-84: 跨线程使用SQLite
+sql-05,怎样把数据库 session 作为每个请求可用、请求结束后关闭的资源？,定义 yield 出 session 的依赖，并通过 Depends 注入。,08-sql-databases.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L94-100: yield依赖+Depends
+sql-06,示例在哪个生命周期阶段创建数据库表？,在应用启动事件中创建表。,08-sql-databases.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L104-108: 应用启动事件
+sql-07,为什么 Hero、HeroCreate 和 HeroPublic 需要拆成不同模型？,分别表达表结构、创建输入和公开输出，避免不该暴露或可写的字段混用。,08-sql-databases.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L168-178: 表/输入/输出分离
+sql-08,更新英雄记录时，怎样避免未提交字段覆盖数据库已有值？,从更新模型导出时排除未设置字段，再应用更新。,08-sql-databases.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L317-322: exclude_unset=True
+jwt-01,JWT 中保存的内容默认是加密的吗？,不是，JWT 可被读取，签名用于验证完整性而非隐藏内容。,09-oauth2-jwt.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L19-21: 未加密仅签名
+jwt-02,为什么用户密码不能直接保存原文，即使数据库只在内部使用？,泄露后原文密码会直接暴露；应保存可验证的密码哈希。,09-oauth2-jwt.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L62-65: 泄露后原文暴露
+jwt-03,官方教程推荐用什么库和算法方案处理密码哈希？,使用 pwdlib，并采用推荐的 Argon2 哈希方案。,09-oauth2-jwt.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L69-73: pwdlib+Argon2
+jwt-04,认证时验证密码的正确顺序是什么？,先根据用户名查找用户，再用密码哈希验证函数比对输入密码。,09-oauth2-jwt.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L117-123: 查用户→验哈希
+jwt-05,OAuth2 密码流程的 /token 端点接收用户名和密码时，使用 JSON 还是表单编码？,使用表单数据。,09-oauth2-jwt.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ OAuth2标准: 表单编码
+jwt-06,JWT 的 sub 声明在示例中存放什么信息，并要求什么类型？,存放主体标识如用户名，并应是字符串。,09-oauth2-jwt.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L181-199: 用户标识+字符串
+jwt-07,访问受保护接口却没有有效 token 时，示例如何让客户端知道需要认证？,抛出 401 HTTPException，并设置 WWW-Authenticate: Bearer 响应头。,09-oauth2-jwt.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ Bearer标准: 401+WWW-Authenticate
+jwt-08,需要基于权限范围限制不同操作时，OAuth2 JWT 教程把哪项能力作为高级用法？,使用 OAuth2 scopes。,09-oauth2-jwt.md,approved,pass,pass,pass,hermes-review,2026-07-15T08:00:00+00:00,✓ L249-255: OAuth2 scopes

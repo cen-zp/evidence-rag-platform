@@ -1,0 +1,28 @@
+{
+  "case_count": 72,
+  "top_k": 3,
+  "recall_at_k": 0.8472222222222222,
+  "mean_reciprocal_rank": 0.7430555555555556,
+  "mean_latency_ms": 65.72156191670804,
+  "p95_latency_ms": 74.03666699974565,
+  "reranker_enabled": false,
+  "run_metadata": {
+    "evaluated_at_utc": "2026-07-15T04:46:15.863099+00:00",
+    "embedding_model": "BAAI/bge-small-zh-v1.5",
+    "embedding_dimension": 512,
+    "embedding_device": "cpu",
+    "qdrant_collection": "document_chunks_bge_small_zh_v1_5",
+    "reranker_model": null,
+    "reranker_candidate_count": null
+  },
+  "formal_dataset": {
+    "dataset_name": "FastAPI official documentation independent evaluation set",
+    "dataset_origin": "independent",
+    "case_count": 72,
+    "dataset_sha256": "5d75df7b7ddbe07a46d27ec8226971682fd6a81565405b0576cdd0efdd261ac1",
+    "manifest_sha256": "c621327238906fa9184f0c4054d1b616617081edeef320ad1636fa035bce7ec7",
+    "reviewed_case_count": 72,
+    "reviewer_count": 1,
+    "review_sha256": "fa9cf3f67229bfd2edd07958639f60434c7d57ddd2adf45ae534da8c332f4bde"
+  }
+}

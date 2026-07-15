@@ -149,6 +149,21 @@
 
 结论：知识库删除的 API、容器链路与数据清理契约已验证。页面删除操作会先要求确认；本次只操作临时验收数据，未删除任何既有知识库。
 
+## 2026-07-15：FastAPI 官方文档正式检索评测
+
+- 语料与题集：9 篇 FastAPI 官方公开教程；72 条中文 AI 协助题目。每条问题、参考答案与预期来源均已按 [fastapi-official-review.csv](../evals/independent/fastapi-official-review.csv) 记录为独立人工复核通过。
+- 证据：正式报告包含题集、manifest 和审核表 SHA-256；三份 artifact 的哈希分别为 `5d75df…261ac1`、`c62132…e7ec7` 与 `fa9cf3…f4bde`，并记录 72 条审核覆盖、1 个评审别名。
+- 环境：Docker Compose；本地 `BAAI/bge-small-zh-v1.5`、BM25、RRF，重排时使用 `BAAI/bge-reranker-base`；`top_k=3`，每个配置先执行 3 条不计入指标的预热检索。
+
+| 配置 | Recall@3 | MRR | 平均检索耗时 | P95 检索耗时 |
+| --- | ---: | ---: | ---: | ---: |
+| BGE + BM25 + RRF | 0.847 | 0.743 | 62.7 ms | 67.8 ms |
+| BGE + BM25 + RRF + Reranker | 0.847 | 0.819 | 1390.0 ms | 1634.2 ms |
+
+结果文件：[fastapi-official-formal-warm-rrf-only.json](../evals/results/fastapi-official-formal-warm-rrf-only.json) 与 [fastapi-official-formal-warm-reranker.json](../evals/results/fastapi-official-formal-warm-reranker.json)。同次未预热报告也保留为 [RRF-only](../evals/results/fastapi-official-formal-rrf-only.json) 与 [Reranker](../evals/results/fastapi-official-formal-reranker.json)，仅用于区分冷启动成本。
+
+结论：在这套经人工复核的公开文档题集上，Reranker 提升了第一个正确来源的平均排名（MRR），但没有提升 Top-3 命中率，且在 CPU 上显著增加检索耗时。该结果可用于说明检索配置取舍；它只评测来源文件命中，不等同于答案正确率、引用充分性、拒答恰当性、端到端延迟或模型调用成本。
+
 ## 2026-07-15：FastAPI 官方语料与 AI 协助题集草案基线
 
 - 语料：9 篇公开 FastAPI 官方教程，来源清单和 SHA-256 见 [fastapi-official-2026-07-14/source-manifest.json](../evals/corpora/fastapi-official-2026-07-14/source-manifest.json)。

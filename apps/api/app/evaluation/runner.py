@@ -32,7 +32,10 @@ def run(
     cases: Sequence[RetrievalEvaluationCase],
     top_k: int,
     reranker_enabled: bool = True,
+    warmup_queries: int = 0,
 ) -> RetrievalEvaluationReport:
+    if warmup_queries < 0:
+        raise ValueError("warmup_queries must not be negative")
     retriever = create_knowledge_base_retriever(reranker_enabled=reranker_enabled)
 
     def retrieve_filenames(question: str, limit: int) -> list[str]:
@@ -41,10 +44,15 @@ def run(
             for hit in retriever.search(knowledge_base_id, question, top_k=limit)
         ]
 
+    for case in cases[:warmup_queries]:
+        retrieve_filenames(case.question, top_k)
+
     return evaluate_retrieval(cases, retrieve_filenames, top_k=top_k)
 
 
-def build_run_metadata(settings: Settings, reranker_enabled: bool) -> dict[str, object]:
+def build_run_metadata(
+    settings: Settings, reranker_enabled: bool, warmup_queries: int
+) -> dict[str, object]:
     """Capture retrieval settings that affect a report without exposing secrets."""
     return {
         "evaluated_at_utc": datetime.now(UTC).isoformat(),
@@ -56,6 +64,7 @@ def build_run_metadata(settings: Settings, reranker_enabled: bool) -> dict[str, 
         "reranker_candidate_count": settings.reranker_candidate_count
         if reranker_enabled
         else None,
+        "warmup_queries_excluded": warmup_queries,
     }
 
 
@@ -71,6 +80,12 @@ def main() -> None:
     )
     parser.add_argument("--output", type=Path)
     parser.add_argument(
+        "--warmup-queries",
+        type=int,
+        default=0,
+        help="Run the first N cases before measurement to warm local retrieval models",
+    )
+    parser.add_argument(
         "--formal-manifest",
         type=Path,
         help=(
@@ -80,6 +95,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.top_k < 1:
         parser.error("--top-k must be positive")
+    if args.warmup_queries < 0:
+        parser.error("--warmup-queries must not be negative")
 
     reranker_enabled = not args.disable_reranker
     cases = load_cases(args.cases)
@@ -93,10 +110,13 @@ def main() -> None:
         cases,
         args.top_k,
         reranker_enabled=reranker_enabled,
+        warmup_queries=args.warmup_queries,
     )
     report_data = report.to_dict() | {
         "reranker_enabled": reranker_enabled,
-        "run_metadata": build_run_metadata(get_settings(), reranker_enabled),
+        "run_metadata": build_run_metadata(
+            get_settings(), reranker_enabled, args.warmup_queries
+        ),
     }
     if formal_dataset is not None:
         report_data["formal_dataset"] = formal_dataset

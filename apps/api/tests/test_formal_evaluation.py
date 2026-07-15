@@ -108,7 +108,7 @@ def test_review_sheet_exports_pending_cases_and_formal_mode_requires_all_approva
         validate_formal_dataset(cases, manifest_path, cases_path)
 
 
-def test_committed_fastapi_dataset_is_a_reviewable_independent_draft() -> None:
+def test_committed_fastapi_dataset_is_human_reviewed_and_formal_ready() -> None:
     project_root = Path(__file__).resolve().parents[3]
     cases_path = project_root / "evals" / "independent" / "fastapi-official-cases.jsonl"
     manifest_path = project_root / "evals" / "independent" / "fastapi-official.manifest.json"
@@ -124,10 +124,11 @@ def test_committed_fastapi_dataset_is_a_reviewable_independent_draft() -> None:
     assert len({case.id for case in cases}) == 72
     assert len({case.question for case in cases}) == 72
     assert manifest["dataset_origin"] == "independent"
-    assert manifest["human_review_status"] == "needs_human_review"
+    assert manifest["human_review_status"] == "approved"
 
-    with pytest.raises(ValueError, match="Formal evaluation manifest is invalid"):
-        validate_formal_dataset(cases, manifest_path, cases_path)
+    result = validate_formal_dataset(cases, manifest_path, cases_path)
+    assert result["reviewed_case_count"] == 72
+    assert result["reviewer_count"] == 1
 
 
 def test_formal_dataset_rejects_wrong_case_count_and_duplicate_questions(tmp_path) -> None:

@@ -74,6 +74,17 @@ uv run python -m app.evaluation.runner \
   --output ../../evals/results/rrf-only.json
 ```
 
+本地 BGE/CrossEncoder 首次调用会加载模型。若报告需要比较稳态检索延迟，可对两个配置使用相同的预热数量；预热查询会执行检索但**不进入** Recall、MRR 和延迟统计，输出的 `run_metadata.warmup_queries_excluded` 会记录该数量：
+
+```bash
+uv run python -m app.evaluation.runner \
+  --knowledge-base-id <知识库 UUID> \
+  --cases ../../evals/my-cases.jsonl \
+  --top-k 5 \
+  --warmup-queries 3 \
+  --output ../../evals/results/warm-reranker.json
+```
+
 ## 正式独立题集模式
 
 仓库的 [../evals/independent/](../evals/independent/) 只提供 JSONL 和来源说明模板，**不是题集本身**。完成独立题集和人工来源标注后，复制模板为未提交或已脱敏的实际文件，并使用 `--formal-manifest` 运行：
