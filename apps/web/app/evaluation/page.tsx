@@ -29,7 +29,7 @@ import {
   saveBrowserLatency,
   sendChatMessageStream,
 } from "../../lib/chat";
-import { parseExpectedFilenames } from "../../lib/evaluation";
+import { displayKnowledgeBaseName, parseExpectedFilenames } from "../../lib/evaluation";
 
 type EvaluationAnswer = {
   evaluationCaseId: string;
@@ -342,10 +342,12 @@ export default function EvaluationPage() {
             >
               {knowledgeBases.length === 0 && <option value="">暂无知识库</option>}
               {knowledgeBases.map((knowledgeBase) => (
-                <option key={knowledgeBase.id} value={knowledgeBase.id}>{knowledgeBase.name}</option>
+                <option key={knowledgeBase.id} value={knowledgeBase.id}>
+                  {displayKnowledgeBaseName(knowledgeBase.name)}
+                </option>
               ))}
             </select>
-            <Link className="formal-review-link" href="/review">进入 72 题人工审核</Link>
+            <Link className="formal-review-link" href="/review">复核新批次（原批次已完成）</Link>
           </div>
         </div>
 
@@ -537,7 +539,7 @@ export default function EvaluationPage() {
                     <div><dt>拒答恰当</dt><dd>{rate(reviewSummary.refusal_pass_rate)}</dd></div>
                   </dl>
                 )}
-                <Link className="evaluation-secondary-link" href="/review">打开 72 题人工审核工具</Link>
+                <Link className="evaluation-secondary-link" href="/review">复核新批次（原批次已完成）</Link>
               </section>
 
               <section className="evaluation-card">
