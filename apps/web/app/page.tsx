@@ -3,39 +3,24 @@
 import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  AnswerReviewSummary,
   AuthSession,
   ChatApiError,
   ChatHistoryMessage,
-  ChatResponse,
   Citation,
   Conversation,
   DocumentRecord,
-  EndToEndLatencySummary,
-  EvaluationCase,
   KnowledgeBase,
-  ModelUsageSummary,
-  RetrievalEvaluationReport,
-  ReviewVerdict,
-  createAnswerReview,
-  createEvaluationCase,
   createKnowledgeBase,
-  deleteEvaluationCase,
   deleteKnowledgeBase,
-  getAnswerReviewSummary,
   getApiHealth,
   getConversationMessages,
   getConversations,
   getDocuments,
-  getEndToEndLatencySummary,
-  getEvaluationCases,
   getKnowledgeBases,
-  getModelUsageSummary,
   getStoredSession,
   login,
   logout,
   retryDocument,
-  runRetrievalEvaluation,
   register,
   saveSession,
   saveMessageFeedback,
@@ -48,30 +33,25 @@ type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  model?: string;
-  latencyMs?: number;
-  retrievalLatencyMs?: number;
-  serviceLatencyMs?: number;
-  endToEndLatencyMs?: number;
-  usage?: ChatResponse["usage"];
   citations?: Citation[];
-  evaluationCaseId?: string;
   feedbackRating?: 1 | -1;
 };
 
 type ApiStatus = "checking" | "connected" | "disconnected";
 type AuthMode = "login" | "register";
 
-const examples = ["上传文档后处于什么状态？", "如何判断回答是否有依据？"];
-const reviewVerdictOptions: { value: ReviewVerdict; label: string }[] = [
-  { value: "pass", label: "通过" },
-  { value: "fail", label: "不通过" },
-  { value: "not_applicable", label: "不适用" },
-];
+const directExamples = ["什么是检索增强生成？", "帮我梳理一个项目计划。"];
+const knowledgeBaseExamples = ["上传文档后处于什么状态？", "如何判断回答是否有依据？"];
 const apiStatusLabel: Record<ApiStatus, string> = {
   checking: "正在检查 API",
   connected: "API 已连接",
   disconnected: "API 未连接",
+};
+const documentStatusLabel: Record<string, string> = {
+  pending: "等待处理",
+  processing: "处理中",
+  ready: "可检索",
+  failed: "处理失败",
 };
 
 export default function ChatPage() {
@@ -97,24 +77,7 @@ export default function ChatPage() {
   const [savingFeedbackMessageId, setSavingFeedbackMessageId] = useState<string | null>(null);
   const [streamPhase, setStreamPhase] = useState<string | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
-  const [evaluationCases, setEvaluationCases] = useState<EvaluationCase[]>([]);
-  const [evaluationReport, setEvaluationReport] = useState<RetrievalEvaluationReport | null>(null);
-  const [answerReviewSummary, setAnswerReviewSummary] = useState<AnswerReviewSummary | null>(null);
-  const [modelUsageSummary, setModelUsageSummary] = useState<ModelUsageSummary | null>(null);
-  const [latencySummary, setLatencySummary] = useState<EndToEndLatencySummary | null>(null);
   const [newKnowledgeBaseName, setNewKnowledgeBaseName] = useState("");
-  const [evaluationQuestion, setEvaluationQuestion] = useState("");
-  const [expectedFilename, setExpectedFilename] = useState("");
-  const [isSavingEvaluationCase, setIsSavingEvaluationCase] = useState(false);
-  const [deletingEvaluationCaseId, setDeletingEvaluationCaseId] = useState<string | null>(null);
-  const [isRunningEvaluation, setIsRunningEvaluation] = useState(false);
-  const [draftEvaluationCaseId, setDraftEvaluationCaseId] = useState<string | null>(null);
-  const [reviewingEvaluationCaseId, setReviewingEvaluationCaseId] = useState<string | null>(null);
-  const [answerVerdict, setAnswerVerdict] = useState<ReviewVerdict | "">("");
-  const [citationVerdict, setCitationVerdict] = useState<ReviewVerdict | "">("");
-  const [refusalVerdict, setRefusalVerdict] = useState<ReviewVerdict | "">("");
-  const [reviewNotes, setReviewNotes] = useState("");
-  const [isSavingAnswerReview, setIsSavingAnswerReview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedKnowledgeBase = knowledgeBases.find(
@@ -122,13 +85,6 @@ export default function ChatPage() {
   );
   const latestCitations = useMemo(
     () => [...messages].reverse().find((message) => message.role === "assistant")?.citations ?? [],
-    [messages],
-  );
-  const latestReviewableAnswer = useMemo(
-    () =>
-      [...messages]
-        .reverse()
-        .find((message) => message.role === "assistant" && message.evaluationCaseId),
     [messages],
   );
   const hasPendingDocuments = documents.some(
@@ -140,38 +96,6 @@ export default function ChatPage() {
       setDocuments(await getDocuments(knowledgeBaseId));
     } catch (loadError) {
       setError(loadError instanceof ChatApiError ? loadError.message : "无法读取文档状态。");
-    }
-  }, []);
-
-  const loadEvaluationCases = useCallback(async (knowledgeBaseId: string) => {
-    try {
-      setEvaluationCases(await getEvaluationCases(knowledgeBaseId));
-    } catch (loadError) {
-      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取评测案例。");
-    }
-  }, []);
-
-  const loadAnswerReviewSummary = useCallback(async (knowledgeBaseId: string) => {
-    try {
-      setAnswerReviewSummary(await getAnswerReviewSummary(knowledgeBaseId));
-    } catch (loadError) {
-      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取答案评审汇总。");
-    }
-  }, []);
-
-  const loadModelUsageSummary = useCallback(async (knowledgeBaseId: string) => {
-    try {
-      setModelUsageSummary(await getModelUsageSummary(knowledgeBaseId));
-    } catch (loadError) {
-      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取模型调用摘要。");
-    }
-  }, []);
-
-  const loadLatencySummary = useCallback(async (knowledgeBaseId: string) => {
-    try {
-      setLatencySummary(await getEndToEndLatencySummary(knowledgeBaseId));
-    } catch (loadError) {
-      setError(loadError instanceof ChatApiError ? loadError.message : "无法读取端到端耗时摘要。");
     }
   }, []);
 
@@ -226,22 +150,14 @@ export default function ChatPage() {
     async function refreshKnowledgeBaseData() {
       await Promise.all([
         loadDocuments(selectedKnowledgeBaseId),
-        loadEvaluationCases(selectedKnowledgeBaseId),
-        loadAnswerReviewSummary(selectedKnowledgeBaseId),
-        loadModelUsageSummary(selectedKnowledgeBaseId),
-        loadLatencySummary(selectedKnowledgeBaseId),
         loadConversations(selectedKnowledgeBaseId),
       ]);
     }
 
     void refreshKnowledgeBaseData();
   }, [
-    loadAnswerReviewSummary,
     loadDocuments,
-    loadEvaluationCases,
     loadConversations,
-    loadLatencySummary,
-    loadModelUsageSummary,
     selectedKnowledgeBaseId,
   ]);
 
@@ -256,21 +172,13 @@ export default function ChatPage() {
     const message = draft.trim();
     if (!message || isSending) return;
 
-    const evaluationCaseId = evaluationCases.some(
-      (evaluationCase) =>
-        evaluationCase.id === draftEvaluationCaseId && evaluationCase.question === message,
-    )
-      ? draftEvaluationCaseId ?? undefined
-      : undefined;
     const userMessage: Message = {
       id: `local-${Date.now()}`,
       role: "user",
       content: message,
-      evaluationCaseId,
     };
     setMessages((current) => [...current, userMessage]);
     setDraft("");
-    setDraftEvaluationCaseId(null);
     setError(null);
     setIsSending(true);
     setStreamPhase("retrieving");
@@ -296,14 +204,7 @@ export default function ChatPage() {
           id: result.assistant_message_id ?? `local-${Date.now() + 1}`,
           role: "assistant",
           content: result.answer,
-          model: result.model,
-          latencyMs: result.latency_ms,
-          retrievalLatencyMs: result.retrieval_latency_ms,
-          serviceLatencyMs: result.total_latency_ms,
-          endToEndLatencyMs,
           citations: result.citations,
-          usage: result.usage,
-          evaluationCaseId,
         },
       ]);
       if (
@@ -319,11 +220,7 @@ export default function ChatPage() {
         );
       }
       if (selectedKnowledgeBaseId) {
-        await Promise.all([
-          loadModelUsageSummary(selectedKnowledgeBaseId),
-          loadLatencySummary(selectedKnowledgeBaseId),
-          loadConversations(selectedKnowledgeBaseId),
-        ]);
+        await loadConversations(selectedKnowledgeBaseId);
       }
     } catch (requestError) {
       setError(
@@ -351,11 +248,6 @@ export default function ChatPage() {
           id: message.id,
           role: message.role,
           content: message.content,
-          model: message.model ?? undefined,
-          latencyMs: message.latency_ms ?? undefined,
-          retrievalLatencyMs: message.retrieval_latency_ms ?? undefined,
-          serviceLatencyMs: message.total_latency_ms ?? undefined,
-          endToEndLatencyMs: message.browser_end_to_end_latency_ms ?? undefined,
           citations: message.citations,
         })),
       );
@@ -395,8 +287,6 @@ export default function ChatPage() {
       setKnowledgeBases((current) => [knowledgeBase, ...current]);
       setSelectedKnowledgeBaseId(knowledgeBase.id);
       setConversationId(null);
-      setModelUsageSummary(null);
-      setLatencySummary(null);
       setNewKnowledgeBaseName("");
     } catch (requestError) {
       setError(requestError instanceof ChatApiError ? requestError.message : "无法创建知识库。");
@@ -434,11 +324,6 @@ export default function ChatPage() {
     setConversations([]);
     setDocuments([]);
     setMessages([]);
-    setEvaluationCases([]);
-    setEvaluationReport(null);
-    setAnswerReviewSummary(null);
-    setModelUsageSummary(null);
-    setLatencySummary(null);
   }
 
   async function removeKnowledgeBase() {
@@ -460,13 +345,6 @@ export default function ChatPage() {
       setConversations([]);
       setMessages([]);
       setDocuments([]);
-      setEvaluationCases([]);
-      setEvaluationReport(null);
-      setAnswerReviewSummary(null);
-      setModelUsageSummary(null);
-      setLatencySummary(null);
-      setDraftEvaluationCaseId(null);
-      setReviewingEvaluationCaseId(null);
     } catch (requestError) {
       setError(requestError instanceof ChatApiError ? requestError.message : "无法删除知识库。");
     } finally {
@@ -506,129 +384,8 @@ export default function ChatPage() {
     }
   }
 
-  async function submitEvaluationCase(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const question = evaluationQuestion.trim();
-    const filenames = [
-      ...new Set(
-        expectedFilename
-          .split(/[，,]/)
-          .map((filename) => filename.trim())
-          .filter(Boolean),
-      ),
-    ];
-    if (!question || !filenames.length || !selectedKnowledgeBaseId || isSavingEvaluationCase) return;
-    if (filenames.length > 10) {
-      setError("每条评测案例最多填写 10 个预期来源文件名。");
-      return;
-    }
-
-    setIsSavingEvaluationCase(true);
-    setError(null);
-    try {
-      const evaluationCase = await createEvaluationCase(selectedKnowledgeBaseId, question, filenames);
-      setEvaluationCases((current) => [evaluationCase, ...current]);
-      setEvaluationQuestion("");
-      setExpectedFilename("");
-      setEvaluationReport(null);
-      setAnswerReviewSummary(null);
-    } catch (requestError) {
-      setError(requestError instanceof ChatApiError ? requestError.message : "无法保存评测案例。");
-    } finally {
-      setIsSavingEvaluationCase(false);
-    }
-  }
-
-  async function runEvaluation() {
-    if (!selectedKnowledgeBaseId || !evaluationCases.length || isRunningEvaluation) return;
-
-    setIsRunningEvaluation(true);
-    setError(null);
-    try {
-      setEvaluationReport(await runRetrievalEvaluation(selectedKnowledgeBaseId));
-    } catch (requestError) {
-      setError(requestError instanceof ChatApiError ? requestError.message : "无法运行评测。");
-    } finally {
-      setIsRunningEvaluation(false);
-    }
-  }
-
-  async function removeEvaluationCase(evaluationCaseId: string) {
-    if (!selectedKnowledgeBaseId || deletingEvaluationCaseId) return;
-
-    setDeletingEvaluationCaseId(evaluationCaseId);
-    setError(null);
-    try {
-      await deleteEvaluationCase(selectedKnowledgeBaseId, evaluationCaseId);
-      setEvaluationCases((current) => current.filter((item) => item.id !== evaluationCaseId));
-      setEvaluationReport(null);
-      setAnswerReviewSummary(null);
-      if (reviewingEvaluationCaseId === evaluationCaseId) setReviewingEvaluationCaseId(null);
-    } catch (requestError) {
-      setError(requestError instanceof ChatApiError ? requestError.message : "无法删除评测案例。");
-    } finally {
-      setDeletingEvaluationCaseId(null);
-    }
-  }
-
-  function askEvaluationCase(evaluationCase: EvaluationCase) {
-    setDraft(evaluationCase.question);
-    setDraftEvaluationCaseId(evaluationCase.id);
-    setReviewingEvaluationCaseId(null);
-  }
-
-  function startAnswerReview(evaluationCaseId: string) {
-    setReviewingEvaluationCaseId(evaluationCaseId);
-    setAnswerVerdict("");
-    setCitationVerdict("");
-    setRefusalVerdict("");
-    setReviewNotes("");
-  }
-
-  async function submitAnswerReview(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (
-      !selectedKnowledgeBaseId ||
-      !reviewingEvaluationCaseId ||
-      !latestReviewableAnswer ||
-      latestReviewableAnswer.evaluationCaseId !== reviewingEvaluationCaseId ||
-      !answerVerdict ||
-      !citationVerdict ||
-      !refusalVerdict ||
-      isSavingAnswerReview
-    ) {
-      return;
-    }
-
-    setIsSavingAnswerReview(true);
-    setError(null);
-    try {
-      await createAnswerReview(selectedKnowledgeBaseId, reviewingEvaluationCaseId, {
-        answer: latestReviewableAnswer.content,
-        model: latestReviewableAnswer.model ?? "unknown",
-        latency_ms: latestReviewableAnswer.latencyMs ?? 0,
-        citation_chunk_ids: (latestReviewableAnswer.citations ?? []).map(
-          (citation) => citation.chunk_id,
-        ),
-        answer_verdict: answerVerdict,
-        citation_verdict: citationVerdict,
-        refusal_verdict: refusalVerdict,
-        notes: reviewNotes.trim() || null,
-      });
-      await loadAnswerReviewSummary(selectedKnowledgeBaseId);
-      setReviewingEvaluationCaseId(null);
-      setAnswerVerdict("");
-      setCitationVerdict("");
-      setRefusalVerdict("");
-      setReviewNotes("");
-    } catch (requestError) {
-      setError(requestError instanceof ChatApiError ? requestError.message : "无法保存答案评审。");
-    } finally {
-      setIsSavingAnswerReview(false);
-    }
-  }
-
-  const scopeLabel = selectedKnowledgeBase ? "当前：证据问答" : "当前：直接模型调用";
+  const scopeLabel = selectedKnowledgeBase ? "当前：知识库问答" : "当前：通用问答";
+  const activeExamples = selectedKnowledgeBase ? knowledgeBaseExamples : directExamples;
 
   if (!authSession) {
     return (
@@ -690,7 +447,10 @@ export default function ChatPage() {
           <span className={`status-dot ${apiStatus}`} />
           {apiStatusLabel[apiStatus]}
         </div>
-        <a className="formal-review-nav" href="/review">72 题真人审核</a>
+        <nav className="primary-nav" aria-label="主导航">
+          <a className="active" href="#chat">知识问答</a>
+          <a className="management-link" href="/evaluation">评测管理</a>
+        </nav>
         <div className="account-menu">
           <span>{authSession.user.email}</span>
           <button type="button" onClick={() => void signOut()}>退出</button>
@@ -717,17 +477,10 @@ export default function ChatPage() {
                 setConversationId(null);
                 setConversations([]);
                 setDocuments([]);
-                setEvaluationCases([]);
-                setEvaluationReport(null);
-                setAnswerReviewSummary(null);
-                setModelUsageSummary(null);
-                setLatencySummary(null);
-                setDraftEvaluationCaseId(null);
-                setReviewingEvaluationCaseId(null);
                 setSelectedKnowledgeBaseId(event.target.value);
               }}
             >
-              <option value="">不使用知识库（直接模型调用）</option>
+              <option value="">不使用知识库（通用问答）</option>
               {knowledgeBases.map((knowledgeBase) => (
                 <option key={knowledgeBase.id} value={knowledgeBase.id}>
                   {knowledgeBase.name}
@@ -780,7 +533,7 @@ export default function ChatPage() {
                   ))}
                 </div>
               ) : (
-                <span className="conversation-history-empty">当前资料库还没有已保存的问答。</span>
+                <span className="conversation-history-empty">还没有已保存的问答；在下方输入第一个问题即可开始。</span>
               )}
             </section>
           )}
@@ -788,15 +541,22 @@ export default function ChatPage() {
           <div className="conversation" aria-live="polite">
             {messages.length === 0 ? (
               <div className="empty-state">
-                <p className="empty-kicker">第 3 周里程碑</p>
-                <h2>{selectedKnowledgeBase ? "基于当前资料回答，并展示证据。" : "选择知识库后开始证据问答。"}</h2>
+                <p className="empty-kicker">{selectedKnowledgeBase ? "知识库问答" : "通用问答"}</p>
+                <h2>
+                  {selectedKnowledgeBase
+                    ? "基于当前资料回答，并展示证据。"
+                    : "直接提问，不检索资料，也不提供证据。"}
+                </h2>
                 <p>
                   {selectedKnowledgeBase
                     ? "系统只会使用已完成处理的文档。没有检索到证据时，后端会拒答而不是编造。"
-                    : "未选择知识库时仍是直接模型调用，不会伪造来源。"}
+                    : "适合通用问题。若希望回答基于你的资料，请选择知识库后再提问。"}
                 </p>
+                {!selectedKnowledgeBase && (
+                  <p className="empty-next-step">需要资料依据？在右侧新建知识库、上传资料后切换到知识库问答。</p>
+                )}
                 <div className="example-list">
-                  {examples.map((example) => (
+                  {activeExamples.map((example) => (
                     <button key={example} type="button" onClick={() => setDraft(example)}>
                       {example}
                     </button>
@@ -808,45 +568,26 @@ export default function ChatPage() {
                 <article className={`message ${message.role}`} key={message.id}>
                   <p className="message-role">{message.role === "user" ? "你" : "模型回答"}</p>
                   <p className="message-content">{message.content}</p>
-                  {message.role === "assistant" && (
-                    <>
-                      <div className="message-meta">
-                        <span>{message.model ?? "retrieval-guard"}</span>
-                        <span>模型 {message.latencyMs ?? 0} ms</span>
-                        {message.retrievalLatencyMs !== undefined && (
-                          <span>检索 {message.retrievalLatencyMs} ms</span>
-                        )}
-                        {message.serviceLatencyMs !== undefined && (
-                          <span>服务端全链路 {message.serviceLatencyMs} ms</span>
-                        )}
-                        {message.endToEndLatencyMs !== undefined && (
-                          <span>浏览器端到端 {message.endToEndLatencyMs} ms</span>
-                        )}
-                        {message.usage && <span>{message.usage.total_tokens} tokens</span>}
-                        {message.citations && <span>{message.citations.length} 条已校验证据</span>}
-                      </div>
-                      {selectedKnowledgeBaseId && !message.id.startsWith("local-") && (
-                        <div className="message-feedback" aria-label="回答反馈">
-                          <span>这条回答有帮助吗？</span>
-                          <button
-                            type="button"
-                            aria-pressed={message.feedbackRating === 1}
-                            disabled={savingFeedbackMessageId === message.id}
-                            onClick={() => void submitMessageFeedback(message.id, 1)}
-                          >
-                            有帮助
-                          </button>
-                          <button
-                            type="button"
-                            aria-pressed={message.feedbackRating === -1}
-                            disabled={savingFeedbackMessageId === message.id}
-                            onClick={() => void submitMessageFeedback(message.id, -1)}
-                          >
-                            不支持
-                          </button>
-                        </div>
-                      )}
-                    </>
+                  {message.role === "assistant" && selectedKnowledgeBaseId && !message.id.startsWith("local-") && (
+                    <div className="message-feedback" aria-label="回答反馈">
+                      <span>这条回答有帮助吗？</span>
+                      <button
+                        type="button"
+                        aria-pressed={message.feedbackRating === 1}
+                        disabled={savingFeedbackMessageId === message.id}
+                        onClick={() => void submitMessageFeedback(message.id, 1)}
+                      >
+                        有帮助
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={message.feedbackRating === -1}
+                        disabled={savingFeedbackMessageId === message.id}
+                        onClick={() => void submitMessageFeedback(message.id, -1)}
+                      >
+                        不支持
+                      </button>
+                    </div>
                   )}
                 </article>
               ))
@@ -865,11 +606,8 @@ export default function ChatPage() {
             <textarea
               id="message"
               value={draft}
-              onChange={(event) => {
-                setDraft(event.target.value);
-                setDraftEvaluationCaseId(null);
-              }}
-              placeholder={selectedKnowledgeBase ? "基于当前知识库提问…" : "输入问题，直接请求模型…"}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={selectedKnowledgeBase ? "基于当前知识库提问…" : "输入通用问题…"}
               rows={3}
               disabled={isSending}
             />
@@ -877,7 +615,7 @@ export default function ChatPage() {
               <span>
                 {selectedKnowledgeBase
                   ? "只展示服务端校验过的证据；最多携带最近 6 条对话"
-                  : "未选择知识库：直接模型调用；最多携带最近 6 条对话"}
+                  : "通用问答：不检索资料，不提供证据；最多携带最近 6 条对话"}
               </span>
               <button type="submit" disabled={!draft.trim() || isSending}>
                 {isSending ? "发送中" : "发送"}
@@ -938,7 +676,9 @@ export default function ChatPage() {
                         )}
                       </div>
                       <div className="document-actions">
-                        <span className={`document-status ${document.status}`}>{document.status}</span>
+                        <span className={`document-status ${document.status}`}>
+                          {documentStatusLabel[document.status] ?? document.status}
+                        </span>
                         {document.status === "failed" && (
                           <button
                             type="button"
@@ -954,347 +694,13 @@ export default function ChatPage() {
                   ))}
                 </ul>
               ) : (
-                <p className="panel-empty">上传 Markdown、PDF 或 DOCX 后，Worker 会在此更新处理状态。</p>
+                <p className="panel-empty">点击上方“上传资料”，选择 Markdown、PDF 或 DOCX 后即可开始处理。</p>
               )
             ) : (
               <p className="panel-empty">新建或选择知识库后即可上传资料并启用证据问答。</p>
             )}
-          </section>
-
-          <section className="evaluation-section" aria-label="检索评测">
-            <p className="eyebrow">RETRIEVAL EVALUATION</p>
-            <div className="section-heading">
-              <h3>检索评测</h3>
-              <button
-                type="button"
-                className="text-button"
-                disabled={!selectedKnowledgeBase || !evaluationCases.length || isRunningEvaluation}
-                onClick={runEvaluation}
-              >
-                {isRunningEvaluation ? "评测中" : "运行评测"}
-              </button>
-            </div>
-            {selectedKnowledgeBase ? (
-              <>
-                <form className="evaluation-form" onSubmit={submitEvaluationCase}>
-                  <label className="sr-only" htmlFor="evaluation-question">
-                    评测问题
-                  </label>
-                  <input
-                    id="evaluation-question"
-                    value={evaluationQuestion}
-                    onChange={(event) => setEvaluationQuestion(event.target.value)}
-                    placeholder="评测问题"
-                    maxLength={2_000}
-                  />
-                  <label className="sr-only" htmlFor="expected-filename">
-                    预期命中文件名
-                  </label>
-                  <input
-                    id="expected-filename"
-                    value={expectedFilename}
-                    onChange={(event) => setExpectedFilename(event.target.value)}
-                    placeholder="预期命中文件名（逗号分隔）"
-                    list="ready-document-filenames"
-                    maxLength={2_000}
-                  />
-                  <datalist id="ready-document-filenames">
-                    {documents
-                      .filter((document) => document.status === "ready")
-                      .map((document) => <option key={document.id} value={document.filename} />)}
-                  </datalist>
-                  <button
-                    type="submit"
-                    disabled={!evaluationQuestion.trim() || !expectedFilename.trim() || isSavingEvaluationCase}
-                  >
-                    {isSavingEvaluationCase ? "保存中" : "新增案例"}
-                  </button>
-                </form>
-                <p className="evaluation-summary">
-                  文件名可用中英文逗号分隔。已保存 {evaluationCases.length} 条案例；指标只反映当前题集和当前检索配置。
-                </p>
-                {evaluationCases.length > 0 && (
-                  <ul className="evaluation-case-list" aria-label="最近评测案例">
-                    {evaluationCases.slice(0, 3).map((evaluationCase) => (
-                      <li key={evaluationCase.id}>
-                        <div>
-                          <p>{evaluationCase.question}</p>
-                          <span>预期：{evaluationCase.expected_filenames.join("、")}</span>
-                        </div>
-                        <div className="evaluation-case-actions">
-                          <button
-                            type="button"
-                            onClick={() => askEvaluationCase(evaluationCase)}
-                          >
-                            用此题提问
-                          </button>
-                          {latestReviewableAnswer?.evaluationCaseId === evaluationCase.id && (
-                            <button
-                              type="button"
-                              onClick={() => startAnswerReview(evaluationCase.id)}
-                            >
-                              评审回答
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="delete-evaluation-case"
-                            aria-label={`删除案例：${evaluationCase.question}`}
-                            disabled={deletingEvaluationCaseId !== null}
-                            onClick={() => void removeEvaluationCase(evaluationCase.id)}
-                          >
-                            {deletingEvaluationCaseId === evaluationCase.id ? "删除中" : "删除"}
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {evaluationReport && (
-                  <dl className="evaluation-report">
-                    <div>
-                      <dt>Recall@{evaluationReport.top_k}</dt>
-                      <dd>{(evaluationReport.recall_at_k * 100).toFixed(1)}%</dd>
-                    </div>
-                    <div>
-                      <dt>MRR</dt>
-                      <dd>{evaluationReport.mean_reciprocal_rank.toFixed(3)}</dd>
-                    </div>
-                    <div>
-                      <dt>平均检索</dt>
-                      <dd>{evaluationReport.mean_latency_ms.toFixed(1)} ms</dd>
-                    </div>
-                    <div>
-                      <dt>P95 检索</dt>
-                      <dd>{evaluationReport.p95_latency_ms.toFixed(1)} ms</dd>
-                    </div>
-                  </dl>
-                )}
-                {answerReviewSummary && (
-                  <dl className="answer-review-summary">
-                    <div>
-                      <dt>已人工评审</dt>
-                      <dd>{answerReviewSummary.review_count} 条</dd>
-                    </div>
-                    <div>
-                      <dt>未覆盖案例</dt>
-                      <dd>{answerReviewSummary.unreviewed_case_count} 条</dd>
-                    </div>
-                    <div>
-                      <dt>答案通过</dt>
-                      <dd>
-                        {answerReviewSummary.answer_pass_rate === null
-                          ? "—"
-                          : `${(answerReviewSummary.answer_pass_rate * 100).toFixed(1)}%`}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>引用支持</dt>
-                      <dd>
-                        {answerReviewSummary.citation_pass_rate === null
-                          ? "—"
-                          : `${(answerReviewSummary.citation_pass_rate * 100).toFixed(1)}%`}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>拒答恰当</dt>
-                      <dd>
-                        {answerReviewSummary.refusal_pass_rate === null
-                          ? "—"
-                          : `${(answerReviewSummary.refusal_pass_rate * 100).toFixed(1)}%`}
-                      </dd>
-                    </div>
-                  </dl>
-                )}
-                {modelUsageSummary && (
-                  <>
-                    <dl className="model-usage-summary">
-                      <div>
-                        <dt>已记录调用</dt>
-                        <dd>{modelUsageSummary.call_count} 次</dd>
-                      </div>
-                      <div>
-                        <dt>返回 token</dt>
-                        <dd>{modelUsageSummary.usage_reported_call_count} 次</dd>
-                      </div>
-                      <div>
-                        <dt>累计 token</dt>
-                        <dd>{modelUsageSummary.total_tokens}</dd>
-                      </div>
-                      <div>
-                        <dt>平均模型耗时</dt>
-                        <dd>
-                          {modelUsageSummary.mean_latency_ms === null
-                            ? "—"
-                            : `${modelUsageSummary.mean_latency_ms.toFixed(1)} ms`}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>已估算成本</dt>
-                        <dd>{modelUsageSummary.estimated_cost_call_count} 次</dd>
-                      </div>
-                      <div>
-                        <dt>平均单次成本</dt>
-                        <dd>
-                          {modelUsageSummary.mean_estimated_cost === null
-                            ? "未配置"
-                            : `${modelUsageSummary.mean_estimated_cost.toFixed(6)} ${modelUsageSummary.estimated_cost_currency}`}
-                        </dd>
-                      </div>
-                    </dl>
-                    <p className="model-usage-note">
-                      单价在调用时从本地配置保存为快照；未配置单价或未返回 token 的调用不会估算成本。
-                    </p>
-                  </>
-                )}
-                {latencySummary && (
-                  <>
-                    <dl className="model-usage-summary">
-                      <div>
-                        <dt>已记录回答</dt>
-                        <dd>{latencySummary.message_count} 条</dd>
-                      </div>
-                      <div>
-                        <dt>回答 / 拒答</dt>
-                        <dd>{latencySummary.answered_count} / {latencySummary.guarded_count}</dd>
-                      </div>
-                      <div>
-                        <dt>平均检索耗时</dt>
-                        <dd>
-                          {latencySummary.mean_retrieval_latency_ms === null
-                            ? "—"
-                            : `${latencySummary.mean_retrieval_latency_ms.toFixed(1)} ms`}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>P95 检索耗时</dt>
-                        <dd>
-                          {latencySummary.p95_retrieval_latency_ms === null
-                            ? "—"
-                            : `${latencySummary.p95_retrieval_latency_ms} ms`}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>平均服务端全链路</dt>
-                        <dd>
-                          {latencySummary.mean_server_total_latency_ms === null
-                            ? "—"
-                            : `${latencySummary.mean_server_total_latency_ms.toFixed(1)} ms`}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>P95 服务端全链路</dt>
-                        <dd>
-                          {latencySummary.p95_server_total_latency_ms === null
-                            ? "—"
-                            : `${latencySummary.p95_server_total_latency_ms} ms`}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>平均浏览器端到端</dt>
-                        <dd>
-                          {latencySummary.mean_browser_end_to_end_latency_ms === null
-                            ? "—"
-                            : `${latencySummary.mean_browser_end_to_end_latency_ms.toFixed(1)} ms`}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt>P95 浏览器端到端</dt>
-                        <dd>
-                          {latencySummary.p95_browser_end_to_end_latency_ms === null
-                            ? "—"
-                            : `${latencySummary.p95_browser_end_to_end_latency_ms} ms`}
-                        </dd>
-                      </div>
-                    </dl>
-                    <p className="model-usage-note">
-                      浏览器端到端耗时从发起 SSE 到收到并解析最终结果；历史旧消息没有该字段。
-                    </p>
-                  </>
-                )}
-                {reviewingEvaluationCaseId &&
-                  latestReviewableAnswer?.evaluationCaseId === reviewingEvaluationCaseId && (
-                    <form className="answer-review-form" onSubmit={submitAnswerReview}>
-                      <p className="answer-review-title">人工评审当前回答</p>
-                      <p className="answer-review-answer">{latestReviewableAnswer.content}</p>
-                      <p className="answer-review-meta">
-                        {latestReviewableAnswer.model} · {latestReviewableAnswer.latencyMs} ms ·{" "}
-                        {latestReviewableAnswer.citations?.length ?? 0} 条已校验证据
-                      </p>
-                      <fieldset>
-                        <legend>答案是否符合参考资料或预期回答？</legend>
-                        {reviewVerdictOptions.map((option) => (
-                          <label key={`answer-${option.value}`}>
-                            <input
-                              type="radio"
-                              name="answer-verdict"
-                              checked={answerVerdict === option.value}
-                              onChange={() => setAnswerVerdict(option.value)}
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                      </fieldset>
-                      <fieldset>
-                        <legend>引用是否足以支持本次回答？</legend>
-                        {reviewVerdictOptions.map((option) => (
-                          <label key={`citation-${option.value}`}>
-                            <input
-                              type="radio"
-                              name="citation-verdict"
-                              checked={citationVerdict === option.value}
-                              onChange={() => setCitationVerdict(option.value)}
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                      </fieldset>
-                      <fieldset>
-                        <legend>面对证据不足时，拒答是否恰当？</legend>
-                        {reviewVerdictOptions.map((option) => (
-                          <label key={`refusal-${option.value}`}>
-                            <input
-                              type="radio"
-                              name="refusal-verdict"
-                              checked={refusalVerdict === option.value}
-                              onChange={() => setRefusalVerdict(option.value)}
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                      </fieldset>
-                      <label className="sr-only" htmlFor="answer-review-notes">
-                        评审备注
-                      </label>
-                      <textarea
-                        id="answer-review-notes"
-                        value={reviewNotes}
-                        onChange={(event) => setReviewNotes(event.target.value)}
-                        placeholder="可选：记录错误类型、遗漏证据或改进建议"
-                        maxLength={2_000}
-                        rows={3}
-                      />
-                      <div className="answer-review-actions">
-                        <button type="button" onClick={() => setReviewingEvaluationCaseId(null)}>
-                          取消
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={
-                            isSavingAnswerReview ||
-                            !answerVerdict ||
-                            !citationVerdict ||
-                            !refusalVerdict
-                          }
-                        >
-                          {isSavingAnswerReview ? "保存中" : "保存人工评审"}
-                        </button>
-                      </div>
-                    </form>
-                  )}
-              </>
-            ) : (
-              <p className="panel-empty">选择知识库后，可积累题集并运行本地检索评测。</p>
+            {selectedKnowledgeBase && hasPendingDocuments && (
+              <p className="document-progress">资料正在处理，会每 3 秒自动刷新状态。</p>
             )}
           </section>
 

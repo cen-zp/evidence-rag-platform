@@ -29,6 +29,22 @@ class FakeVectorStore:
         self.deleted.append(document_id)
 
 
+class FailOnceVectorStore(FakeVectorStore):
+    def __init__(self) -> None:
+        super().__init__()
+        self._should_fail = True
+
+    def replace_document_chunks(
+        self,
+        chunks: list[DocumentChunk],
+        vectors: list[list[float]],
+    ) -> None:
+        super().replace_document_chunks(chunks, vectors)
+        if self._should_fail:
+            self._should_fail = False
+            raise RuntimeError("temporary vector store failure")
+
+
 @pytest.fixture
 def document_fixture(tmp_path: Path) -> Generator[tuple[object, UUID, Path], None, None]:
     engine = create_engine(
@@ -142,11 +158,122 @@ def test_processor_reindexes_ready_document_when_forced(document_fixture) -> Non
     assert len(vector_store.indexed) == 1
 
 
+def test_processor_ignores_duplicate_delivery_after_document_is_ready(
+    document_fixture,
+) -> None:
+    session_factory, document_id, source_directory = document_fixture
+    (source_directory / "notes.md").write_text("重复投递 " * 300, encoding="utf-8")
+    vector_store = FakeVectorStore()
+    embedding_provider = FakeEmbeddingProvider()
+    processor = DocumentProcessor(
+        session_factory=session_factory,
+        vector_store=vector_store,
+        embedding_provider=embedding_provider,
+        uploads_root=source_directory.parent,
+    )
+
+    processor.process(document_id)
+    with session_factory() as session:
+        original_chunk_ids = list(
+            session.scalars(
+                select(DocumentChunk.id)
+                .where(DocumentChunk.document_id == document_id)
+                .order_by(DocumentChunk.chunk_index)
+            )
+        )
+
+    processor.process(document_id)
+
+    with session_factory() as session:
+        document = session.get(Document, document_id)
+        chunk_ids = list(
+            session.scalars(
+                select(DocumentChunk.id)
+                .where(DocumentChunk.document_id == document_id)
+                .order_by(DocumentChunk.chunk_index)
+            )
+        )
+
+    assert document is not None
+    assert document.status == DocumentStatus.READY
+    assert chunk_ids == original_chunk_ids
+    assert len(vector_store.indexed) == 1
+    assert embedding_provider.document_calls == 1
+
+
+def test_processor_recovers_after_vector_replacement_failure(document_fixture) -> None:
+    session_factory, document_id, source_directory = document_fixture
+    (source_directory / "notes.md").write_text("可靠重试 " * 300, encoding="utf-8")
+    with session_factory() as session:
+        document = session.get(Document, document_id)
+        assert document is not None
+        document.status = DocumentStatus.READY
+        old_chunk = DocumentChunk(
+            document_id=document.id,
+            knowledge_base_id=document.knowledge_base_id,
+            content="旧内容",
+            page_number=1,
+            chunk_index=0,
+            chunk_metadata={},
+        )
+        session.add(old_chunk)
+        session.commit()
+        old_chunk_id = old_chunk.id
+
+    vector_store = FailOnceVectorStore()
+    processor = DocumentProcessor(
+        session_factory=session_factory,
+        vector_store=vector_store,
+        embedding_provider=FakeEmbeddingProvider(),
+        uploads_root=source_directory.parent,
+    )
+
+    with pytest.raises(RuntimeError, match="temporary vector store failure"):
+        processor.process(document_id, force=True)
+
+    with session_factory() as session:
+        document = session.get(Document, document_id)
+        chunk_ids_after_failure = list(
+            session.scalars(
+                select(DocumentChunk.id).where(DocumentChunk.document_id == document_id)
+            )
+        )
+
+    assert document is not None
+    assert document.status == DocumentStatus.FAILED
+    assert document.error_message == "temporary vector store failure"
+    assert chunk_ids_after_failure == [old_chunk_id]
+    assert vector_store.deleted == [document_id]
+
+    processor.process(document_id)
+
+    with session_factory() as session:
+        document = session.get(Document, document_id)
+        replacement_chunk_ids = list(
+            session.scalars(
+                select(DocumentChunk.id)
+                .where(DocumentChunk.document_id == document_id)
+                .order_by(DocumentChunk.chunk_index)
+            )
+        )
+
+    assert document is not None
+    assert document.status == DocumentStatus.READY
+    assert document.error_message is None
+    assert old_chunk_id not in replacement_chunk_ids
+    assert len(replacement_chunk_ids) == 3
+    assert len(vector_store.indexed) == 2
+
+
 class FakeEmbeddingProvider:
     dimension = 2
+
+    def __init__(self) -> None:
+        self.document_calls = 0
 
     def embed_query(self, text: str) -> list[float]:
         return [float(len(text)), 0.0]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        self.document_calls += 1
         return [[float(len(text)), 0.0] for text in texts]

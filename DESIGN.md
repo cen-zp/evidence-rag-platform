@@ -7,11 +7,13 @@ source_template: linear.app (adapted)
 
 ## Intent
 
-This is a focused internal knowledge tool, not a marketing page. It should make
-the distinction between an AI answer and supporting evidence easy to inspect.
-The workbench must make the current scope obvious: without a selected knowledge
-base it is direct-model chat; with a selected knowledge base it is a
-retrieval-grounded answer surface with inspectable evidence.
+This is a focused knowledge tool, not a marketing page. It should make the
+distinction between an AI answer and supporting evidence easy to inspect. The
+main workbench must make the current scope obvious: without a selected knowledge
+base it is general chat; with a selected knowledge base it is a
+retrieval-grounded answer surface with inspectable evidence. Internal quality
+workflows belong to a separate management route and must not interrupt this
+ordinary question-answering flow.
 
 ## Visual system
 
@@ -31,8 +33,9 @@ retrieval-grounded answer surface with inspectable evidence.
 - Empty: explain whether the current mode is direct-model chat or evidence
   question answering, then present example questions.
 - Sending: disable the composer and show a clear in-progress state.
-- Success: render the answer, model name, and measured latency as separate,
-  inspectable information.
+- Success: render the answer and validated evidence without exposing internal
+  model, token, cost, or latency records; those remain inspectable under the
+  evaluation management route.
 - Failure: keep the draft message, explain that the API or its local key may
   be unavailable, and avoid exposing secrets or raw provider details.
 - Follow-up: retain a small, explicitly disclosed page-local context window;
@@ -47,14 +50,21 @@ document snippets and locations; never simulate sources. Failed documents show
 a compact error and retry action, while pending and processing documents never
 offer a duplicate enqueue action.
 
-## Evaluation panel
+## Evaluation management
 
-Keep retrieval evaluation close to the document status: users add a question
-and the expected source filename, then inspect Recall@K, MRR, and local
-retrieval latency. Treat every result as scoped to its current knowledge base,
-case set, and retrieval configuration; do not present a small smoke run as a
-general performance claim. Show a compact recent-case list with a deliberate
+The main workbench contains only knowledge questions, knowledge-base and
+document status, and server-validated evidence. Retrieval evaluation, the
+72-case formal human-review tool, and model usage, cost, and latency summaries
+live under the separate `/evaluation` management route. The top bar may expose
+a quiet "评测管理" link, but "知识问答" remains the primary navigation item.
+
+On the management route, users add a question and expected source filename,
+then inspect Recall@K, MRR, and local retrieval latency. Treat every result as
+scoped to its current knowledge base, case set, and retrieval configuration; do
+not present a small smoke run as a general performance claim. Show a deliberate
 delete action so incorrect cases can be removed before they contaminate a run.
-Place human-review and model-usage summaries in the same compact metric-card
-system. Model metadata must state that it covers successful grounded calls
-only, stores no question or answer content, and is not a quality or cost claim.
+Keep the ability to generate an answer from an evaluation case and record a
+human verdict on that route rather than sending the user back through the main
+workbench. Model metadata must state that it covers successful grounded calls,
+stores no question or answer content, and is not a quality claim; estimated
+costs must be labeled as local pricing snapshots rather than billing truth.

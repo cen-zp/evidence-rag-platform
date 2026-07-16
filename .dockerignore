@@ -13,5 +13,6 @@ __pycache__
 uploads
 logs
 evals/results/*
+!evals/results/fastapi-official-confidence-calibration.json
 !evals/results/fastapi-official-formal-answer-batch.json
 !evals/results/fastapi-official-formal-answer-compact-s1-20260715.json

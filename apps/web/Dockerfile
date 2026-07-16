@@ -4,7 +4,9 @@ WORKDIR /workspace/apps/web
 RUN corepack enable
 
 COPY apps/web/package.json apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm config set store-dir /pnpm/store && \
+    pnpm install --frozen-lockfile
 
 COPY apps/web ./
 COPY evals/results/fastapi-official-formal-answer-compact-s1-20260715.json ./review-data/fastapi-official-formal-answer-compact-s1-20260715.json

@@ -37,8 +37,11 @@ button:disabled { cursor: not-allowed; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(39 166 68 / 12%); }
 .status-dot.checking { background: var(--subtle); box-shadow: 0 0 0 3px rgb(112 116 125 / 12%); }
 .status-dot.disconnected { background: #dc6d64; box-shadow: 0 0 0 3px rgb(220 109 100 / 12%); }
-.formal-review-nav { color: var(--accent-hover); font-size: 12px; text-decoration: none; }
-.formal-review-nav:hover { color: var(--ink); }
+.primary-nav { display: inline-flex; align-items: center; gap: 16px; margin-left: auto; margin-right: 24px; }
+.primary-nav a { color: var(--ink); font-size: 13px; text-decoration: none; }
+.primary-nav a:hover { color: var(--accent-hover); }
+.primary-nav .management-link { color: var(--subtle); font-size: 12px; }
+.primary-nav .active { color: var(--ink); font-weight: 600; }
 .account-menu { display: inline-flex; align-items: center; gap: 12px; color: var(--subtle); font-size: 12px; }
 .account-menu button, .auth-switch { border: 0; padding: 0; color: var(--accent-hover); background: transparent; font-size: 12px; }
 .account-menu button:hover, .auth-switch:hover { color: var(--ink); }
@@ -87,6 +90,7 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
 .empty-kicker { margin-bottom: 12px; color: var(--accent-hover); font-size: 13px; font-weight: 600; }
 .empty-state h2 { margin-bottom: 12px; font-size: clamp(21px, 3vw, 28px); letter-spacing: -.6px; }
 .empty-state > p:not(.empty-kicker), .evidence-empty p { color: var(--muted); font-size: 15px; line-height: 1.65; }
+.empty-state .empty-next-step { margin: 14px 0 0; color: var(--accent-hover); font-size: 13px; font-weight: 600; }
 .example-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
 .example-list button { border: 1px solid var(--border-strong); border-radius: 7px; padding: 8px 10px; color: var(--ink); background: transparent; font-size: 13px; }
 .example-list button:hover { border-color: var(--accent); color: var(--accent-hover); }
@@ -137,8 +141,9 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
 .document-retry:hover:not(:disabled) { color: var(--ink); }
 .document-retry:disabled { opacity: .45; }
 .panel-empty { margin: 15px 0 0; color: var(--subtle); font-size: 13px; line-height: 1.55; }
-.evaluation-section { padding: 28px 0; border-bottom: 1px solid var(--border); }
-.evaluation-section .eyebrow { margin-bottom: 10px; }
+.document-progress { margin: 12px 0 0; color: #bac3ff; font-size: 12px; line-height: 1.5; }
+.formal-review-link { color: var(--accent-hover); font-size: 12px; text-decoration: none; white-space: nowrap; }
+.formal-review-link:hover { color: var(--ink); }
 .evaluation-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; margin-top: 16px; }
 .evaluation-form input { min-width: 0; border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; color: var(--ink); background: var(--surface); font-size: 12px; }
 .evaluation-form input:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(94 106 210 / 16%); }
@@ -192,14 +197,61 @@ h1 { margin-bottom: 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.8px;
 .contract ul { display: grid; gap: 8px; margin: 0; padding-left: 18px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
+.evaluation-page { min-height: 100vh; }
+.evaluation-mode { border: 1px solid var(--border); border-radius: 999px; padding: 5px 8px; color: var(--subtle); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.evaluation-shell { width: min(100%, 1320px); margin: 0 auto; padding: 38px 32px 56px; }
+.evaluation-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; padding-bottom: 30px; border-bottom: 1px solid var(--border); }
+.evaluation-heading h1 { margin-bottom: 10px; }
+.evaluation-heading > div:first-child > p:last-child { max-width: 680px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.evaluation-heading-actions { display: grid; min-width: min(100%, 300px); gap: 8px; justify-items: start; }
+.evaluation-heading-actions label { color: var(--subtle); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 600; letter-spacing: .08em; }
+.evaluation-heading-actions select { width: 100%; border: 1px solid var(--border-strong); border-radius: 7px; padding: 9px 30px 9px 10px; color: var(--ink); background: var(--surface); }
+.evaluation-heading-actions select:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(94 106 210 / 16%); }
+.evaluation-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(310px, .48fr); gap: 22px; margin-top: 24px; align-items: start; }
+.evaluation-main, .evaluation-insights { display: grid; gap: 18px; }
+.evaluation-card { min-width: 0; padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.evaluation-card .eyebrow { margin-bottom: 8px; }
+.evaluation-card h2 { margin: 0; font-size: 17px; letter-spacing: -.25px; }
+.evaluation-card .section-heading { align-items: flex-start; }
+.evaluation-card .evaluation-form { margin-top: 20px; }
+.evaluation-card .evaluation-case-list { max-height: 460px; overflow-y: auto; }
+.evaluation-insights .evaluation-card { background: #08090a; }
+.evaluation-error { margin: 18px 0 0; border: 1px solid rgb(220 109 100 / 30%); border-radius: 8px; padding: 10px 12px; color: #f5aaa2; background: rgb(220 109 100 / 7%); font-size: 13px; }
+.evaluation-empty, .evaluation-state { display: grid; justify-items: start; gap: 12px; }
+.evaluation-empty { margin-top: 24px; padding: 30px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.evaluation-empty h2, .evaluation-state h1 { margin: 0; font-size: 21px; }
+.evaluation-empty p, .evaluation-state p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.evaluation-state { min-height: 100vh; place-content: center; padding: 24px; background: var(--canvas); }
+.evaluation-primary-link, .evaluation-secondary-link { text-decoration: none; }
+.evaluation-primary-link { border-radius: 7px; padding: 9px 12px; color: white; background: var(--accent); font-size: 13px; font-weight: 600; }
+.evaluation-primary-link:hover { background: var(--accent-hover); }
+.evaluation-secondary-link { display: inline-block; margin-top: 14px; color: var(--accent-hover); font-size: 12px; }
+.evaluation-secondary-link:hover { color: var(--ink); }
+.evaluation-question { margin: 18px 0 0; color: var(--accent-hover); font-size: 13px; font-weight: 600; line-height: 1.55; }
+.evaluation-answer { margin: 12px 0 0; color: var(--ink); white-space: pre-wrap; font-size: 14px; line-height: 1.7; }
+.evaluation-citations { display: grid; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+.evaluation-citations li { border: 1px solid var(--border); border-radius: 8px; padding: 11px; background: #08090a; }
+.evaluation-citations strong { color: var(--accent-hover); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+.evaluation-citations p { display: -webkit-box; overflow: hidden; margin: 7px 0 0; color: var(--muted); -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: 12px; line-height: 1.55; }
+
 @media (max-width: 780px) {
   .topbar { height: 56px; padding: 0 18px; }
   .workspace { display: block; }
   .chat-panel { min-height: calc(100vh - 56px); padding: 25px 18px; border-right: 0; }
   .evidence-panel { padding: 28px 18px; border-top: 1px solid var(--border); }
   .conversation { justify-content: flex-start; min-height: 360px; }
-  .status { font-size: 11px; }
+  .status { gap: 0; font-size: 0; }
+  .primary-nav { gap: 10px; margin-left: auto; margin-right: 12px; }
+  .primary-nav a { font-size: 12px; }
+  .primary-nav .management-link { font-size: 11px; }
+  .account-menu > span { display: none; }
   .knowledge-context { align-items: flex-start; flex-wrap: wrap; }
   .knowledge-context select { max-width: 100%; flex: 1 1 220px; }
   .evaluation-form { grid-template-columns: 1fr; }
+  .evaluation-mode { display: none; }
+  .evaluation-shell { padding: 28px 18px 42px; }
+  .evaluation-heading { display: grid; gap: 22px; }
+  .evaluation-heading-actions { width: 100%; min-width: 0; }
+  .evaluation-layout { grid-template-columns: 1fr; }
+  .evaluation-card { padding: 18px; }
 }
