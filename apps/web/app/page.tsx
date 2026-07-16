@@ -28,6 +28,7 @@ import {
   sendChatMessageStream,
   uploadDocument,
 } from "../lib/chat";
+import { displayKnowledgeBaseName } from "../lib/evaluation";
 
 type Message = {
   id: string;
@@ -328,7 +329,7 @@ export default function ChatPage() {
 
   async function removeKnowledgeBase() {
     if (!selectedKnowledgeBase || isDeletingKnowledgeBase) return;
-    if (!window.confirm(`删除“${selectedKnowledgeBase.name}”及其所有资料、评测记录和向量？此操作无法撤销。`)) {
+    if (!window.confirm(`删除“${displayKnowledgeBaseName(selectedKnowledgeBase.name)}”及其所有资料、评测记录和向量？此操作无法撤销。`)) {
       return;
     }
 
@@ -483,7 +484,7 @@ export default function ChatPage() {
               <option value="">不使用知识库（通用问答）</option>
               {knowledgeBases.map((knowledgeBase) => (
                 <option key={knowledgeBase.id} value={knowledgeBase.id}>
-                  {knowledgeBase.name}
+                  {displayKnowledgeBaseName(knowledgeBase.name)}
                 </option>
               ))}
             </select>
@@ -647,7 +648,11 @@ export default function ChatPage() {
 
           <section className="document-section" aria-label="文档处理状态">
             <div className="section-heading">
-              <h3>{selectedKnowledgeBase?.name ?? "尚未选择知识库"}</h3>
+              <h3>
+                {selectedKnowledgeBase
+                  ? displayKnowledgeBaseName(selectedKnowledgeBase.name)
+                  : "尚未选择知识库"}
+              </h3>
               <button
                 type="button"
                 className="text-button"
