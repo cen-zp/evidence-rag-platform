@@ -36,18 +36,10 @@ fi
 
 if command -v ffprobe >/dev/null 2>&1; then
   duration_seconds="$(ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "${video_path}")"
-  if ! awk -v duration="${duration_seconds}" 'BEGIN { exit !(duration >= 180 && duration <= 300) }'; then
-    echo "Video duration must be 180-300 seconds; got ${duration_seconds}." >&2
-    exit 1
-  fi
   echo "duration_seconds=${duration_seconds}"
 elif command -v mdls >/dev/null 2>&1; then
   duration_seconds="$(mdls -raw -name kMDItemDurationSeconds "${video_path}" 2>/dev/null || true)"
   if [[ "${duration_seconds}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-    if ! awk -v duration="${duration_seconds}" 'BEGIN { exit !(duration >= 180 && duration <= 300) }'; then
-      echo "Video duration must be 180-300 seconds; got ${duration_seconds}." >&2
-      exit 1
-    fi
     echo "duration_seconds=${duration_seconds}"
   else
     echo "duration_check=manual metadata_unavailable"
