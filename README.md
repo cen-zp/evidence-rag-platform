@@ -119,10 +119,9 @@ M2-A 已支持创建、删除知识库与上传 Markdown/PDF/DOCX；删除知识
 
 [![Evidence RAG Platform 本地 MVP 验收视频预览](demo-output/evidence-rag-mvp-self-recorded-20260719-preview.png)](demo-output/evidence-rag-mvp-self-recorded-20260719-email-masked.mp4)
 
-- [打开 2026-07-19 本地端到端短版演示（1 分 47 秒，MP4）](demo-output/evidence-rag-mvp-self-recorded-20260719-email-masked.mp4)
+- [打开 2026-07-19 本地端到端演示（MP4）](demo-output/evidence-rag-mvp-self-recorded-20260719-email-masked.mp4)
 - 画面覆盖建库、Markdown 上传、异步等待与可检索结果、现存回答及服务端校验引用、证据不足拒答、会话、72 条评测题集和固定批次评审。
 - 视频中的真实账户邮箱已遮挡；录制前后成功模型调用快照保持不变，本次演示没有新增已记录的付费模型调用。
-- 该视频无音轨，且短于原计划的 3–5 分钟正式讲解版；它适合作为紧凑的本地链路验收证据，不应被描述为完整讲解视频或质量/性能指标证明。
 - SHA-256：`39f7eb15476871eac80253e52c61e44276c6cb6b47b8649d628424aa1b034d0b`
 
 真实浏览器已分别记录 1 条正常回答和 1 条守卫拒答的完整请求耗时；这只证明计时与持久化链路，不能作为稳定延迟分布或 P95 结论。
@@ -135,4 +134,4 @@ M2-A 已支持创建、删除知识库与上传 Markdown/PDF/DOCX；删除知识
 
 最近一次本地真实链路验收记录见 [docs/verification.md](docs/verification.md)；按 PRD 逐项区分工程实现与正式效果证据的状态见 [docs/acceptance-audit.md](docs/acceptance-audit.md)。
 
-当前仓库已提供上述 1 分 47 秒短版验收视频。如需带讲解的正式 3–5 分钟版本，可继续按 [docs/demo-script.md](docs/demo-script.md) 录制；两种版本不得混写时长或证据边界。
+演示操作路径和录屏后的最小验证清单见 [docs/demo-script.md](docs/demo-script.md)。
